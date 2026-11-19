@@ -22,6 +22,7 @@ export { fold, SOON, parse, sound, requestOf } from './read.js';
 // Days, numbers and clock times, said: the language packs (they were here until 19 Nov 2026).
 import { DAYNAMES, clock, sayTime, sayNum } from '../../lang/en/index.js';
 import { DIAS, sayNumEs, sayTimeEs, aTimeEs, showTimeEs } from '../../lang/es/index.js';
+import { answerMusic } from '../music/index.js';
 export { DAYNAMES, clock, sayTime, sayNum, DIAS, sayNumEs, sayTimeEs, aTimeEs, showTimeEs };
 
 export const EAT = ['bfast', 'mex', 'world', 'street', 'share', 'roof'];
@@ -660,7 +661,16 @@ export function createAsker({ pack, shown = (p) => p.other || p.photo, random = 
   // Reading (read.js) turns the words into a request; answerRequest() answers a request, whoever wrote it (Lars, 18 Nov 2026: "Do 1-3
   // proposal", 2: reading the question apart from finding the answer).
   const reader = createReader({ places, MEALS, pack });
-  function answer(text, n, last = null, here = null) { return answerRequest(reader.read(text, n), n, last, here); }
+  // Live music (B8): only a city whose pack has music nights answers music questions from them; any other city answers as before.
+  const MUSIC = Object.keys(pack.music || {}).length > 0;
+  function answer(text, n, last = null, here = null) {
+    const q = reader.read(text, n);
+    if (MUSIC) {
+      const m = answerMusic(text, pack, n, es ? 'es' : 'en', { named: q.named?.id });
+      if (m) return { ...m, q, show: m.say[0].text, lines: m.say };
+    }
+    return answerRequest(q, n, last, here);
+  }
   function answerRequest(q, n, last = null, here = null) {
     if (q.more && last && last.kind === 'list') {
       const ranked = { ...list(last.q, n, last.here), here: last.here }, count = q.count || last.count || 4, offset = last.offset + last.ids.length;

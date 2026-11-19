@@ -11,6 +11,7 @@ hand from now on (they are data: review changes as diffs), then run `node tools/
 | collections.json | Susan York's picks (8) and how answers name them |
 | hours.json | opening hours, one source, with checked dates where known |
 | lexicon.json | English words inside names, hand-written readings |
+| music.template.json | the form for live music nights (D8): fill it in, save it as music.json, build; until then San Miguel has no music answers and every answer is as recorded |
 
 Known faults carried over from /page5 on purpose (the golden snapshot records today's answers; fix them as separate changes):
 

@@ -6,6 +6,7 @@ export const SCHEMA = 1;
 export const BYTES_PER_PLACE = 300;   // budget: gzipped bytes a place (review, section 3.3)
 export const BUDGET_FLOOR = 20000;    // a very small city still gets this much
 export const STALE_DAYS = 120;        // hours checked longer ago than this: a warning
+export const MUSIC_STALE_DAYS = 60;   // music nights change sooner than hours
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const RANGE = /^(\d{1,2}):(\d{2})–(\d{1,2}):(\d{2})$/;
@@ -38,12 +39,13 @@ function tzOk(tz) {
 const daysAgo = (date, today) => Math.round((Date.parse(today) - Date.parse(date)) / 864e5);
 
 /**
- * Check a city's source files. `src` = {city, areas, places, collections, hours, lexicon}; `today` = "YYYY-MM-DD".
+ * Check a city's source files. `src` = {city, areas, places, collections, hours, lexicon, music?}; `today` = "YYYY-MM-DD";
+ * `genres`: the music genres the reader knows (domains/music GENRES), to check music.json's against.
  * Returns {errors: [], warnings: [], notes: {...}} (notes: counts and lists for the report).
  */
-export function validate(src, today) {
+export function validate(src, today, { genres = null } = {}) {
   const errors = [], warnings = [], notes = {};
-  const { city, areas = [], places = [], collections = [], hours = { places: {} }, lexicon = {} } = src;
+  const { city, areas = [], places = [], collections = [], hours = { places: {} }, lexicon = {}, music = null } = src;
   const err = (m) => errors.push(m), warn = (m) => warnings.push(m);
 
   // the city
@@ -92,6 +94,26 @@ export function validate(src, today) {
   if (missingHours.length) warn(`${missingHours.length} places have no hours: ${missingHours.join(", ")}`);
   if (settle.length) warn(`${settle.length} places have two versions of their hours to settle (alsoSaid): ${settle.join(", ")}`);
   if (stale.length) warn(`${stale.length} places' hours were checked more than ${STALE_DAYS} days ago: ${stale.join(", ")}`);
+  // music (optional): which places have live music, which genres, which nights; it changes often, so it is dated and goes stale sooner
+  notes.music = { venues: 0, empty: [] };
+  const TIME = /^([01]?\d|2[0-3]):[0-5]\d$/;
+  for (const [id, v] of Object.entries(music?.venues || {})) {
+    if (!ids.has(id)) { err(`music.json: music for unknown place ${id}`); continue; }
+    if (!(v.slots || []).length) { notes.music.empty.push(id); continue; }
+    notes.music.venues++;
+    if (!Array.isArray(v.genres) || !v.genres.length) err(`music.json: place ${id} needs at least one genre`);
+    for (const g of [...(v.genres || []), ...v.slots.flatMap((sl) => sl.genres || [])]) if (genres && !genres.includes(g)) err(`music.json: place ${id} has genre "${g}", not one the reader knows (${genres.join(", ")})`);
+    for (const sl of v.slots) {
+      if (!Array.isArray(sl.days) || !sl.days.length || !sl.days.every((d) => Number.isInteger(d) && d >= 0 && d <= 6)) err(`music.json: place ${id} has a night with days ${JSON.stringify(sl.days)} (0–6, Monday = 0)`);
+      if (!TIME.test(sl.from || "") || !TIME.test(sl.to || "")) err(`music.json: place ${id} has a night from "${sl.from}" to "${sl.to}" (write "20:00")`);
+    }
+    if (!v.checked || !DATE.test(v.checked)) err(`music.json: place ${id} needs "checked": the date someone last confirmed its nights`);
+    else if (daysAgo(v.checked, today) > MUSIC_STALE_DAYS) warn(`music.json: place ${id}'s nights were checked more than ${MUSIC_STALE_DAYS} days ago`);
+  }
+  notes.music.toAdd = (music?.toAdd || []).map((v) => v.name);
+  if (notes.music.toAdd.length) warn(`music.json: ${notes.music.toAdd.length} venues are waiting to be added to places.json: ${notes.music.toAdd.join(", ")}`);
+  if (notes.music.empty.length) warn(`music.json: ${notes.music.empty.length} places have no nights yet and are left out: ${notes.music.empty.join(", ")}`);
+
   notes.noFacts = places.filter((p) => p.kind !== "sights" && !p.facts).map((p) => p.id);
   if (notes.noFacts.length) warn(`${notes.noFacts.length} places have no facts (cuisine, dishes, features): ${notes.noFacts.join(", ")}`);
 
