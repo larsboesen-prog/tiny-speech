@@ -167,7 +167,10 @@ actions; the reader's grammar; language and variety packs; answer templates; loa
   lost; every transcript checked by Whisper large-v3. Baseline on 144 synthetic Mexican requests: stock Whisper tiny got
   41.1% of the words wrong and the reader understood 34.7% as said; with the sites' name hint, 52.8% wrong (it loops or
   copies the hint). Decision (owner, 19 Nov 2026: "a lot of effort for what gain?", then "put ear on hold"): **on hold**.
-  When it is picked up: measure stock Whisper on 5–10 real speakers first; fine-tune only if it is far from good. It ships as an 8-bit file of the same layout and size
+  When it is picked up: measure stock Whisper on 5–10 real speakers first; fine-tune only if it is far from good.
+  The owner's target for the ears is **8–10 MB, bilingual**, which Whisper tiny cannot reach. The probe of the small design
+  (sounds + the city's word list, `training/asr/probe/`) with a large sound recognizer understood 47.2% of held-out synthetic
+  requests as said against 29–31% for Whisper tiny; the open question is how much a 5–8M sound model keeps. It ships as an 8-bit file of the same layout and size
   as today's (decoder 30.1 MB), only if the real speakers' test improves on words, places and understanding, and FLEURS
   is no worse. About 3 GPU hours.
 
