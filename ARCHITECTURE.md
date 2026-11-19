@@ -157,11 +157,13 @@ actions; the reader's grammar; language and variety packs; answer templates; loa
 - **End of speech:** loudness (`listen.js`), unless noisy recordings (street, a bar with live music) fail.
 - **Ears, fine-tuned (`training/asr/`, owner's request 19 Nov 2026):** before any new recognizer, the same Whisper tiny
   fine-tuned on Mexican Spanish restaurant requests: about 3,850 written requests, corrections, follow-ups, names, local
-  expressions and hesitant speech (`tools/asr-text.mjs`); about 70% synthetic voices (Piper's two Mexican voices; 24 made-up
+  expressions and hesitant speech (3,892, `tools/asr-text.mjs`); about 70% synthetic voices (Piper's two Mexican voices; 24 made-up
   Mexican speakers from Qwen3-TTS VoiceDesign) and 30% native Mexican speakers (the recording page's `?set=asr`, 20+ packets
   of about 78 prompts and 6 cards said in one's own words), as a sampling rule; general speech (FLEURS) so nothing else is
-  lost; every transcript checked by Whisper large-v3. Baseline on synthetic Mexican requests: stock Whisper tiny got 35.5%
-  of the words wrong, and the reader understood 40% of them as said. It ships as an 8-bit file of the same layout and size
+  lost; every transcript checked by Whisper large-v3. Baseline on 144 synthetic Mexican requests: stock Whisper tiny got
+  41.1% of the words wrong and the reader understood 34.7% as said; with the sites' name hint, 52.8% wrong (it loops or
+  copies the hint). Decision (owner, 19 Nov 2026: "a lot of effort for what gain?"): measure stock Whisper on 5–10 real
+  speakers first; fine-tune only if it is far from good, and keep the phone's Spanish voice unless it disappoints. It ships as an 8-bit file of the same layout and size
   as today's (decoder 30.1 MB), only if the real speakers' test improves on words, places and understanding, and FLEURS
   is no worse. About 3 GPU hours.
 
