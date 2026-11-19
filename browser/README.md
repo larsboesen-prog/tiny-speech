@@ -19,26 +19,27 @@ this against the sites' original files (`test/fixtures/before/`).
 
 ## MapSMA: try it, then switch /page5
 
-1. **Copy** this folder's six files to the site as `/tiny-speech/` (nothing else changes yet).
-2. **Try** `https://mapsma.com/tiny-speech/check.html` on the iPhone that already used /page5:
-   - *Load* under Voice: the line should end "fetched 0": nothing downloaded again. ("kept" counts the
-     files found on the phone: the voice model, the dictionary files, dizione.zip, and however many
-     engine files Pyodide and onnxruntime use.)
-   - *Load* under Speech to text, *Record*, ask a question: the words appear and the line ends with
-     "ended by pause".
+1. **Copy** these folders to the site under `/tiny-speech/`, keeping their layout (the workers import from the folders beside
+   theirs): `browser/`, `engines/`, `lang/`, `core/`, `domains/`, `vendor/` (with `tiny-voca-js.gguf` from `npm run fetch:voice`, or
+   leave it out and the voice loads it from Hugging Face), and `packs/dist/` as `/tiny-speech/packs/`. Nothing on /page5 changes yet.
+2. **Try** `https://mapsma.com/tiny-speech/browser/check.html` on the iPhone that already used /page5:
+   - *Load* under Voice: the line should end "fetched 0": nothing downloaded again. ("kept" counts the files found on the phone.)
+   - *Load* under Speech to text, *Record*, ask a question: the words appear and the line ends with "ended by pause".
    - *Run round trip*: the voice says the sentence and Whisper writes it back.
-   - *List this site's caches*: `mapsma-voice-libs-1` and `mapsma-tinyvoca-d94d2a0-8cd889e`, the same
-     names /page5 uses.
+   - *List this site's caches*: `mapsma-voice-libs-1` and `mapsma-tinyvoca-d94d2a0-8cd889e`, the same names /page5 uses.
+   - The plain-JS voice: `check.html?voice=js`. Note its "Voice ready … ms" and how long the first sentence takes: that decides
+     whether /page5 moves to it (B10's gate: first-sound time and memory on the phone).
 3. **Switch** /page5: four lines in its page script, and a new `V`:
 
    | Line (18 Nov copy) | Before | After |
    |---|---|---|
-   | 41 | `import { detector, speechAt16k } from './listen.js?v=20261118d';` | `import { detector, speechAt16k } from '/tiny-speech/listen.js?v=0.1.0';` |
-   | 401 | `new Worker('asr-worker.js?v=20261118d', { type: 'module' })` | `new Worker('/tiny-speech/asr-worker.js?v=0.1.0&site=mapsma', { type: 'module' })` |
-   | 538 | `ctx.audioWorklet.addModule('pcm-worklet.js?v=20261118d')` | `ctx.audioWorklet.addModule('/tiny-speech/pcm-worklet.js?v=0.1.0')` |
-   | 723 | `new Worker('tinyvoca-worker.js?v=20261118d')` | `new Worker('/tiny-speech/tinyvoca-worker.js?v=0.1.0&site=mapsma&dizione=/page5/tinyvoca/dizione.zip')` |
+   | 41 | `import { detector, speechAt16k } from './listen.js?v=20261118d';` | `import { detector, speechAt16k } from '/tiny-speech/browser/listen.js?v=0.1.0';` |
+   | 401 | `new Worker('asr-worker.js?v=20261118d', { type: 'module' })` | `new Worker('/tiny-speech/browser/asr-worker.js?v=0.1.0&site=mapsma', { type: 'module' })` |
+   | 538 | `ctx.audioWorklet.addModule('pcm-worklet.js?v=20261118d')` | `ctx.audioWorklet.addModule('/tiny-speech/browser/pcm-worklet.js?v=0.1.0')` |
+   | 723 | `new Worker('tinyvoca-worker.js?v=20261118d')` | `new Worker('/tiny-speech/browser/tinyvoca-worker.js?v=0.1.0&site=mapsma&dizione=/page5/tinyvoca/dizione.zip')` |
 
-   `dizione.zip` stays where it is (`/page5/tinyvoca/`). `ask.js`, `read.js`, `spanish.js` are not part of v0.
+   `dizione.zip` stays where it is (`/page5/tinyvoca/`). `ask.js`, `read.js`, `spanish.js` stay MapSMA's until the places domain
+   (`domains/places/`, identical answers proven by the golden tests) replaces them in a later switch.
 4. **Check** /page5 on the iPhone: a question in English and one in Spanish, a Spanish name read aloud
    ("La Azotea"), the Timing numbers as before.
 5. **Going back** is the four lines again: /page5's own copies stay in place until the shared files have
@@ -48,10 +49,10 @@ this against the sites' original files (`test/fixtures/before/`).
 
 | Line (18 Nov copy) | After |
 |---|---|
-| 8 | `import { REC_MAX_MS, detector, speechAt16k } from '/tiny-speech/listen.js?v=0.1.0';` |
-| 265 | `new Worker('/tiny-speech/asr-worker.js?v=0.1.0&site=credbrief', { type: 'module' })` |
-| 391 | `await ctx.audioWorklet.addModule('/tiny-speech/pcm-worklet.js?v=0.1.0');` |
-| 924 | `new Worker('/tiny-speech/tinyvoca-worker.js?v=0.1.0&site=credbrief&dizione=/page40/tinyvoca/dizione.zip')` |
+| 8 | `import { REC_MAX_MS, detector, speechAt16k } from '/tiny-speech/browser/listen.js?v=0.1.0';` |
+| 265 | `new Worker('/tiny-speech/browser/asr-worker.js?v=0.1.0&site=credbrief', { type: 'module' })` |
+| 391 | `await ctx.audioWorklet.addModule('/tiny-speech/browser/pcm-worklet.js?v=0.1.0');` |
+| 924 | `new Worker('/tiny-speech/browser/tinyvoca-worker.js?v=0.1.0&site=credbrief&dizione=/page40/tinyvoca/dizione.zip')` |
 
 Workers must come from the page's own site (browsers do not start a worker from another site), so each
 site serves its own copy of these files; the copies are the same files, from this folder, at one version.
