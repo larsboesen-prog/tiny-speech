@@ -1,0 +1,83 @@
+// MapSMA's reader and asker, run in Node exactly as /page5 builds them (18 Nov 2026): data.js's places (without the map),
+// /photos/hours.json laid over data.js's hours, a place shown when it has a photo or is an extra, Susan York's picks and the
+// facts. Used to record what the site answers today (the golden snapshot) and to check that the shared core answers the same.
+import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
+import { join } from "node:path";
+import vm from "node:vm";
+
+// Fixed moments in San Miguel (UTC−6 all year since 2022): a weekday lunch, a Saturday night, a Monday small hour.
+export const CLOCKS = {
+  "tue-14:10": "2026-11-17T20:10:00Z",
+  "sat-23:40": "2026-11-22T05:40:00Z",
+  "mon-03:00": "2026-11-16T09:00:00Z",
+};
+// Where "near me" is asked from: a street about 200 m north of the Jardín.
+export const HERE = { lat: 20.9162, lng: -100.7440 };
+
+function seeded(seed) {
+  let s = seed >>> 0;
+  return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+}
+
+/** Load a MapSMA-shaped implementation from `dir` (ask.js, read.js, data.json, facts.js, susan.js, hours.json, photos.json). */
+export async function loadSite(dir) {
+  const ask = await import(pathToFileURL(join(dir, "ask.js")).href);
+  const data = JSON.parse(readFileSync(join(dir, "data.json"), "utf8"));
+  const win = {};
+  const ctx = vm.createContext({ window: win });
+  for (const f of ["facts.js", "susan.js"]) vm.runInContext(readFileSync(join(dir, f), "utf8"), ctx);
+  const hours = JSON.parse(readFileSync(join(dir, "hours.json"), "utf8"));
+  const photos = new Set(JSON.parse(readFileSync(join(dir, "photos.json"), "utf8")).ids);
+  let rng = seeded(1);
+  const makeAsker = (lang) => {
+    const HOURS = { ...data.HOURS };
+    for (const [id, v] of Object.entries(hours.places)) HOURS[id] = v.hours;
+    return ask.createAsker({
+      places: data.PLACES.map((p) => ({ ...p })), INFO: data.INFO, HOURS, CATS: data.CATS, ALSO: data.ALSO || {},
+      SUSAN: win.SUSAN, FACTS: win.FACTS || {}, shown: (p) => p.other || photos.has(p.id), random: () => rng(), lang,
+    });
+  };
+  const askers = { en: makeAsker("en"), es: makeAsker("es") };
+  /** One conversation (a question, or several with "more"), at one clock, answered in `lang`. */
+  function run(questions, clock, lang) {
+    const asker = askers[lang];
+    const now = ask.nowMX(new Date(CLOCKS[clock]));
+    let lastList = null;
+    const out = [];
+    for (const text of questions) {
+      rng = seeded(7);  // "surprise me" draws the same places every run
+      const pq = asker.parse(text);
+      const here = pq.near || pq.howFar ? HERE : null;
+      const res = asker.answer(text, now, lastList, here);
+      if (res.kind === "list" && res.ids.length && !(res.ids.length === 1 && !res.all.length)) lastList = res;
+      out.push({ request: ask.requestOf(pq), answer: plainAnswer(res) });
+    }
+    return out;
+  }
+  return { ask, askers, run };
+}
+
+// What an answer says and shows, without the request object (recorded separately) and with places as their ids.
+export function plainAnswer(res) {
+  const seen = new WeakSet();
+  const plain = (v, key) => {
+    if (v === null || v === undefined || typeof v === "function") return undefined;
+    if (v instanceof Date) return v.toISOString();
+    if (Array.isArray(v)) return v.map((x) => plain(x)).filter((x) => x !== undefined);
+    if (typeof v === "object") {
+      if (seen.has(v)) return "[seen]";
+      seen.add(v);
+      if (typeof v.id === "string" && typeof v.name === "string" && "lat" in v) return "place:" + v.id;
+      const o = {};
+      for (const [k, x] of Object.entries(v)) {
+        if (key === undefined && k === "q") continue;
+        const p = plain(x, k);
+        if (p !== undefined) o[k] = p;
+      }
+      return o;
+    }
+    return v;
+  };
+  return plain(res);
+}

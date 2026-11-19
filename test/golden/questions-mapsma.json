@@ -1,0 +1,1333 @@
+{
+ "note": "Fixed questions for the MapSMA golden snapshot. Written by tools/golden-questions.mjs on 19 Nov 2026; edit by adding, as a reviewed diff.",
+ "clocks": [
+  "tue-14:10",
+  "sat-23:40",
+  "mon-03:00"
+ ],
+ "conversations": [
+  [
+   "Find 4 restaurants in Centro that are open in the next 2 hours"
+  ],
+  [
+   "Busca 4 restaurantes en el Centro abiertos en las próximas 2 horas"
+  ],
+  [
+   "Surprise me: three restaurants Susan York reviewed recently that are open now"
+  ],
+  [
+   "Sorpréndeme: tres restaurantes que Susan York reseñó hace poco y que están abiertos ahora"
+  ],
+  [
+   "Best tacos in Centro"
+  ],
+  [
+   "Cheap eats"
+  ],
+  [
+   "Rooftop with a view"
+  ],
+  [
+   "Something unique"
+  ],
+  [
+   "Is La Azotea open?"
+  ],
+  [
+   "What's open near me?"
+  ],
+  [
+   "How far is La Azotea?"
+  ],
+  [
+   "¿Qué tan lejos está La Azotea?"
+  ],
+  [
+   "Is Bocaciega open tomorrow?"
+  ],
+  [
+   "¿Está abierto Bocaciega mañana?"
+  ],
+  [
+   "Is Cien 24 open?"
+  ],
+  [
+   "Is Fenicia cheap?"
+  ],
+  [
+   "I'm hungry"
+  ],
+  [
+   "Mexican food in San Antonio"
+  ],
+  [
+   "brunch on Sunday"
+  ],
+  [
+   "cheap places for Mexican food"
+  ],
+  [
+   "dinner tonight"
+  ],
+  [
+   "find 4 restaurants near the Jardín"
+  ],
+  [
+   "fish tacos"
+  ],
+  [
+   "four places in Centro"
+  ],
+  [
+   "hidden gems"
+  ],
+  [
+   "lunch near the Parroquia"
+  ],
+  [
+   "lunch spots open now"
+  ],
+  [
+   "open on Monday"
+  ],
+  [
+   "places to watch the sunset"
+  ],
+  [
+   "rooftop bars"
+  ],
+  [
+   "rooftops in Guadalupe"
+  ],
+  [
+   "rooftops with a view"
+  ],
+  [
+   "surprise me"
+  ],
+  [
+   "the best Italian"
+  ],
+  [
+   "the best Mexican restaurant"
+  ],
+  [
+   "the most expensive"
+  ],
+  [
+   "upscale places for fine dining"
+  ],
+  [
+   "where do locals eat"
+  ],
+  [
+   "which places can be booked"
+  ],
+  [
+   "una terraza con vista"
+  ],
+  [
+   "terrazas con vista"
+  ],
+  [
+   "lugares baratos para comida mexicana"
+  ],
+  [
+   "lugares para ver el atardecer"
+  ],
+  [
+   "three of Susan York's recent picks"
+  ],
+  [
+   "a view of the Parroquia"
+  ],
+  [
+   "open now"
+  ],
+  [
+   "Tonight"
+  ],
+  [
+   "Is La Sotea open?"
+  ],
+  [
+   "is la zotay it open"
+  ],
+  [
+   "Boca Ciega"
+  ],
+  [
+   "Yerba Santa"
+  ],
+  [
+   "is tastavir open"
+  ],
+  [
+   "a que hora abrebocaciga"
+  ],
+  [
+   "quien hace"
+  ],
+  [
+   "el plato"
+  ],
+  [
+   "sues in York picks"
+  ],
+  [
+   "restaurants in central"
+  ],
+  [
+   "is the sushi gami open"
+  ],
+  [
+   "how far is boca ciega"
+  ],
+  [
+   "cheap tacos open now"
+  ],
+  [
+   "dinner tonight in Guadalupe"
+  ],
+  [
+   "breakfast tomorrow at 9"
+  ],
+  [
+   "breakfast tomorrow"
+  ],
+  [
+   "lunch tomorrow at noon"
+  ],
+  [
+   "open late tonight"
+  ],
+  [
+   "something romantic for dinner on Friday"
+  ],
+  [
+   "places open on Sunday"
+  ],
+  [
+   "what is open in the next hour"
+  ],
+  [
+   "what is open in the next 30 minutes"
+  ],
+  [
+   "coffee now"
+  ],
+  [
+   "a cheap breakfast"
+  ],
+  [
+   "the most expensive restaurant in Centro"
+  ],
+  [
+   "kid friendly lunch spots"
+  ],
+  [
+   "dog friendly cafés"
+  ],
+  [
+   "coffee with wifi"
+  ],
+  [
+   "a quiet garden for lunch"
+  ],
+  [
+   "best pizza"
+  ],
+  [
+   "pizza open now"
+  ],
+  [
+   "sushi tonight what is open"
+  ],
+  [
+   "ramen for dinner"
+  ],
+  [
+   "vegan food near me"
+  ],
+  [
+   "gluten free bakery"
+  ],
+  [
+   "mezcal bar open late"
+  ],
+  [
+   "craft beer on Saturday"
+  ],
+  [
+   "a winery out of town"
+  ],
+  [
+   "places for groups tonight"
+  ],
+  [
+   "parking for dinner"
+  ],
+  [
+   "tacos baratos abiertos ahora"
+  ],
+  [
+   "cena esta noche en Guadalupe"
+  ],
+  [
+   "desayuno mañana a las 9"
+  ],
+  [
+   "comida mañana al mediodía"
+  ],
+  [
+   "abierto tarde esta noche"
+  ],
+  [
+   "algo romántico para cenar el viernes"
+  ],
+  [
+   "lugares abiertos el domingo"
+  ],
+  [
+   "qué hay abierto en la próxima hora"
+  ],
+  [
+   "café ahorita"
+  ],
+  [
+   "un desayuno barato"
+  ],
+  [
+   "el restaurante más caro del Centro"
+  ],
+  [
+   "lugares para ir con niños"
+  ],
+  [
+   "café con wifi"
+  ],
+  [
+   "la mejor pizza"
+  ],
+  [
+   "sushi esta noche"
+  ],
+  [
+   "comida vegana cerca de mí"
+  ],
+  [
+   "panadería sin gluten"
+  ],
+  [
+   "bar de mezcal abierto tarde"
+  ],
+  [
+   "cerveza artesanal el sábado"
+  ],
+  [
+   "un viñedo fuera de la ciudad"
+  ],
+  [
+   "dónde comen los locales"
+  ],
+  [
+   "sorpréndeme"
+  ],
+  [
+   "qué hay abierto cerca de mí"
+  ],
+  [
+   "¿Qué tan lejos está la Parroquia?"
+  ],
+  [
+   "al rato una cena"
+  ],
+  [
+   "mande"
+  ],
+  [
+   "cuarto para las nueve"
+  ],
+  [
+   "live music tonight"
+  ],
+  [
+   "live jazz tonight"
+  ],
+  [
+   "where is there live music"
+  ],
+  [
+   "jazz on Thursday"
+  ],
+  [
+   "mariachi"
+  ],
+  [
+   "a bar with a band"
+  ],
+  [
+   "música en vivo esta noche"
+  ],
+  [
+   "jazz en vivo"
+  ],
+  [
+   "dónde hay música en vivo"
+  ],
+  [
+   "jazz el jueves"
+  ],
+  [
+   "mariachis en el Jardín"
+  ],
+  [
+   "un bar con concierto"
+  ],
+  [
+   "trova el jueves"
+  ],
+  [
+   "somewhere to dance salsa"
+  ],
+  [
+   "hay sushi open tonight?"
+  ],
+  [
+   "¿dónde hay brunch near the Jardín?"
+  ],
+  [
+   "best tacos en el Centro"
+  ],
+  [
+   "cheap comida mexicana"
+  ],
+  [
+   "rooftop con vista"
+  ],
+  [
+   "is there música en vivo tonight"
+  ],
+  [
+   "tacos al pastor near me"
+  ],
+  [
+   "pozole tonight"
+  ],
+  [
+   "chiles en nogada"
+  ],
+  [
+   "dónde puedo comer mole"
+  ],
+  [
+   "enchiladas for lunch"
+  ],
+  [
+   "churros y chocolate"
+  ],
+  [
+   "quesadillas ahorita"
+  ],
+  [
+   "hello"
+  ],
+  [
+   "thank you"
+  ],
+  [
+   "gracias"
+  ],
+  [
+   "what can you do"
+  ],
+  [
+   "help"
+  ],
+  [
+   "¿qué puedes hacer?"
+  ],
+  [
+   "ok"
+  ],
+  [
+   "yes"
+  ],
+  [
+   "no"
+  ],
+  [
+   "where can I get coffee?"
+  ],
+  [
+   "¿dónde hay cafés?"
+  ],
+  [
+   "where can I get bakery?"
+  ],
+  [
+   "¿dónde hay pan y pasteles?"
+  ],
+  [
+   "where can I get street food?"
+  ],
+  [
+   "¿dónde hay puestos de comida callejera?"
+  ],
+  [
+   "where can I get bars?"
+  ],
+  [
+   "¿dónde hay bares?"
+  ],
+  [
+   "where can I get roof tops?"
+  ],
+  [
+   "¿dónde hay terrazas?"
+  ],
+  [
+   "where can I get winery?"
+  ],
+  [
+   "¿dónde hay viñedos?"
+  ],
+  [
+   "where can I get world food?"
+  ],
+  [
+   "¿dónde hay lugares de cocina del mundo?"
+  ],
+  [
+   "where can I get mexican?"
+  ],
+  [
+   "¿dónde hay comida mexicana?"
+  ],
+  [
+   "where can I get traditional?"
+  ],
+  [
+   "¿dónde hay comida tradicional?"
+  ],
+  [
+   "where can I get modern?"
+  ],
+  [
+   "¿dónde hay cocina contemporánea?"
+  ],
+  [
+   "where can I get tacos?"
+  ],
+  [
+   "¿dónde hay taqueria?"
+  ],
+  [
+   "where can I get fish tacos?"
+  ],
+  [
+   "¿dónde hay tacos de pescado?"
+  ],
+  [
+   "where can I get birria?"
+  ],
+  [
+   "¿dónde hay consome?"
+  ],
+  [
+   "where can I get italian?"
+  ],
+  [
+   "¿dónde hay comida italiana?"
+  ],
+  [
+   "where can I get sicilian?"
+  ],
+  [
+   "¿dónde hay comida siciliana?"
+  ],
+  [
+   "where can I get pizza?"
+  ],
+  [
+   "¿dónde hay pizzas?"
+  ],
+  [
+   "where can I get pasta?"
+  ],
+  [
+   "¿dónde hay pastas?"
+  ],
+  [
+   "where can I get peruvian?"
+  ],
+  [
+   "¿dónde hay comida peruana?"
+  ],
+  [
+   "where can I get ceviche?"
+  ],
+  [
+   "¿dónde hay tiradito?"
+  ],
+  [
+   "where can I get seafood?"
+  ],
+  [
+   "¿dónde hay mariscos?"
+  ],
+  [
+   "where can I get sushi?"
+  ],
+  [
+   "¿dónde hay nigiri?"
+  ],
+  [
+   "where can I get japanese?"
+  ],
+  [
+   "¿dónde hay comida japonesa?"
+  ],
+  [
+   "where can I get ramen?"
+  ],
+  [
+   "¿dónde hay fideos?"
+  ],
+  [
+   "where can I get dumplings?"
+  ],
+  [
+   "¿dónde hay gyozas?"
+  ],
+  [
+   "where can I get korean?"
+  ],
+  [
+   "¿dónde hay comida coreana?"
+  ],
+  [
+   "where can I get thai?"
+  ],
+  [
+   "¿dónde hay comida tailandesa?"
+  ],
+  [
+   "where can I get chinese?"
+  ],
+  [
+   "¿dónde hay comida china?"
+  ],
+  [
+   "where can I get indian?"
+  ],
+  [
+   "¿dónde hay comida india?"
+  ],
+  [
+   "where can I get asian?"
+  ],
+  [
+   "¿dónde hay comida asiática?"
+  ],
+  [
+   "where can I get lebanese?"
+  ],
+  [
+   "¿dónde hay comida libanesa y de Medio Oriente?"
+  ],
+  [
+   "where can I get mediterranean?"
+  ],
+  [
+   "¿dónde hay comida mediterránea?"
+  ],
+  [
+   "where can I get french?"
+  ],
+  [
+   "¿dónde hay comida francesa?"
+  ],
+  [
+   "where can I get tapas?"
+  ],
+  [
+   "¿dónde hay cocina espanola?"
+  ],
+  [
+   "where can I get american food?"
+  ],
+  [
+   "¿dónde hay comida americana?"
+  ],
+  [
+   "where can I get burgers?"
+  ],
+  [
+   "¿dónde hay hamburguesas?"
+  ],
+  [
+   "where can I get steak?"
+  ],
+  [
+   "¿dónde hay cortes de carne?"
+  ],
+  [
+   "where can I get vegetarian?"
+  ],
+  [
+   "¿dónde hay comida vegetariana?"
+  ],
+  [
+   "where can I get vegan?"
+  ],
+  [
+   "¿dónde hay comida vegana?"
+  ],
+  [
+   "where can I get healthy?"
+  ],
+  [
+   "¿dónde hay comida saludable?"
+  ],
+  [
+   "where can I get comfort food?"
+  ],
+  [
+   "¿dónde hay comida casera?"
+  ],
+  [
+   "where can I get brunch?"
+  ],
+  [
+   "¿dónde hay bottomless mimosas?"
+  ],
+  [
+   "where can I get breakfast?"
+  ],
+  [
+   "¿dónde hay desayuno?"
+  ],
+  [
+   "where can I get croissants?"
+  ],
+  [
+   "¿dónde hay cuernitos?"
+  ],
+  [
+   "where can I get desserts?"
+  ],
+  [
+   "¿dónde hay postres?"
+  ],
+  [
+   "where can I get ice creams?"
+  ],
+  [
+   "¿dónde hay helado?"
+  ],
+  [
+   "where can I get chocolate?"
+  ],
+  [
+   "¿dónde hay chocolate caliente?"
+  ],
+  [
+   "where can I get sandwiches?"
+  ],
+  [
+   "¿dónde hay sándwiches?"
+  ],
+  [
+   "where can I get wine?"
+  ],
+  [
+   "¿dónde hay vino?"
+  ],
+  [
+   "where can I get wine lists?"
+  ],
+  [
+   "¿dónde hay lugares con buena carta de vinos?"
+  ],
+  [
+   "where can I get mezcal?"
+  ],
+  [
+   "¿dónde hay mezcal y tequila?"
+  ],
+  [
+   "where can I get cocktails?"
+  ],
+  [
+   "¿dónde hay cócteles?"
+  ],
+  [
+   "where can I get beer?"
+  ],
+  [
+   "¿dónde hay cerveza?"
+  ],
+  [
+   "where can I get tasting menus?"
+  ],
+  [
+   "¿dónde hay menú de degustación?"
+  ],
+  [
+   "where can I get fine dining?"
+  ],
+  [
+   "¿dónde hay alta cocina?"
+  ],
+  [
+   "where can I get farm to table?"
+  ],
+  [
+   "¿dónde hay cocina del campo a la mesa?"
+  ],
+  [
+   "where can I get views?"
+  ],
+  [
+   "¿dónde hay lugares con vista?"
+  ],
+  [
+   "where can I get sunsets?"
+  ],
+  [
+   "¿dónde hay lugares para ver el atardecer?"
+  ],
+  [
+   "where can I get gardens?"
+  ],
+  [
+   "¿dónde hay lugares con jardín?"
+  ],
+  [
+   "where can I get outdoors?"
+  ],
+  [
+   "¿dónde hay lugares para comer al aire libre?"
+  ],
+  [
+   "where can I get live music?"
+  ],
+  [
+   "¿dónde hay lugares con música en vivo?"
+  ],
+  [
+   "where can I get romantic?"
+  ],
+  [
+   "¿dónde hay lugares para una cita romántica?"
+  ],
+  [
+   "where can I get special occasion?"
+  ],
+  [
+   "¿dónde hay lugares para una ocasión especial?"
+  ],
+  [
+   "where can I get kids?"
+  ],
+  [
+   "¿dónde hay lugares para ir con niños?"
+  ],
+  [
+   "where can I get dogs?"
+  ],
+  [
+   "¿dónde hay lugares que aceptan perros?"
+  ],
+  [
+   "where can I get wifi?"
+  ],
+  [
+   "¿dónde hay lugares con wifi?"
+  ],
+  [
+   "where can I get big group?"
+  ],
+  [
+   "¿dónde hay lugares para grupos grandes?"
+  ],
+  [
+   "where can I get historic building?"
+  ],
+  [
+   "¿dónde hay lugares en edificios históricos?"
+  ],
+  [
+   "where can I get reservations?"
+  ],
+  [
+   "¿dónde hay lugares que aceptan reservaciones?"
+  ],
+  [
+   "where can I get parking?"
+  ],
+  [
+   "¿dónde hay lugares con estacionamiento?"
+  ],
+  [
+   "where can I get gluten free?"
+  ],
+  [
+   "¿dónde hay lugares con opciones sin gluten?"
+  ],
+  [
+   "where can I get mole?"
+  ],
+  [
+   "¿dónde hay moles?"
+  ],
+  [
+   "where can I get enchiladas?"
+  ],
+  [
+   "¿dónde hay enchiladas?"
+  ],
+  [
+   "where can I get chilaquiles?"
+  ],
+  [
+   "¿dónde hay chilaquiles?"
+  ],
+  [
+   "where can I get pozole?"
+  ],
+  [
+   "¿dónde hay pozoles?"
+  ],
+  [
+   "where can I get tamales?"
+  ],
+  [
+   "¿dónde hay tamal?"
+  ],
+  [
+   "where can I get quesadillas?"
+  ],
+  [
+   "¿dónde hay quesadillas?"
+  ],
+  [
+   "where can I get chiles en nogada?"
+  ],
+  [
+   "¿dónde hay chiles en nogada?"
+  ],
+  [
+   "where can I get chiles rellenos?"
+  ],
+  [
+   "¿dónde hay chiles rellenos?"
+  ],
+  [
+   "where can I get esquites?"
+  ],
+  [
+   "¿dónde hay elotes?"
+  ],
+  [
+   "where can I get carnitas?"
+  ],
+  [
+   "¿dónde hay carnitas?"
+  ],
+  [
+   "where can I get barbacoa?"
+  ],
+  [
+   "¿dónde hay barbacoa?"
+  ],
+  [
+   "where can I get cochinita pibil?"
+  ],
+  [
+   "¿dónde hay cochinita pibil?"
+  ],
+  [
+   "where can I get tostadas?"
+  ],
+  [
+   "¿dónde hay tostadas?"
+  ],
+  [
+   "where can I get antojitos?"
+  ],
+  [
+   "¿dónde hay gorditas?"
+  ],
+  [
+   "where can I get huevos rancheros?"
+  ],
+  [
+   "¿dónde hay huevos rancheros?"
+  ],
+  [
+   "where can I get tortilla soup?"
+  ],
+  [
+   "¿dónde hay sopa de tortilla?"
+  ],
+  [
+   "where can I get pancakes?"
+  ],
+  [
+   "¿dónde hay hot cakes?"
+  ],
+  [
+   "where can I get waffles?"
+  ],
+  [
+   "¿dónde hay waffles?"
+  ],
+  [
+   "where can I get french toast?"
+  ],
+  [
+   "¿dónde hay pan francés?"
+  ],
+  [
+   "where can I get avocado toast?"
+  ],
+  [
+   "¿dónde hay pan con aguacate?"
+  ],
+  [
+   "where can I get burritos?"
+  ],
+  [
+   "¿dónde hay burritos?"
+  ],
+  [
+   "where can I get crêpes?"
+  ],
+  [
+   "¿dónde hay crepas?"
+  ],
+  [
+   "where can I get churros?"
+  ],
+  [
+   "¿dónde hay churros?"
+  ],
+  [
+   "where can I get guacamole?"
+  ],
+  [
+   "¿dónde hay guacamole?"
+  ],
+  [
+   "Is Jacques open?"
+  ],
+  [
+   "¿Está abierto Jacques?"
+  ],
+  [
+   "How far is Jacques?"
+  ],
+  [
+   "Jacques tomorrow"
+  ],
+  [
+   "Is Lavanda open?"
+  ],
+  [
+   "¿Está abierto Lavanda?"
+  ],
+  [
+   "How far is Lavanda?"
+  ],
+  [
+   "Lavanda tomorrow"
+  ],
+  [
+   "Is Café Santa Ana open?"
+  ],
+  [
+   "¿Está abierto Café Santa Ana?"
+  ],
+  [
+   "How far is Café Santa Ana?"
+  ],
+  [
+   "Café Santa Ana tomorrow"
+  ],
+  [
+   "Is Café Umarán open?"
+  ],
+  [
+   "¿Está abierto Café Umarán?"
+  ],
+  [
+   "How far is Café Umarán?"
+  ],
+  [
+   "Café Umarán tomorrow"
+  ],
+  [
+   "Is K'ibok Coffee open?"
+  ],
+  [
+   "¿Está abierto K'ibok Coffee?"
+  ],
+  [
+   "How far is K'ibok Coffee?"
+  ],
+  [
+   "K'ibok Coffee tomorrow"
+  ],
+  [
+   "Is Amapola open?"
+  ],
+  [
+   "¿Está abierto Amapola?"
+  ],
+  [
+   "How far is Amapola?"
+  ],
+  [
+   "Amapola tomorrow"
+  ],
+  [
+   "Is Zenteno Café open?"
+  ],
+  [
+   "¿Está abierto Zenteno Café?"
+  ],
+  [
+   "How far is Zenteno Café?"
+  ],
+  [
+   "Zenteno Café tomorrow"
+  ],
+  [
+   "Is Buonforno open?"
+  ],
+  [
+   "¿Está abierto Buonforno?"
+  ],
+  [
+   "How far is Buonforno?"
+  ],
+  [
+   "Buonforno tomorrow"
+  ],
+  [
+   "Is Raíces open?"
+  ],
+  [
+   "¿Está abierto Raíces?"
+  ],
+  [
+   "How far is Raíces?"
+  ],
+  [
+   "Raíces tomorrow"
+  ],
+  [
+   "Is Rústica open?"
+  ],
+  [
+   "¿Está abierto Rústica?"
+  ],
+  [
+   "How far is Rústica?"
+  ],
+  [
+   "Rústica tomorrow"
+  ],
+  [
+   "Is Panadería El Maple open?"
+  ],
+  [
+   "¿Está abierto Panadería El Maple?"
+  ],
+  [
+   "How far is Panadería El Maple?"
+  ],
+  [
+   "Panadería El Maple tomorrow"
+  ],
+  [
+   "Is Luna de Queso open?"
+  ],
+  [
+   "¿Está abierto Luna de Queso?"
+  ],
+  [
+   "How far is Luna de Queso?"
+  ],
+  [
+   "Luna de Queso tomorrow"
+  ],
+  [
+   "Is Andy's Taco Cart open?"
+  ],
+  [
+   "¿Está abierto Andy's Taco Cart?"
+  ],
+  [
+   "How far is Andy's Taco Cart?"
+  ],
+  [
+   "Andy's Taco Cart tomorrow"
+  ],
+  [
+   "Is Nieves de San Felipe open?"
+  ],
+  [
+   "¿Está abierto Nieves de San Felipe?"
+  ],
+  [
+   "How far is Nieves de San Felipe?"
+  ],
+  [
+   "Nieves de San Felipe tomorrow"
+  ],
+  [
+   "Is Tacos Don Tomás open?"
+  ],
+  [
+   "¿Está abierto Tacos Don Tomás?"
+  ],
+  [
+   "How far is Tacos Don Tomás?"
+  ],
+  [
+   "Tacos Don Tomás tomorrow"
+  ],
+  [
+   "Is Quesadillas open?"
+  ],
+  [
+   "¿Está abierto Quesadillas?"
+  ],
+  [
+   "How far is Quesadillas?"
+  ],
+  [
+   "Quesadillas tomorrow"
+  ],
+  [
+   "Is Esquites open?"
+  ],
+  [
+   "¿Está abierto Esquites?"
+  ],
+  [
+   "How far is Esquites?"
+  ],
+  [
+   "Esquites tomorrow"
+  ],
+  [
+   "Is Esquites y mollejitas open?"
+  ],
+  [
+   "¿Está abierto Esquites y mollejitas?"
+  ],
+  [
+   "How far is Esquites y mollejitas?"
+  ],
+  [
+   "Esquites y mollejitas tomorrow"
+  ],
+  [
+   "Is Kan Bei open?"
+  ],
+  [
+   "¿Está abierto Kan Bei?"
+  ],
+  [
+   "How far is Kan Bei?"
+  ],
+  [
+   "Kan Bei tomorrow"
+  ],
+  [
+   "Is Ghar open?"
+  ],
+  [
+   "¿Está abierto Ghar?"
+  ],
+  [
+   "How far is Ghar?"
+  ],
+  [
+   "Ghar tomorrow"
+  ],
+  [
+   "Is Carnitas El Güero open?"
+  ],
+  [
+   "¿Está abierto Carnitas El Güero?"
+  ],
+  [
+   "How far is Carnitas El Güero?"
+  ],
+  [
+   "Carnitas El Güero tomorrow"
+  ],
+  [
+   "Is El Pato Barbacoa y Mixiotes open?"
+  ],
+  [
+   "¿Está abierto El Pato Barbacoa y Mixiotes?"
+  ],
+  [
+   "How far is El Pato Barbacoa y Mixiotes?"
+  ],
+  [
+   "El Pato Barbacoa y Mixiotes tomorrow"
+  ],
+  [
+   "lunch near Parroquia de San Miguel Arcángel"
+  ],
+  [
+   "cerca de Parroquia de San Miguel Arcángel"
+  ],
+  [
+   "lunch near Jardín Principal"
+  ],
+  [
+   "cerca de Jardín Principal"
+  ],
+  [
+   "lunch near Museo Casa de Allende"
+  ],
+  [
+   "cerca de Museo Casa de Allende"
+  ],
+  [
+   "lunch near Bellas Artes · El Nigromante"
+  ],
+  [
+   "cerca de Bellas Artes · El Nigromante"
+  ],
+  [
+   "Find 4 restaurants in Centro that are open in the next 2 hours",
+   "4 more"
+  ],
+  [
+   "tacos",
+   "more"
+  ],
+  [
+   "cafés",
+   "4 más"
+  ],
+  [
+   "rooftop bars",
+   "two more"
+  ],
+  [
+   "Mexican food",
+   "more please",
+   "more"
+  ]
+ ]
+}
