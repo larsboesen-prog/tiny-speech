@@ -155,6 +155,15 @@ actions; the reader's grammar; language and variety packs; answer templates; loa
   partials come sooner. Requirement: a new city needs zero training (words and names come from the pack at load).
   Until then `AsrEngine` keeps the result shape that lets any recognizer be swapped in.
 - **End of speech:** loudness (`listen.js`), unless noisy recordings (street, a bar with live music) fail.
+- **Ears, fine-tuned (`training/asr/`, owner's request 19 Nov 2026):** before any new recognizer, the same Whisper tiny
+  fine-tuned on Mexican Spanish restaurant requests: about 3,850 written requests, corrections, follow-ups, names, local
+  expressions and hesitant speech (`tools/asr-text.mjs`); about 70% synthetic voices (Piper's two Mexican voices; 24 made-up
+  Mexican speakers from Qwen3-TTS VoiceDesign) and 30% native Mexican speakers (the recording page's `?set=asr`, 20+ packets
+  of about 78 prompts and 6 cards said in one's own words), as a sampling rule; general speech (FLEURS) so nothing else is
+  lost; every transcript checked by Whisper large-v3. Baseline on synthetic Mexican requests: stock Whisper tiny got 35.5%
+  of the words wrong, and the reader understood 40% of them as said. It ships as an 8-bit file of the same layout and size
+  as today's (decoder 30.1 MB), only if the real speakers' test improves on words, places and understanding, and FLEURS
+  is no worse. About 3 GPU hours.
 
 ## 7. Voice
 
@@ -200,6 +209,11 @@ live file, byte for byte. No band names without a source that keeps them fresh.
 
 ## 9. Flexibility for unexpected questions
 
+Step 1 done (19 Nov 2026): concept words from the language-model question set and nine misheard-name aliases took questions
+understood to 98/100/98% (en/es/mixed) and names found to 96%, with no recorded answer changed; `test/golden/approved.json`
+now gates any future difference from /page5 case by case. (The words came from the same set they are measured on: a fresh set
+is the fair test.) Where nothing in a city's data matches (pulque, squash blossoms), the answer says so instead of guessing.
+
 In this order, each measured before the next: (1) concept tables in data (chela → beer, guitarrista → live music);
 (2) an LLM-written question set per city, used as tests and as a source of synonyms, reviewed as a diff; (3) a tiny
 classifier only if measured misses remain (its fixed weights are deterministic, but not rules the owner can read).
@@ -231,10 +245,11 @@ From the review (section 4). B0 → B3 in order; the rest in any order after B3.
 | B11 | `tools/sizes.mjs`; check page shows pack load and first-sound time | size table generated | done: `tools/sizes.mjs` → `docs/sizes.md` (MapSMA English 129.7 MB raw / 57.5 MB brotli; plain-JS voice path 74.6 / 35.4 MB); check page shows pack load, first sound and memory |
 | B12 | News, small (search titles, read, next, stop, hand-off) | works on `feed.xml`; "latest" says the feed has no dates | done: `domains/news/` on `feed.xml` (71 stories): search, read, next, stop, hand-off; "latest" says the feed has no dates |
 | B13 | Self-hosting manifest; no request leaves the origin or carries audio | Playwright | done: `browser/engines.json` lists 33 engine files (180.9 MB) with SHA-256; `tools/manifest.mjs --fetch` (Whisper pinned to the revisions recorded); workers take `?engines=`; Playwright with a proxy trap shows no request leaves and none carries a body |
+| B14 | Ears fine-tuned on Mexican Spanish restaurant requests (70% synthetic voices, 30% native speakers) | on the real speakers' test: fewer word errors, more places found, more requests understood as said; FLEURS no worse | ready: `training/asr/` (text, Piper voices here, made-up voices and the fine-tune on a GPU, 8-bit export in today's layout); waits for speakers and a GPU run |
 
 **Waits on others:** phone measurements (the owner's iPhone, one Android); the recorded question set (speakers,
 phones, real places); the bilingual voice (GPU, a Mexican teacher voice, a listening test); the ears (data, GPU, the
-gate); the bilingual voice's GPU run (after the recording session; `training/gpu/README.md`); San Miguel's music
+gate); native Mexican speakers for the ears' recordings (`training/record/?set=asr`, B14); the bilingual voice's GPU run (after the recording session; `training/gpu/README.md`); San Miguel's music
 nights confirmed with the venues (D8); a real second city (on hold); switching the live sites (their sources and deploys).
 
 ## 12. Questions for the owner

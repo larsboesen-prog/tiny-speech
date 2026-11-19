@@ -1,16 +1,19 @@
 // The recording page (training/RECIPE.md step 4, a real voice): one clip per sentence, raw from the microphone (no echo
 // cancelling, noise suppression or automatic gain), checked as it is made, kept in this browser's IndexedDB so a reload or a
 // crash loses nothing, and downloaded as one zip per session for the GPU pipeline (training/gpu/). Nothing is uploaded.
-const VERSION = "record 1";
+// ?set=asr: the speech-recognition set instead (training/asr/README.md): native Mexican speakers read restaurant requests and
+// say some in their own words (a typed transcript then goes with the take); its own list, storage, consent and speaker details.
+const VERSION = "record 2";
 const $ = (id) => document.getElementById(id);
+const SET = new URL(location.href).searchParams.get("set") === "asr" ? "asr" : "voice";
 const db = await openDb();
-const list = await (await fetch("sentences.json")).json();
+const list = await (await fetch(SET === "asr" ? "../asr/prompts.json" : "sentences.json")).json();
 const state = { session: 1, index: 0, ctx: null, stream: null, node: null, recording: false, chunks: [], take: null, noiseDb: null, device: "", settings: {} };
 
 // ---------- storage ----------
 function openDb() {
   return new Promise((resolve, reject) => {
-    const r = indexedDB.open("tiny-speech-recording", 1);
+    const r = indexedDB.open(SET === "asr" ? "tiny-speech-recording-asr" : "tiny-speech-recording", 1);
     r.onupgradeneeded = () => { r.result.createObjectStore("clips", { keyPath: "id" }); r.result.createObjectStore("meta", { keyPath: "k" }); };
     r.onsuccess = () => resolve(r.result);
     r.onerror = () => reject(r.error);
@@ -157,8 +160,12 @@ function show() {
   if (!r) { $("sentence").textContent = "This session is done. Download it below. · Sesión terminada."; return; }
   $("num").textContent = `${r.n} · ${state.index + 1}/${rows.length}`;
   $("lang").textContent = r.lang === "es" ? "Español (México)" : "English";
-  $("why").textContent = r.why === "reference" ? "reference: calm and natural · referencia: tranquila y natural" : "";
+  $("why").textContent = r.why === "reference" ? "reference: calm and natural · referencia: tranquila y natural"
+    : r.why === "scenario" ? "say it your own way · dilo con tus propias palabras" : "";
   $("sentence").textContent = r.text;
+  $("sentence").classList.toggle("card", r.why === "scenario");
+  $("saidBox").hidden = r.why !== "scenario";
+  if (r.why === "scenario") getClip(r.id).then((c) => { $("said").value = c?.text || ""; });
   $("sentence").lang = r.lang === "es" ? "es-MX" : "en-US";
   state.take = null;
   $("play").disabled = !kept.has(r.id); $("keep").disabled = true;
@@ -188,7 +195,10 @@ async function toggle() {
 async function keep() {
   const r = current(), t = state.take;
   if (!r || !t || t.flags.includes("silent")) return;
-  await putClip({ id: r.id, n: r.n, session: r.session, lang: r.lang, text: r.text, speaker: $("speaker").value.trim() || "MX1", rate: t.rate,
+  // in their own words: the take goes with what was actually said, typed by the speaker or a helper (checked again later)
+  const said = r.why === "scenario" ? $("said").value.replace(/\s+/g, " ").trim() : null;
+  if (r.why === "scenario" && !said) { $("status").innerHTML = '<span class="warn">Type what was said first · Escribe primero lo que se dijo</span>'; $("said").focus(); return; }
+  await putClip({ id: r.id, n: r.n, session: r.session, lang: r.lang, text: said ?? r.text, prompt: r.text, kind: r.why || "read", speaker: $("speaker").value.trim() || (SET === "asr" ? "anon" : "MX1"), rate: t.rate,
     seconds: t.seconds, peakDb: t.peakDb, snrDb: t.snrDb, flags: t.flags, at: new Date().toISOString(), wav: wav(t.clip, t.rate) });
   kept.add(r.id);
   state.index = Math.min(inSession().length, state.index + 1);
@@ -207,8 +217,9 @@ async function decode(blob) { const v = new DataView(await blob.arrayBuffer()), 
 // ---------- download ----------
 async function sessionZip(session) {
   const clips = (await allClips()).filter((c) => session === "all" || String(c.session) === String(session)).sort((a, b) => a.n - b.n);
-  const csv = ["id|lang|text|seconds|peak_db|snr_db|flags", ...clips.map((c) => [c.id, c.lang, c.text.replace(/\|/g, "/"), c.seconds, c.peakDb, c.snrDb, c.flags.join(" ")].join("|"))].join("\n") + "\n";
-  const info = { page: VERSION, speaker: clips[0]?.speaker || $("speaker").value, session, clips: clips.length, consent: (await getMeta("consent")) || null, ...((await getMeta("mic")) || {}), sampleRates: [...new Set(clips.map((c) => c.rate))], roomNoiseDb: state.noiseDb, userAgent: navigator.userAgent, made: new Date().toISOString() };
+  const csv = ["id|lang|text|seconds|peak_db|snr_db|flags|kind|prompt", ...clips.map((c) => [c.id, c.lang, c.text.replace(/\|/g, "/"), c.seconds, c.peakDb, c.snrDb, c.flags.join(" "),
+    c.kind || "read", (c.prompt || c.text).replace(/\|/g, "/")].join("|"))].join("\n") + "\n";
+  const info = { page: VERSION, set: SET, speakerInfo: (await getMeta("speakerInfo")) || null, speaker: clips[0]?.speaker || $("speaker").value, session, clips: clips.length, consent: (await getMeta("consent")) || null, ...((await getMeta("mic")) || {}), sampleRates: [...new Set(clips.map((c) => c.rate))], roomNoiseDb: state.noiseDb, userAgent: navigator.userAgent, made: new Date().toISOString() };
   return zip([{ name: "info.json", data: JSON.stringify(info, null, 2) }, { name: "metadata.csv", data: csv }, ...clips.map((c) => ({ name: `wavs/${c.id}.wav`, data: c.wav }))]);
 }
 async function download(session) {
@@ -228,6 +239,15 @@ async function renderDownloads() {
 
 // ---------- wiring ----------
 $("session").innerHTML = [...new Set(list.map((r) => r.session))].map((s) => `<option value="${s}">${s === "extra" ? "Extra" : s}</option>`).join("");
+if (SET === "asr") {
+  $("speakerInfo").hidden = false;
+  $("consentLink").href = "../asr/CONSENT-ASR.md";
+  $("setName").textContent = "Restaurant requests, for the speech recognizer · Peticiones a restaurantes, para el reconocedor de voz";
+  $("speaker").value = "";
+  $("speaker").placeholder = "e.g. H07 (given by the owner)";
+  const packet = new URL(location.href).searchParams.get("packet");
+  if (packet) { state.session = packet; $("session").value = packet; }
+}
 $("consent").onchange = () => { $("start").disabled = !$("consent").checked; };
 $("start").onclick = async () => {
   try {
@@ -235,7 +255,8 @@ $("start").onclick = async () => {
     $("checks").hidden = false; $("studio").hidden = false; $("done").hidden = false;
     $("start").textContent = "Microphone on · Micrófono encendido";
     await putMeta("speaker", $("speaker").value);
-    await putMeta("consent", { ticked: true, at: new Date().toISOString() });
+    await putMeta("consent", { ticked: true, at: new Date().toISOString(), form: SET === "asr" ? "CONSENT-ASR.md" : "CONSENT.md" });
+    if (SET === "asr") await putMeta("speakerInfo", Object.fromEntries([...document.querySelectorAll("#speakerInfo [name]")].map((x) => [x.name, x.value])));
     const first = inSession().findIndex((r) => !kept.has(r.id)); state.index = first < 0 ? 0 : first;
     show();
   } catch (e) { $("start").insertAdjacentHTML("afterend", `<span class="bad"> ${e.message}</span>`); }
@@ -254,4 +275,4 @@ document.addEventListener("keydown", (e) => {
 });
 const savedSpeaker = await getMeta("speaker"); if (savedSpeaker) $("speaker").value = savedSpeaker;
 renderDownloads();
-window.recorder = { list, state, analyse, sessionZip, allClips, kept: () => kept.size };
+window.recorder = { list, state, analyse, sessionZip, allClips, kept: () => kept.size, set: SET };

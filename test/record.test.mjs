@@ -88,11 +88,57 @@ print(json.dumps({"bad": bad, "names": z.namelist(), "csv": z.read("metadata.csv
   "wav": [w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getnframes()]}))`, file]).toString());
   assert.equal(out.bad, null, "every CRC matches");
   assert.equal(out.names.length, 3);
-  assert.equal(out.csv[0], "id|lang|text|seconds|peak_db|snr_db|flags");
+  assert.equal(out.csv[0], "id|lang|text|seconds|peak_db|snr_db|flags|kind|prompt");
   assert.match(out.csv[1], /^es-[a-z]+-\d{5}\|es\|Investigadores desarrollan/);
   assert.equal(out.info.consent.ticked, true, "the consent tick, remembered across the reload");
   assert.equal(out.info.settings.echoCancellation, false);
   assert.deepEqual(out.wav.slice(0, 2), [1, 2], "mono, 16-bit");
   assert.ok(out.wav[3] > out.wav[2] * 0.8, "at least the tone's length");
   assert.deepEqual(errors, []);
+});
+
+test("the speech-recognition set: its own packet, speaker details, and a card said in one's own words with its transcript", { skip }, async () => {
+  const context = await browser.newContext({ permissions: ["microphone"] });
+  const p = await context.newPage();
+  await p.goto(`http://localhost:${web.port}/training/record/index.html?set=asr&packet=2`);
+  await p.waitForFunction(() => window.recorder);
+  assert.equal(await p.evaluate(() => window.recorder.set), "asr");
+  assert.equal(await p.isVisible("#speakerInfo"), true);
+  assert.match(await p.getAttribute("#consentLink", "href"), /CONSENT-ASR\.md$/);
+  await p.fill("#speaker", "H02");
+  await p.selectOption("#age", "30–44");
+  await p.fill("#region", "Guanajuato");
+  await p.check("#consent");
+  await p.click("#start");
+  await p.waitForSelector("#studio:not([hidden])");
+  const first = await p.evaluate(() => window.recorder.list.find((r) => r.session === "2"));
+  assert.equal(await p.textContent("#sentence"), first.text, "packet 2 from the start");
+  // go to the packet's first card
+  const card = await p.evaluate(() => window.recorder.list.filter((r) => r.session === "2").findIndex((r) => r.why === "scenario"));
+  await p.evaluate((i) => { window.recorder.state.index = i; window.recorder.state.noiseDb = -90; }, card);
+  await p.click("#skip"); await p.click("#back");
+  assert.equal(await p.isVisible("#saidBox"), true, "a card asks for what was said");
+  await p.click("#rec"); await p.waitForTimeout(2500); await p.click("#rec");
+  await p.click("#keep");
+  assert.match(await p.textContent("#status"), /Type what was said first/);
+  await p.fill("#said", "Oye, ¿dónde puedo cenar por el centro con mis amigos, algo barato?");
+  await p.click("#keep");
+  await p.waitForFunction(() => window.recorder.kept() === 1);
+  const bytes = await p.evaluate(async () => [...new Uint8Array(await (await window.recorder.sessionZip("2")).arrayBuffer())]);
+  const file = join(dir, "asr-packet2.zip");
+  writeFileSync(file, Buffer.from(bytes));
+  const out = JSON.parse(execFileSync("python3", ["-I", "-c", `
+import zipfile, json, sys
+z = zipfile.ZipFile(sys.argv[1])
+print(json.dumps({"info": json.loads(z.read("info.json")), "csv": z.read("metadata.csv").decode().splitlines()}))`, file]).toString());
+  assert.equal(out.info.set, "asr");
+  assert.equal(out.info.speaker, "H02");
+  assert.equal(out.info.speakerInfo.region, "Guanajuato");
+  assert.equal(out.info.consent.form, "CONSENT-ASR.md");
+  assert.equal(out.csv[0], "id|lang|text|seconds|peak_db|snr_db|flags|kind|prompt");
+  const [, , text, , , , , kind, prompt] = out.csv[1].split("|");
+  assert.deepEqual([text, kind], ["Oye, ¿dónde puedo cenar por el centro con mis amigos, algo barato?", "scenario"]);
+  assert.ok(prompt.startsWith("Pide") || prompt.startsWith("Pregunta") || prompt.startsWith("Primero") || prompt.startsWith("Cambia") || prompt.startsWith("Di "), prompt);
+  assert.equal(await p.evaluate(async () => (await window.recorder.allClips()).length), 1, "its own storage, apart from the voice set");
+  await context.close();
 });

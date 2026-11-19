@@ -1,0 +1,215 @@
+{
+ "note": "Made-up speakers for the speech-recognition set (training/asr/gpu/synth_voices.py): Qwen3-TTS VoiceDesign makes each from its description; none is a real person. Listen to references/ before the full run.",
+ "voices": [
+  {
+   "id": "es-f-20-cdmx",
+   "lang": "es",
+   "description": "A young woman, about twenty, from Mexico City, quick and casual chilango Spanish, bright voice. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1000
+  },
+  {
+   "id": "es-m-25-cdmx",
+   "lang": "es",
+   "description": "A man in his mid twenties from Mexico City, relaxed, a little nasal, informal. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1001
+  },
+  {
+   "id": "es-f-35-gto",
+   "lang": "es",
+   "description": "A woman in her thirties from Guanajuato, warm and clear, central Mexican Spanish, unhurried. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1002
+  },
+  {
+   "id": "es-m-40-gto",
+   "lang": "es",
+   "description": "A man in his forties from San Miguel de Allende, deep and calm, Bajío accent. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1003
+  },
+  {
+   "id": "es-f-55-gdl",
+   "lang": "es",
+   "description": "A woman in her fifties from Guadalajara, Jalisco accent, cheerful and talkative. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1004
+  },
+  {
+   "id": "es-m-60-gdl",
+   "lang": "es",
+   "description": "A man in his sixties from Guadalajara, gravelly voice, slow and friendly. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1005
+  },
+  {
+   "id": "es-f-30-mty",
+   "lang": "es",
+   "description": "A woman in her thirties from Monterrey, norteño accent, firm and fast. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1006
+  },
+  {
+   "id": "es-m-35-mty",
+   "lang": "es",
+   "description": "A man in his thirties from Monterrey, strong northern Mexican accent, loud and direct. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1007
+  },
+  {
+   "id": "es-f-45-pue",
+   "lang": "es",
+   "description": "A woman in her forties from Puebla, soft and polite, careful pronunciation. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1008
+  },
+  {
+   "id": "es-m-50-qro",
+   "lang": "es",
+   "description": "A man in his fifties from Querétaro, measured, slightly hoarse, central Mexican. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1009
+  },
+  {
+   "id": "es-f-70-gto",
+   "lang": "es",
+   "description": "An older woman in her seventies from a town in Guanajuato, gentle, a little shaky, very Mexican. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1010
+  },
+  {
+   "id": "es-m-70-mich",
+   "lang": "es",
+   "description": "An older man in his seventies from Michoacán, slow rural central Mexican Spanish. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1011
+  },
+  {
+   "id": "es-f-18-gto",
+   "lang": "es",
+   "description": "A teenage girl of eighteen from León, Guanajuato, fast, upbeat, lots of slang. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1012
+  },
+  {
+   "id": "es-m-19-cdmx",
+   "lang": "es",
+   "description": "A young man of nineteen from Mexico City, mumbling a little, casual slang. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1013
+  },
+  {
+   "id": "es-f-40-yuc",
+   "lang": "es",
+   "description": "A woman in her forties from Mérida, Yucatán, Yucatecan accent, crisp consonants. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1014
+  },
+  {
+   "id": "es-m-45-ver",
+   "lang": "es",
+   "description": "A man in his forties from Veracruz, coastal accent, relaxed, drops some final s sounds. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1015
+  },
+  {
+   "id": "es-f-28-oax",
+   "lang": "es",
+   "description": "A woman in her late twenties from Oaxaca, soft-spoken, central-southern Mexican Spanish. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1016
+  },
+  {
+   "id": "es-m-30-son",
+   "lang": "es",
+   "description": "A man in his thirties from Hermosillo, Sonora, northern accent, sing-song. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1017
+  },
+  {
+   "id": "es-f-50-cdmx",
+   "lang": "es",
+   "description": "A woman in her fifties from Mexico City, professional, clear, slightly formal. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1018
+  },
+  {
+   "id": "es-m-55-gto",
+   "lang": "es",
+   "description": "A man in his fifties, taxi driver from Guanajuato, friendly, quick, informal. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1019
+  },
+  {
+   "id": "es-f-65-qro",
+   "lang": "es",
+   "description": "A woman in her sixties from Querétaro, warm grandmotherly voice, unhurried. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1020
+  },
+  {
+   "id": "es-m-28-gto",
+   "lang": "es",
+   "description": "A young man in his late twenties, waiter in San Miguel de Allende, polite and quick. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1021
+  },
+  {
+   "id": "es-f-33-bilingual",
+   "lang": "es",
+   "description": "A bilingual woman in her thirties from Mexico City who mixes in English words, modern and quick. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1022
+  },
+  {
+   "id": "es-m-45-bilingual",
+   "lang": "es",
+   "description": "A bilingual man in his forties who grew up between Mexico and Texas, Mexican Spanish with some English words. Speaking Mexican Spanish, never Spain's accent.",
+   "text": "Hola, buenas tardes. ¿Me podrías decir dónde hay un buen lugar para comer cerca del centro? Algo sencillo, sin tanto rollo, y que esté abierto ahorita.",
+   "seed": 1023
+  },
+  {
+   "id": "en-f-60-us",
+   "lang": "en",
+   "description": "A woman in her sixties from the American Midwest, retired, friendly and clear.",
+   "text": "Hi there. Could you tell me where I can get a good dinner near the main square tonight? Nothing fancy, just somewhere friendly that's open now.",
+   "seed": 2000
+  },
+  {
+   "id": "en-m-65-us",
+   "lang": "en",
+   "description": "A man in his sixties from Texas, slow and warm, slight drawl.",
+   "text": "Hi there. Could you tell me where I can get a good dinner near the main square tonight? Nothing fancy, just somewhere friendly that's open now.",
+   "seed": 2001
+  },
+  {
+   "id": "en-f-35-ca",
+   "lang": "en",
+   "description": "A woman in her thirties from Toronto, Canadian English, bright and quick.",
+   "text": "Hi there. Could you tell me where I can get a good dinner near the main square tonight? Nothing fancy, just somewhere friendly that's open now.",
+   "seed": 2002
+  },
+  {
+   "id": "en-m-40-uk",
+   "lang": "en",
+   "description": "A man in his forties from London, British English, relaxed.",
+   "text": "Hi there. Could you tell me where I can get a good dinner near the main square tonight? Nothing fancy, just somewhere friendly that's open now.",
+   "seed": 2003
+  },
+  {
+   "id": "en-f-30-mx",
+   "lang": "en",
+   "description": "A Mexican woman in her thirties speaking fluent English with a Mexican accent.",
+   "text": "Hi there. Could you tell me where I can get a good dinner near the main square tonight? Nothing fancy, just somewhere friendly that's open now.",
+   "seed": 2004
+  },
+  {
+   "id": "en-m-50-mx",
+   "lang": "en",
+   "description": "A Mexican man in his fifties speaking English with a strong Mexican accent, careful.",
+   "text": "Hi there. Could you tell me where I can get a good dinner near the main square tonight? Nothing fancy, just somewhere friendly that's open now.",
+   "seed": 2005
+  }
+ ]
+}

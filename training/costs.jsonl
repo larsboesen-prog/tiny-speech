@@ -110,3 +110,35 @@
 {"at":"2026-11-19T04:39:24.154Z","model":"anthropic/claude-sonnet-5.5","purpose":"tests questions es","prompt":262,"completion":6370,"cost":0.064224}
 {"at":"2026-11-19T04:40:04.985Z","model":"anthropic/claude-sonnet-5.5","purpose":"tests questions es","prompt":262,"completion":4970,"cost":0.050224}
 {"at":"2026-11-19T04:40:37.656Z","model":"anthropic/claude-sonnet-5.5","purpose":"tests questions mixed","prompt":244,"completion":3527,"cost":0.035758}
+{"at":"2026-11-19T17:18:20.482Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":523,"completion":5189,"cost":0.052936}
+{"at":"2026-11-19T17:18:58.012Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":539,"completion":5863,"cost":0.059708}
+{"at":"2026-11-19T17:19:31.005Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":568,"completion":4488,"cost":0.046016}
+{"at":"2026-11-19T17:20:17.020Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":510,"completion":6800,"cost":0.06902}
+{"at":"2026-11-19T17:21:32.168Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":522,"completion":5115,"cost":0.052194}
+{"at":"2026-11-19T17:22:09.258Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":525,"completion":5394,"cost":0.05499}
+{"at":"2026-11-19T17:22:44.883Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":521,"completion":4962,"cost":0.050662}
+{"at":"2026-11-19T17:23:31.370Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":532,"completion":6845,"cost":0.069514}
+{"at":"2026-11-19T17:24:07.173Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":531,"completion":5208,"cost":0.053142}
+{"at":"2026-11-19T17:24:49.390Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":513,"completion":6320,"cost":0.064226}
+{"at":"2026-11-19T17:25:20.773Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":541,"completion":4463,"cost":0.045712}
+{"at":"2026-11-19T17:25:59.916Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":535,"completion":5820,"cost":0.05927}
+{"at":"2026-11-19T17:26:34.296Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":552,"completion":4663,"cost":0.047734}
+{"at":"2026-11-19T17:27:07.697Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es requests","prompt":509,"completion":4971,"cost":0.050728}
+{"at":"2026-11-19T17:27:33.759Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es corrections","prompt":372,"completion":3478,"cost":0.035524}
+{"at":"2026-11-19T17:28:11.566Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es corrections","prompt":373,"completion":5007,"cost":0.050816}
+{"at":"2026-11-19T17:28:40.727Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es corrections","prompt":377,"completion":3633,"cost":0.037084}
+{"at":"2026-11-19T17:29:31.947Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es corrections","prompt":374,"completion":7000,"cost":0.070748}
+{"at":"2026-11-19T17:30:16.467Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es corrections","prompt":374,"completion":6197,"cost":0.062718}
+{"at":"2026-11-19T17:31:06.729Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es corrections","prompt":375,"completion":6743,"cost":0.06818}
+{"at":"2026-11-19T17:31:42.288Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es corrections","prompt":373,"completion":4797,"cost":0.048716}
+{"at":"2026-11-19T17:32:12.201Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es corrections","prompt":380,"completion":3712,"cost":0.03788}
+{"at":"2026-11-19T17:32:37.443Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es followups","prompt":556,"completion":4056,"cost":0.041672}
+{"at":"2026-11-19T17:33:03.811Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es followups","prompt":563,"completion":4251,"cost":0.043636}
+{"at":"2026-11-19T17:33:34.067Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es followups","prompt":579,"completion":4728,"cost":0.048438}
+{"at":"2026-11-19T17:34:05.484Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es followups","prompt":581,"completion":4675,"cost":0.047912}
+{"at":"2026-11-19T17:34:32.496Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es followups","prompt":562,"completion":4455,"cost":0.045674}
+{"at":"2026-11-19T17:34:58.980Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es followups","prompt":580,"completion":4260,"cost":0.04376}
+{"at":"2026-11-19T17:35:24.955Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es followups","prompt":562,"completion":4148,"cost":0.042604}
+{"at":"2026-11-19T17:35:45.593Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es followups","prompt":577,"completion":3322,"cost":0.034374}
+{"at":"2026-11-19T17:35:57.444Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es followups","prompt":576,"completion":1570,"cost":0.016852}
+{"at":"2026-11-19T17:36:22.636Z","model":"anthropic/claude-sonnet-5.5","purpose":"asr text es names","prompt":525,"completion":3767,"cost":0.03872}
