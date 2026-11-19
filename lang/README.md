@@ -6,6 +6,7 @@ Everything about a language that is not about a city (D6): days, numbers and clo
 |---|---|
 | `en/index.js` | `sayTime`, `sayNum`, `clock`, `DAYNAMES` (MapSMA's, moved here unchanged); `readClock`, `numberOf` (new) |
 | `es/index.js` | `sayTimeEs`, `sayNumEs`, `aTimeEs`, `showTimeEs`, `DIAS` (MapSMA's, moved); `readClock`, `numberOf` (new) |
+| `es/sounds.js` | Spanish spelling → tiny-voca's sounds: `wordPhones` (MapSMA's, readings from the pack), `sentencePhones` (numbers as words, small words unstressed, English kept only inside names), `numberWordsEs` |
 | `es/mx.json` | Mexican Spanish: words (ahorita, al rato, mande, almuerzo, comida…), clock idioms, currency, sounds for the voice |
 
 Rule: understand every variety's way of saying it, speak the city's (review 3.2). Spanish `readClock` reads Mexico's
