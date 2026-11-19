@@ -7,7 +7,8 @@ import { fileURLToPath } from "node:url";
 
 const API = "https://openrouter.ai/api/v1";
 export const BUDGET = Number(process.env.TS_BUDGET || 14);
-const LOG = fileURLToPath(new URL("../training/costs.jsonl", import.meta.url));
+// TS_COST_LOG: a long run can log elsewhere and add its lines to training/costs.jsonl when it ends (a clean tree meanwhile)
+const LOG = process.env.TS_COST_LOG || fileURLToPath(new URL("../training/costs.jsonl", import.meta.url));
 mkdirSync(fileURLToPath(new URL("../training/", import.meta.url)), { recursive: true });
 
 export async function usage() {

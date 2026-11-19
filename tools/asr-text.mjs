@@ -64,7 +64,7 @@ function check(lang, text) {
   return t;
 }
 
-const FILE = OUT + "utterances.jsonl";
+const FILE = process.env.TS_ASR_FILE || OUT + "utterances.jsonl";  // a long run can write elsewhere and be copied in at the end
 if (!process.argv.includes("--run-only") || !existsSync(FILE)) {
   const rows = existsSync(FILE) ? readFileSync(FILE, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l)) : [];
   const seen = new Set(rows.map((r) => r.text.toLowerCase()));
