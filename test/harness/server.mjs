@@ -18,6 +18,7 @@ const MOUNTS = [
   ["/lang/", join(ROOT, "lang")],
   ["/engines/", join(ROOT, "engines")],
   ["/vendor/", join(ROOT, "vendor")],
+  ["/training/", join(ROOT, "training")],
 ];
 const TYPES = { ".js": "text/javascript", ".mjs": "text/javascript", ".html": "text/html; charset=utf-8", ".json": "application/json", ".wav": "audio/wav" };
 
