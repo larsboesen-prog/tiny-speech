@@ -41,7 +41,7 @@ export function startServer({ dizione = DIZIONE } = {}) {
     requests.push({ method: req.method, path, bytes, url: req.url });
     hits[path] = (hits[path] || 0) + 1;
     if (path.startsWith("/mirror/")) {  // a site serving its own copies of the libraries (here: the stand-ins)
-      const fake = fakeResponse("https://" + path.slice("/mirror/".length));
+      const fake = fakeResponse("https://" + path.slice("/mirror/".length).replace(/(@\d[\w.-]*)\/index\.js$/, "$1"));  // a package's own file
       res.writeHead(fake.status, { "content-type": fake.contentType });
       return res.end(fake.body);
     }

@@ -23,7 +23,8 @@ const SITE = { libs: HERE.searchParams.get("libs") || "tiny-speech-libs-1" };
 // folder as on its own host (https://cdn.jsdelivr.net/npm/… → <folder>cdn.jsdelivr.net/npm/…, models under <folder>huggingface.co/),
 // pinned by SHA-256 in browser/manifest.json: no third party sees the visitor. Without it, the files come from their hosts as before.
 const ENGINES = HERE.searchParams.get("engines");
-const mirror = (url) => (ENGINES ? new URL(ENGINES + url.replace(/^https:\/\//, ""), HERE).href : url);
+// A package's own address (…/transformers@3.8.1) is also a folder there (…@3.8.1/dist/…): on the site its file is …@3.8.1/index.js.
+const mirror = (url) => (ENGINES ? new URL(ENGINES + url.replace(/^https:\/\//, "").replace(/(@\d[\w.-]*)$/, "$1/index.js"), HERE).href : url);
 
 // The library, loaded once (from its host, or the site's copy); the settings below are made before anything uses it.
 const libs = import(mirror(TRANSFORMERS)).then(({ env, pipeline }) => {

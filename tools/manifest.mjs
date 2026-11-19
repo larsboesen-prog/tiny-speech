@@ -34,7 +34,9 @@ export function coreFiles() {
   return out;
 }
 
-export const mirrorPath = (url) => url.replace(/^https:\/\//, "");
+// Where a site keeps an engine file: its address without https://; a package's own address (…/transformers@3.8.1), which is also
+// a folder at its host (…@3.8.1/dist/…), as …@3.8.1/index.js. The workers' mirror() makes the same addresses.
+export const mirrorPath = (url) => url.replace(/^https:\/\//, "").replace(/(@\d[\w.-]*)$/, "$1/index.js");
 export const engines = () => (existsSync(ENGINES) ? JSON.parse(readFileSync(ENGINES, "utf8")) : { files: [] });
 
 async function record(dizione) {

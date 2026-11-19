@@ -34,7 +34,7 @@ const HF = `https://huggingface.co/n4ze3m/tiny-voca/resolve/${MODEL_REV}/`;
 // browser/manifest.json. Files are still kept under their original addresses, so a visitor's stored copies are found either way.
 const ENGINES = HERE.searchParams.get("engines");
 const MIRROR = ENGINES ? new URL(ENGINES, HERE).href : "";
-const mirror = (url) => (MIRROR && new URL(url).origin !== HERE.origin ? MIRROR + url.replace(/^https:\/\//, "") : url);  // the site's own files (dizione.zip) as they are
+const mirror = (url) => (MIRROR && new URL(url).origin !== HERE.origin ? MIRROR + url.replace(/^https:\/\//, "").replace(/(@\d[\w.-]*)$/, "$1/index.js") : url);  // the site's own files (dizione.zip) as they are
 const original = (url) => (MIRROR && url.startsWith(MIRROR) ? "https://" + url.slice(MIRROR.length) : url);
 // dizione commit 8cd889e, as each site serves it: ?dizione=/page5/tinyvoca/dizione.zip, else tinyvoca/dizione.zip beside this worker.
 // The same address as before gives the same cache key, so a visitor's stored copy is found again.

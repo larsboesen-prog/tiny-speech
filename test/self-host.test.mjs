@@ -13,7 +13,7 @@ test("the manifest lists every engine file the four engines fetch, with size and
   assert.match(recorded, /^\d{4}-\d{2}-\d{2}$/);
   for (const f of files) {
     assert.match(f.url, /^https:\/\/(cdn\.jsdelivr\.net|huggingface\.co)\//, f.url);
-    assert.equal(f.path, f.url.slice("https://".length));
+    assert.equal(f.path, f.url.slice("https://".length).replace(/(@\d[\w.-]*)$/, "$1/index.js"));
     assert.ok(f.bytes > 0 && /^[0-9a-f]{64}$/.test(f.sha256), f.url);
   }
   for (const role of ["asr-en", "asr-es", "voice", "voiceJs"]) assert.ok(files.some((f) => f.for.includes(role)), role);
@@ -62,7 +62,7 @@ test("with the site's own engine files, the voice and speech to text work and no
   assert.deepEqual(web.leaks, [], "no request for another host");
   assert.deepEqual(errors, []);
   const mirrored = web.requests.filter((r) => r.path.startsWith("/mirror/")).map((r) => r.path);
-  for (const want of ["/mirror/cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1", "/mirror/cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js",
+  for (const want of ["/mirror/cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/index.js", "/mirror/cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js",
     "/mirror/cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort.wasm.min.js", "/mirror/huggingface.co/n4ze3m/tiny-voca/resolve/d94d2a0338fd1e0eab7dd896ec0ad23d8cdf7c14/onnx/model.onnx"]) {
     assert.ok(mirrored.includes(want), `${want} came from the site`);
   }
