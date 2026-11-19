@@ -244,7 +244,13 @@ const join = (chunks) => {
 };
 
 // ---------- round trip: the voice speaks, speech to text listens ----------
-const words = (s) => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").match(/[a-z0-9ñ]+/g) || [];
+// Number words count as their digits ("ten" = "10" = "diez"), as Whisper writes numbers either way.
+const NUMBERS = Object.fromEntries([
+  ..."zero one two three four five six seven eight nine ten eleven twelve".split(" ").map((w, i) => [w, String(i)]),
+  ..."cero uno dos tres cuatro cinco seis siete ocho nueve diez once doce".split(" ").map((w, i) => [w, String(i)]),
+  ["una", "1"], ["un", "1"],
+]);
+const words = (s) => (String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").match(/[a-z0-9ñ]+/g) || []).map((w) => NUMBERS[w] || w);
 function overlap(said, heard) {
   const want = words(said), got = new Set(words(heard));
   const hit = want.filter((w) => got.has(w)).length;

@@ -1,5 +1,6 @@
 // A small static server for the browser tests: the two sites' original files (as they were served on 18 Nov 2026) at /page40/
 // and /page5/, the shared core at /tiny-speech/, and the harness page. Every request is counted in `hits` (path -> count).
+// `dizione` replaces the stand-in tinyvoca/dizione.zip with real bytes (the live test serves the real one).
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -17,14 +18,14 @@ const TYPES = { ".js": "text/javascript", ".mjs": "text/javascript", ".html": "t
 // Stand-in for each site's tinyvoca/dizione.zip (the phonemizer's source); the fake Pyodide only records its size.
 const DIZIONE = Buffer.from("PK\u0003\u0004 stand-in for dizione 8cd889e");
 
-export function startServer() {
+export function startServer({ dizione = DIZIONE } = {}) {
   const hits = {};
   const server = createServer(async (req, res) => {
     const path = decodeURIComponent(new URL(req.url, "http://x").pathname);
     hits[path] = (hits[path] || 0) + 1;
     if (path.endsWith("/tinyvoca/dizione.zip")) {
-      res.writeHead(200, { "content-type": "application/zip", "content-length": DIZIONE.length });
-      return res.end(DIZIONE);
+      res.writeHead(200, { "content-type": "application/zip", "content-length": dizione.length });
+      return res.end(dizione);
     }
     const mount = MOUNTS.find(([prefix]) => path.startsWith(prefix));
     const file = mount && normalize(join(mount[1], path.slice(mount[0].length)));

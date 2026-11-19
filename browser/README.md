@@ -56,6 +56,22 @@ this against the sites' original files (`test/fixtures/before/`).
 Workers must come from the page's own site (browsers do not start a worker from another site), so each
 site serves its own copy of these files; the copies are the same files, from this folder, at one version.
 
+## Measured with the real models (19 Nov 2026)
+
+`npm run test:live -- path/to/dizione.zip`: the check page in headless Chromium in a cloud container (one
+thread), with the real transformers.js, Whisper, Pyodide, onnxruntime-web and tiny-voca from the network,
+first visit (nothing stored): speech to text ready in 3.3 s, the voice in 6.5 s (12 files fetched).
+
+| Round trip: tiny-voca (M2) says it, Whisper writes it | Heard | Voice | Speech to text |
+|---|---|---|---|
+| tiny.en: "La Azotea is open until ten tonight. Bocaciega closes at eleven." | "La Azotea is open until 10 tonight, Bocaciega closes at 11" | 374 ms for 4.3 s of speech | 2.1 s |
+| tiny.en: "Find three restaurants in Centro that are open now." | word for word | 194 ms for 2.9 s | 1.9 s |
+| tiny, Spanish: "¿Qué restaurantes están abiertos esta noche en el centro?" | "¿Qué restaurantes estas en el centro?" | 209 ms for 3.1 s | 1.9 s |
+
+The Spanish line is the English voice reading Spanish (only names are taught Spanish sounds today):
+the gap the bilingual tiny-voca voice is for. Speech to text here is slower than on the phones the
+pages measured (0.3–1.5 s for a 3-second question): the container's CPU, not the files.
+
 ## Releasing a new version
 
 Change `0.1.0` in the files' headers, `CORE` in the three scripts, `package.json`, and every `?v=` the

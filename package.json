@@ -6,7 +6,8 @@
   "type": "module",
   "license": "UNLICENSED",
   "scripts": {
-    "test": "node --test \"test/*.test.mjs\""
+    "test": "node --test \"test/*.test.mjs\"",
+    "test:live": "node test/live/real-models.mjs"
   },
   "devDependencies": {
     "playwright": "^1.50.0"
