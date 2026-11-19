@@ -22,7 +22,8 @@ test("each site's config gives the cache names its page used before the shared c
   assert.equal(workerUrl(app("mapsma"), "asr"), "asr-worker.js?libs=mapsma-voice-libs-1");
   assert.equal(workerUrl(app("credbrief"), "voice", { v: "3" }), "tinyvoca-worker.js?v=3&libs=credbrief-page40-libs-1&voice=credbrief-tinyvoca-&dizione=%2Fpage40%2Ftinyvoca%2Fdizione.zip");
   assert.equal(workerUrl({}, "asr"), "asr-worker.js?libs=tiny-speech-libs-1", "no config: names of its own");
-  assert.match(workerUrl(app("mapsma"), "voiceJs"), /site=mapsma&cache=mapsma-tinyvoca-js-/);
+  assert.equal(workerUrl(app("mapsma"), "voiceJs"), "tinyvoca-js-worker.js?cache=mapsma-tinyvoca-js-");
+  assert.equal(workerUrl(app("mapsma"), "voiceJs", { model: "/v/bi.gguf", sha256: "ab12" }), "tinyvoca-js-worker.js?cache=mapsma-tinyvoca-js-&model=%2Fv%2Fbi.gguf&sha256=ab12");
   for (const a of index.apps) assert.deepEqual(appConfig(app(a.app)).hosts, a.hosts, `${a.app}: the index and the config agree`);
   assert.equal(appForHost(index, "www.mapsma.com").app, "mapsma");
   assert.equal(appForHost(index, "credbrief.com").app, "credbrief");

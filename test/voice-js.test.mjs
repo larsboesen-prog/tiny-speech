@@ -4,11 +4,13 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { createVoice, MODEL } from "../engines/tinyvoca-js.js";
 import { startServer } from "./harness/server.mjs";
 import { loadCore } from "./golden/mapsma.mjs";
 
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const GGUF = fileURLToPath(new URL("../vendor/tiny-voca/tiny-voca-js.gguf", import.meta.url));
 const haveModel = existsSync(GGUF);
 const require = createRequire(import.meta.url);
@@ -74,7 +76,7 @@ test("the worker speaks as the ONNX worker does: load, teach, stream, Spanish, s
   const types = r.posted.map((m) => m.type);
   assert.ok(!types.includes("error") && !types.includes("__onerror"), JSON.stringify(r.posted.filter((m) => /error/.test(m.type))));
   const ready = r.posted.find((m) => m.type === "ready");
-  assert.deepEqual([ready.core, ready.voices, ready.sampleRate, ready.fetched], ["tiny-speech 0.2.0", ["F2", "M2"], 24000, 1]);
+  assert.deepEqual([ready.core, ready.voices, ready.sampleRate, ready.fetched], ["tiny-speech 0.3.0", ["F2", "M2"], 24000, 1]);
   assert.equal(r.posted.find((m) => m.type === "taught").words, 1);
   assert.match(r.posted.find((m) => m.type === "phones").text, /ɑː s oʊ t ˈeɪ ɑː/);
   const sentences = r.posted.filter((m) => m.type === "sentence");
@@ -92,5 +94,22 @@ test("the worker refuses a model file that does not match its SHA-256", { skip: 
   const r = await worker(context, [{ send: { type: "load" } }, { wait: "error" }], "/tiny-speech/tinyvoca-js-worker.js?v=1&site=test&model=/corrupt/tiny-voca-js.gguf");
   assert.match(r.posted.find((m) => m.type === "error").message, /does not match its SHA-256/);
   assert.equal(MODEL.bytes, readFileSync(GGUF).length);
+  await context.close();
+});
+
+test("the bilingual voice file loads by ?model= and ?sha256=, and reads Spanish after <es>", { skip: skipBrowser || (existsSync(ROOT + "vendor/tiny-voca/tiny-voca-bilingual-init.gguf") ? false : "no bilingual file (node tools/voice-gguf.mjs init)") }, async () => {
+  const file = ROOT + "vendor/tiny-voca/tiny-voca-bilingual-init.gguf";
+  const sha = createHash("sha256").update(readFileSync(file)).digest("hex");
+  const context = await browser.newContext();
+  const r = await worker(context, [
+    { send: { type: "load" } }, { wait: "ready" },
+    { send: { type: "phones", id: 1, text: "Mama Mía tiene salsa esta noche.", lang: "es" } }, { wait: "phones" },
+    { send: { type: "speak", id: 2, text: "Mama Mía tiene salsa esta noche.", lang: "es" } }, { wait: "done" },
+  ], `/tiny-speech/tinyvoca-js-worker.js?v=1&cache=t-bi-&model=/vendor/tiny-voca/tiny-voca-bilingual-init.gguf&sha256=${sha}`);
+  assert.ok(!r.posted.some((m) => /error/.test(m.type)), JSON.stringify(r.posted.filter((m) => /error/.test(m.type))));
+  assert.deepEqual(r.posted.find((m) => m.type === "ready").voices, ["F2", "M2", "MX1"]);
+  assert.match(r.posted.find((m) => m.type === "phones").text, /^<es> m ˈa m a <sp> m ˈi a/);
+  assert.ok(r.posted.filter((m) => m.type === "sentence").every((m) => m.audio.float32 > 10000));
+  assert.ok(Object.keys(r.caches).some((n) => n.startsWith("t-bi-" + sha.slice(0, 7))), "kept under its own hash");
   await context.close();
 });

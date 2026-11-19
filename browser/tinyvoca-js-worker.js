@@ -4,19 +4,25 @@
 // new: speak {lang: "es"} reads Spanish sentences with Spanish sounds (an American accent until the voice learns Spanish), and
 // {type: "city", english, readings, names} tells it which words inside the city's names stay English.
 //
-// Address: tinyvoca-js-worker.js?v=…&site=mapsma|credbrief[&model=<address of tiny-voca-js.gguf>] (a module worker).
+// Address: tinyvoca-js-worker.js?v=…&cache=<cache name prefix, from the site's config (core/config.js workerUrl)>
+//   [&model=<address of a GGUF>&sha256=<its SHA-256>] (the bilingual voice, or any other file: checked against sha256)
+//   [&engines=<the site's folder of engine files> (plan step B13: the released voice from the site itself, same path)]
+// The older &site=mapsma|credbrief still picks the cache names it picked before (a page not yet moved to a config).
 // Messages in: load, speak {id, text | sentences, base, voice, speed, pitch, open, lang}, more {id, sentences, last}, teach {words},
 // phones {id, text, lang}, city {english, readings, names}, stop. Out: status, ready {voices, sampleRate, core, kept, fetched},
 // sentence {id, index, total, audio, sampleRate}, done {id, totalTime}, taught {words}, phones {id, text}, error {id, message}.
 import { createVoice, MODEL, MODEL_URL } from "../engines/tinyvoca-js.js";
 
-const CORE = "tiny-speech 0.2.0";
-const SITES = { mapsma: "mapsma-tinyvoca-js-", credbrief: "credbrief-tinyvoca-js-" };  // B9 moves this to the page's configuration
+const CORE = "tiny-speech 0.3.0";
 const HERE = new URL(self.location.href);
-const SITE_NAME = HERE.searchParams.get("site")
-  || (/(^|\.)mapsma\.com$/.test(HERE.hostname) ? "mapsma" : /(^|\.)credbrief\.com$/.test(HERE.hostname) ? "credbrief" : "");
-const CACHE = (SITES[SITE_NAME] || "tiny-speech-tinyvoca-js-") + MODEL.revision.slice(0, 7);
-const MODEL_AT = new URL(HERE.searchParams.get("model") || MODEL_URL, HERE).href;
+const param = (k) => HERE.searchParams.get(k);
+// the cache's name: the config's prefix (?cache=); else the names the two sites used before configs (?site=); else our own
+const OLD = { mapsma: "mapsma-tinyvoca-js-", credbrief: "credbrief-tinyvoca-js-" };
+const PREFIX = param("cache") || OLD[param("site")] || "tiny-speech-tinyvoca-js-";
+const EXPECT = (param("sha256") || MODEL.sha256).toLowerCase();
+const SELF_HOSTED = param("engines") && new URL(param("engines").replace(/\/?$/, "/") + MODEL_URL.replace(/^https:\/\//, ""), HERE).href;
+const MODEL_AT = new URL(param("model") || SELF_HOSTED || MODEL_URL, HERE).href;
+const CACHE = PREFIX + (param("sha256") ? EXPECT : MODEL.revision).slice(0, 7);
 const seen = { kept: 0, fetched: 0 };
 
 const status = (text, progress) => postMessage({ type: "status", text, progress });
@@ -47,7 +53,7 @@ async function modelBytes() {
     bytes = all.buffer;
     seen.fetched++;
   }
-  if (hex(await crypto.subtle.digest("SHA-256", bytes)) !== MODEL.sha256) {
+  if (hex(await crypto.subtle.digest("SHA-256", bytes)) !== EXPECT) {
     if (store) await store.delete(MODEL_AT);
     throw new Error("the voice file does not match its SHA-256");
   }

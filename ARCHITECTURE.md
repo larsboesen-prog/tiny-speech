@@ -88,17 +88,19 @@ tiny-speech/
 
 ## 4. Sizes: today, and the target with what it depends on
 
+Measured from the files by `tools/sizes.mjs` (`docs/sizes.md`, 19 Nov 2026; raw / brotli):
+
 | Part | Today | Target | Depends on |
 |---|---|---|---|
-| Voice | ONNX + Pyodide, ~45 MB (page's label) | plain JS, one 8 MB file | first-sound time and peak memory on the owner's iPhone and one cheap Android |
-| Spanish voice | the phone's Mexican voice, 0 MB | bilingual tiny-voca, expected under 10 MB | a training run (GPU) and a listening test |
-| Ears | Whisper tiny ~40 MB per language + onnxruntime 10–20 MB | (a) one multilingual tiny for both, if English holds up; (b) a tiny recognizer, 5–15 MB | (a) the recorded test set; (b) data, GPU and the gate in section 6 |
+| Voice | ONNX + onnxruntime + Pyodide: 63.2 / 29.6 MB | plain JS, one file: 8.0 / 7.5 MB | first-sound time and peak memory on the owner's iPhone and one cheap Android |
+| Spanish voice | the phone's Mexican voice, 0 MB | the bilingual tiny-voca file: 8.0 MB (the untrained one is 7,998,144 bytes) | the GPU run and its gates (section 7) |
+| Ears | transformers.js + onnxruntime 22.5 / 3.7 MB, and Whisper tiny 43.5 / 24.0 MB (English) or 43.6 / 26.7 MB (Spanish) | (a) one multilingual tiny for both, if English holds up; (b) a tiny recognizer, 5–15 MB | (a) the recorded test set; (b) data, GPU and the gate in section 6 |
 | Language | chosen once | two-way decision, 0 MB | — |
-| Interpreter + language packs | 40 KB gzipped | under 100 KB gzipped | — |
-| City pack | 15 KB gzipped for 96 places | 300 gzipped bytes a place | section 5 |
+| Interpreter, language packs, configs, tiny-voca's runtime | 467 KB raw / 143 KB brotli | under 200 KB brotli | — |
+| City pack | San Miguel, 100 places: 74.8 / 15.7 KB | 300 gzipped bytes a place | section 5 |
 
-Near term, with no research: today's MapSMA English path is about 95–105 MB; the plain-JS voice brings it to
-about 60 MB. `tools/sizes.mjs` (B11) will generate this table from the built files.
+A first visit to MapSMA in English: **129.7 MB raw, 57.5 MB brotli today; 74.6 / 35.4 MB with the plain-JS voice**;
+Spanish questions add the second Whisper (118.2 / 62.1 MB with both). Once stored on the phone, nothing is downloaded again.
 
 ## 5. Cities (D6)
 
@@ -224,11 +226,11 @@ From the review (section 4). B0 → B3 in order; the rest in any order after B3.
 | B6 | Language packs and the language decision (numbers and clock both ways; names masked) | table tests; text-only language accuracy on B0's questions | done: `lang/`, `core/lang-decide.js`; 419/419 labelled questions right with names masked (415 without) |
 | B7 | Spanish spelling → sounds for sentences (from `spanish.js`) | name outputs unchanged; every template sentence valid for the phoneset | done: `lang/es/sounds.js`; names identical to MapSMA's; every Spanish answer sentence (5,862 words) in valid sounds |
 | B8 | Music facet | "live jazz tonight" / "¿dónde hay trova el jueves?" answered from test slots | done: `domains/music/`, `music.json` in the pack's live file; 9 tests; San Miguel has four venues added and three with nights from listings (D8) |
-| B9 | Config instead of the `SITES` table; hint builder with a token budget; `AsrEngine` result shape | the 19 parity tests still pass | |
+| B9 | Config instead of the `SITES` table; hint builder with a token budget; `AsrEngine` result shape | the 19 parity tests still pass | done: `apps/*.json` and `core/config.js` give the workers their cache names (no site table); `core/pack/hint.js` packs names within the budget, counted with Whisper's tokenizer (/page5's hint: 214); `engines/asr-whisper.js` returns one result shape; parity 7/7 |
 | B10 | Plain-JS voice worker behind `VoiceEngine` | same messages as the ONNX worker; real-file test when the GGUF is present | done: `engines/tinyvoca-js.js`, `browser/tinyvoca-js-worker.js`; English 100% in the live round trip, Spanish 11–55% (needs training), 3–4 × real time here |
-| B11 | `tools/sizes.mjs`; check page shows pack load and first-sound time | size table generated | |
-| B12 | News, small (search titles, read, next, stop, hand-off) | works on `feed.xml`; "latest" says the feed has no dates | |
-| B13 | Self-hosting manifest; no request leaves the origin or carries audio | Playwright | |
+| B11 | `tools/sizes.mjs`; check page shows pack load and first-sound time | size table generated | done: `tools/sizes.mjs` → `docs/sizes.md` (MapSMA English 129.7 MB raw / 57.5 MB brotli; plain-JS voice path 74.6 / 35.4 MB); check page shows pack load, first sound and memory |
+| B12 | News, small (search titles, read, next, stop, hand-off) | works on `feed.xml`; "latest" says the feed has no dates | done: `domains/news/` on `feed.xml` (71 stories): search, read, next, stop, hand-off; "latest" says the feed has no dates |
+| B13 | Self-hosting manifest; no request leaves the origin or carries audio | Playwright | done: `browser/engines.json` lists 33 engine files (180.9 MB) with SHA-256; `tools/manifest.mjs --fetch` (Whisper pinned to the revisions recorded); workers take `?engines=`; Playwright with a proxy trap shows no request leaves and none carries a body |
 
 **Waits on others:** phone measurements (the owner's iPhone, one Android); the recorded question set (speakers,
 phones, real places); the bilingual voice (GPU, a Mexican teacher voice, a listening test); the ears (data, GPU, the

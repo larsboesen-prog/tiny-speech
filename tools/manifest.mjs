@@ -93,11 +93,19 @@ async function record(dizione) {
   console.log(`${list.length} engine files, ${(list.reduce((s, f) => s + f.bytes, 0) / 1e6).toFixed(1)} MB → browser/engines.json`);
 }
 
+// The libraries ask Hugging Face for "main"; the copies are downloaded from the revision that was main when the manifest was
+// recorded (19 Nov 2026), so a later change upstream cannot stop --fetch. The site still serves them at the path asked for.
+export const REVISIONS = {
+  "onnx-community/whisper-tiny.en": "794207fec2761281fe63a23a94b7e9f53a4efbc1",
+  "onnx-community/whisper-tiny": "ff4177021cc41f7db950912b73ea4fdf7d01d8e7",
+};
+export const pinned = (url) => url.replace(/^(https:\/\/huggingface\.co\/)([^/]+\/[^/]+)\/resolve\/main\//, (m, host, repo) => (REVISIONS[repo] ? `${host}${repo}/resolve/${REVISIONS[repo]}/` : m));
+
 async function fetchAll(dir) {
   for (const f of engines().files) {
     const file = join(dir, f.path);
     if (existsSync(file) && sha(readFileSync(file)) === f.sha256) continue;
-    const r = await fetch(f.url);
+    const r = await fetch(pinned(f.url));
     if (!r.ok) throw new Error(`${f.url}: ${r.status}`);
     const bytes = Buffer.from(await r.arrayBuffer());
     if (sha(bytes) !== f.sha256) throw new Error(`${f.url}: SHA-256 differs from the manifest (the file changed at its host)`);

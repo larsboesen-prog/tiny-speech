@@ -41,7 +41,7 @@ export function appForHost(index, hostname) {
  * A worker's address with the site's settings in it: which = "asr" | "voice" (ONNX + Pyodide) | "voiceJs" (plain JS).
  * base: the folder the workers are served from ("" = beside the page); v: the version, for the browser's cache.
  */
-export function workerUrl(config, which, { base = "", v = "", dizione = null, model = null } = {}) {
+export function workerUrl(config, which, { base = "", v = "", dizione = null, model = null, sha256 = null } = {}) {
   const c = appConfig(config);
   const q = new URLSearchParams();
   if (v) q.set("v", v);
@@ -59,10 +59,11 @@ export function workerUrl(config, which, { base = "", v = "", dizione = null, mo
     return `${base}tinyvoca-worker.js?${q}`;
   }
   if (which === "voiceJs") {
-    // the plain-JS voice worker still picks its cache by ?site= (it moves to ?cache= with the bilingual voice); both are sent
-    if (c.app) q.set("site", c.app);
+    // the plain-JS voice worker: its cache by ?cache=; a model other than the released one (the bilingual voice) with its SHA-256
     q.set("cache", c.caches.voiceJs);
     if (model) q.set("model", model);
+    if (model && sha256) q.set("sha256", sha256);
+    if (c.engines && !model) q.set("engines", c.engines);
     return `${base}tinyvoca-js-worker.js?${q}`;
   }
   throw new Error(`no worker called ${which}`);
