@@ -14,11 +14,15 @@ cannot fix that; the model has to learn Spanish.
 |---|---|---|
 | 1. Script: what the voice must say well | **done**: 3,580 Mexican Spanish + 1,396 English sentences, `training/script/` | $3.28 (OpenRouter) |
 | 2. Spanish sounds for training (`lang/es/ipa.js`) | **done**: 29 sounds of central-Mexico Spanish; all present in the script | — |
-| 3. General speech to go with the script | to do: Common Voice es (CC0) and the upstream English transcripts; no generation needed | — |
-| 4. A teacher voice reads it, in one voice, both languages | to do: needs a GPU (or a recorded person) | GPU, see below |
-| 5. Screening and alignment | to do: needs a GPU | GPU |
-| 6. Fine-tune from the released checkpoint | to do: needs a GPU, about 3–5 hours on one RTX 4090 | about $5–10 |
-| 7. Export, run in the browser, gates | to do: here, once 6 exists | — |
+| 3. General speech to go with the script | **done**: `training/data/` (`tools/voice-data.mjs`): 2,000 Common Voice Spanish and 1,000 English sentences (CC0), 1,432 of tiny-voca's own English clips, 400 held out; every text already in the model's tokens | — |
+| 4. A teacher voice reads it, in one voice, both languages | **ready**: a real speaker (the owner's choice), recorded 20 Nov 2026 with `training/record/`; the teacher copies that voice (`training/gpu/teacher.py`) | GPU |
+| 5. Screening and alignment | **ready**: `training/gpu/` (Whisper, upstream's aligner) | GPU |
+| 6. Fine-tune from the released checkpoint | **ready**: `training/gpu/run.sh` (about 7–9 GPU hours in all, `training/gpu/README.md`) | about $5–12 |
+| 7. Export, run in the browser, gates | **ready**: `tools/voice-gguf.mjs pack`, the page reads the bilingual file (`engines/bilingual.js`), `gates.py` and `tools/voice-gates.mjs` | — |
+
+Checked before any GPU time: the GGUF tool rebuilds the released plain-JS file byte for byte; an untrained bilingual file
+(`node tools/voice-gguf.mjs init`) speaks English with exactly the released model's samples and runs Spanish through the new
+tokens; the English tokens made here equal tiny-voca's own for all 1,432 of its English clips (`test/voice-bilingual.test.mjs`).
 
 OpenRouter sells model calls, not GPU time: steps 1–2 used it (the script, written by Claude Sonnet 5.5 and checked by rules);
 steps 4–6 need a rented GPU. Upstream tiny-voca's whole project cost $9.56 on one RTX 4090 at about $1.24 an hour.
@@ -62,8 +66,9 @@ Domain sentences alone teach a narrow voice. Add, read by the same teacher voice
 ## 4. The teacher voice (needs a GPU)
 
 One speaker who sounds Mexican in Spanish and natural in English. In order of preference:
-1. **A real person, with consent:** 30–60 minutes of the owner's chosen speaker reading part of the script in both languages,
-   then Qwen3-TTS (Apache-2.0, upstream's teacher) cloning that voice for the rest. Best accent; needs a recording session.
+1. **A real person, with consent (chosen):** 30–60 minutes of the owner's chosen speaker reading part of the script in both
+   languages (`training/record/`: 500 sentences in order of usefulness, a recording page, a consent form), then Qwen3-TTS
+   (Apache-2.0, upstream's teacher) copying that voice for the rest. The recordings are also trained on directly.
 2. **A designed voice:** Qwen3-TTS VoiceDesign from a description ("a warm voice from central Mexico, about 35, bilingual"), then
    Qwen3-TTS Base reading everything from that one reference clip, as upstream did.
 Not used: voices whose terms forbid training other models on their output (for example OpenAI's audio models on OpenRouter);
@@ -78,8 +83,10 @@ Piper's es_MX voices speak one language each.
 
 ## 6. Fine-tuning (needs a GPU)
 
-From the released checkpoint (upstream `src/tiny_voca`): `vocab_size` 76 → 86; new token rows copied from the rows in the table
-above; a new speaker row (`MX1`) from M2 or F2; train on the new voice's English and Spanish together, with some of the original
+From the released checkpoint (upstream `src/tiny_voca`): `vocab_size` 76 → 87 (ten sounds and `<es>`); each new token row the
+mean of its nearest English rows (`engines/bilingual.js` INIT); a new speaker row (`MX1`) from M2 or F2. The released file
+holds only the inference weights, so `training/gpu/init_checkpoint.py` builds the checkpoint upstream's `--init-from --new-data`
+accepts (fresh critics, which start at step 4,000); train on the new voice's English and Spanish together, with some of the original
 F2/M2 English so English does not drift. Upstream's settings otherwise (`--gan-start`, `--gan-ratio`), for about 30–40k steps:
 3–5 hours on one RTX 4090.
 

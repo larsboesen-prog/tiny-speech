@@ -2,12 +2,15 @@
 // English goes through tiny-voca's own phonemizer (dizione), with the city's Spanish names taught as overrides, as MapSMA does.
 // Spanish goes through lang/es/sounds.js straight to the model's phones: whole sentences, not only names. Until the voice is
 // trained on Spanish (step 5) it speaks Spanish with an American accent; which language it speaks is the page's choice (review 1.4).
+// A bilingual file (tools/voice-gguf.mjs; its vocabulary in engines/bilingual.js) reads Spanish in Mexican Spanish's own sounds
+// after an <es> token instead, and its own speaker MX1 is the default voice.
 import { readGGUF, TinyVoca } from "../vendor/tiny-voca/js/tiny-voca.js";
 import { fromGGUF } from "../vendor/tiny-voca/js/dizione/engine.js";
 import { tokenize } from "../vendor/tiny-voca/js/dizione/symbols.js";
 import { fromText } from "../vendor/tiny-voca/js/dizione/convert.js";
 import { utterancesOf } from "../vendor/tiny-voca/js/text.js";
 import { sentencePhones } from "../lang/es/sounds.js";
+import { isBilingual, spanishTokens, englishTokens, VOWELS as BI_VOWELS, PAUSES as BI_PAUSES, SPEAKER } from "./bilingual.js";
 
 export const MODEL = {
   revision: "1e73262226dbf4ef02e9df277e81aaa1db5ce16c",
@@ -48,6 +51,14 @@ export async function createVoice(buffer, { spanish = {} } = {}) {
   const file = readGGUF(buffer);
   const voca = new TinyVoca(file);
   const phonemizer = await fromGGUF(file);
+  // The bilingual voice (training/RECIPE.md): Mexican Spanish in its own sounds and the <es> token; the runtime's vowel and pause
+  // lists know only English's, so they are set here from the vocabulary (no change to the vendored file).
+  const vocab = JSON.parse(new TextDecoder().decode(file.files["config.json"])).vocab;
+  const bilingual = isBilingual(vocab);
+  if (bilingual) {
+    voca.isVowel = voca.symbols.map((s) => BI_VOWELS.has(s));
+    voca.isPause = voca.symbols.map((s) => BI_PAUSES.has(s));
+  }
   const limit = voca.config.max_tokens - 12;
   let city = { english: [], readings: {}, names: [], ...spanish };
 
@@ -65,8 +76,19 @@ export async function createVoice(buffer, { spanish = {} } = {}) {
     return utterances(text, lang).map((u) => u.phonemes).join(" | ");
   }
 
+  // An English word inside a Spanish sentence (a place's name), in the English phonemizer's phones.
+  const englishWord = (word) => { const t = englishTokens(phonemizer, word); return t.symbols.map((s, i) => [s, t.stress[i]]).filter(([s]) => !/^<|^[.,;:!?…—"'()]$/.test(s)); };
+
   // One Spanish sentence → {ids, stress, phonemes}, or several if it is longer than the model takes.
   function spanishUtterance(sentence) {
+    if (bilingual) {
+      const r = spanishTokens(sentence, { english: englishWord, city });
+      if (r.ids.length <= limit) return [{ ids: r.ids, stress: r.stress, phonemes: r.symbols.map((s, i) => (r.stress[i] ? "ˈ" : "") + s).slice(1, -1).join(" ") }];
+      const halves = sentence.split(/(?<=[,;:—])\s+/);
+      if (halves.length > 1) return halves.flatMap((h) => spanishUtterance(/[.!?…,;:]$/.test(h) ? h : h + ","));
+      const w = sentence.split(" "), k = Math.ceil(w.length / 2);
+      return w.length < 2 ? [] : [...spanishUtterance(w.slice(0, k).join(" ") + ","), ...spanishUtterance(w.slice(k).join(" "))];
+    }
     const { pieces } = sentencePhones(sentence, city);
     const out = [];  // dizione's pieces: [true, mark] or [false, [word phones, ...]]
     let words = [];
@@ -98,13 +120,13 @@ export async function createVoice(buffer, { spanish = {} } = {}) {
   }
 
   /** One utterance → its audio (Float32Array at sampleRate), clean for playing. pitch: -0.6 … 0.3 (M2: -0.3 ≈ 140 Hz). */
-  function synthesize(u, { voice = "M2", speed = 1, pitch = 0, seed = 0 } = {}) {
+  function synthesize(u, { voice = bilingual ? SPEAKER : "M2", speed = 1, pitch = 0, seed = 0 } = {}) {
     const { audio } = voca.synthesize(u.ids, u.stress, { voice, speed, pitchShift: Math.max(-0.6, Math.min(0.3, Number(pitch) || 0)), seed });
     return limitPeak(Float32Array.from(audio), voca.config.sample_rate);
   }
 
   return {
-    voices: voca.voices, sampleRate: voca.config.sample_rate, limit,
+    voices: voca.voices, sampleRate: voca.config.sample_rate, limit, bilingual,
     setCity: (s) => { city = { english: [], readings: {}, names: [], ...s }; },
     teach, phones, utterances, synthesize,
     /** A whole text → [{audio, phonemes}], one per utterance. */
