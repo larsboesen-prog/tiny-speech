@@ -101,3 +101,12 @@
 {"at":"2026-11-19T04:32:35.080Z","model":"anthropic/claude-sonnet-5.5","purpose":"script en replies","prompt":162,"completion":2063,"cost":0.020954}
 {"at":"2026-11-19T04:32:41.219Z","model":"anthropic/claude-sonnet-5.5","purpose":"script en news","prompt":169,"completion":3971,"cost":0.040048}
 {"at":"2026-11-19T04:32:43.107Z","model":"anthropic/claude-sonnet-5.5","purpose":"script en replies","prompt":165,"completion":3283,"cost":0.03316}
+{"at":"2026-11-19T04:36:37.455Z","model":"anthropic/claude-sonnet-5.5","purpose":"tests misheard names","prompt":441,"completion":2350,"cost":0.024382}
+{"at":"2026-11-19T04:36:55.849Z","model":"anthropic/claude-sonnet-5.5","purpose":"tests misheard names","prompt":426,"completion":3129,"cost":0.032142}
+{"at":"2026-11-19T04:37:16.383Z","model":"anthropic/claude-sonnet-5.5","purpose":"tests misheard names","prompt":471,"completion":3575,"cost":0.036692}
+{"at":"2026-11-19T04:37:38.784Z","model":"anthropic/claude-sonnet-5.5","purpose":"tests misheard names","prompt":480,"completion":3863,"cost":0.03959}
+{"at":"2026-11-19T04:38:08.786Z","model":"anthropic/claude-sonnet-5.5","purpose":"tests questions en","prompt":233,"completion":3848,"cost":0.038946}
+{"at":"2026-11-19T04:38:40.673Z","model":"anthropic/claude-sonnet-5.5","purpose":"tests questions en","prompt":233,"completion":4168,"cost":0.042146}
+{"at":"2026-11-19T04:39:24.154Z","model":"anthropic/claude-sonnet-5.5","purpose":"tests questions es","prompt":262,"completion":6370,"cost":0.064224}
+{"at":"2026-11-19T04:40:04.985Z","model":"anthropic/claude-sonnet-5.5","purpose":"tests questions es","prompt":262,"completion":4970,"cost":0.050224}
+{"at":"2026-11-19T04:40:37.656Z","model":"anthropic/claude-sonnet-5.5","purpose":"tests questions mixed","prompt":244,"completion":3527,"cost":0.035758}
