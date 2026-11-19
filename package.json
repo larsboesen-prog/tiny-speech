@@ -1,6 +1,6 @@
 {
   "name": "tiny-speech",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Bilingual (English / Mexican Spanish) on-device voice core shared by MapSMA and CredBrief. Voice by tiny-voca (github.com/n4ze3m/tiny-voca).",
   "type": "module",

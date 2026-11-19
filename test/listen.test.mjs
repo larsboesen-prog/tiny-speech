@@ -25,8 +25,17 @@ function blocks(pieces, rate = RATE) {
 const feedAll = (d, list) => list.map((b) => d.feed(b));
 
 test("the settings are the ones both sites used", () => {
-  assert.equal(CORE, "tiny-speech 0.1.0");
+  assert.equal(CORE, "tiny-speech 0.3.0");
   assert.deepEqual([REC_MAX_MS, END_SILENCE_MS, MIN_SPEECH_MS, LEAD_MS, TAIL_MS], [5000, 700, 250, 250, 300]);
+});
+
+test("a site's own limits (its config) change when a question ends and how much is kept", () => {
+  const list = blocks([[0.5, 0], [1.0, 0.2], [1.5, 0]]);
+  const ends = (limits) => feedAll(detector(RATE, limits), list).indexOf("end");
+  assert.ok(ends({ END_SILENCE_MS: 1200 }) > ends({}), "a longer pause before the end");
+  const d = detector(RATE, { LEAD_MS: 0, TAIL_MS: 0 });
+  feedAll(d, list);
+  assert.ok(speechAt16k(d).length < speechAt16k(d, {}).length, "no lead or tail");
 });
 
 test("speech starts on the second loud block and ends after 0.7 s of quiet", () => {

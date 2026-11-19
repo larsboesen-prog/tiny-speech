@@ -1,4 +1,4 @@
-// tiny-speech shared core v0.1.0 (browser/asr-worker.js): speech to text for MapSMA /page5 and CredBrief /page40. Until 19 Nov 2026
+// tiny-speech shared core v0.3.0 (browser/asr-worker.js): speech to text for MapSMA /page5 and CredBrief /page40. Until 19 Nov 2026
 // each site had its own copy (built and tested on /page40, then copied to /page5, which added the name hint and the language). This
 // one file replaces both: /page40 sends neither a hint nor a language and gets what it got before; /page5 sends both.
 //
@@ -6,25 +6,19 @@
 // button responsive while the reader speaks (Lars, 16 Nov 2026: "the mouse cursor stalls ... blocks my ability to end question" when
 // this ran on the main thread).
 //
-// Address: asr-worker.js?v=…&site=mapsma|credbrief (a module worker).
-// Messages in: {type: "load", model} and {type: "transcribe", reqId, model, audio (16 kHz Float32Array), hint (place names), language ("es": multilingual Whisper only)}.
+// Address: asr-worker.js?v=…&libs=<cache name for engine files> (a module worker), made by core/config.js workerUrl from the
+// site's config (apps/*.json): each site keeps the cache name it had before the shared core, so a visitor's stored engine files
+// are found again. Without ?libs= (a test copy) the cache gets a name of its own. No site or host names here (plan step B9).
+// Messages in: {type: "load", model} and {type: "transcribe", reqId, model, audio (16 kHz Float32Array), language ("es": multilingual
+// Whisper only), hint (names, as text) or hintNames (names in order of need) with hintBudget (tokens)}.
 // Messages out: progress {id, frac}, ready {id, core}, warm {id, ms}, error {id, message}, text {reqId, text | error, waitMs, runMs}.
 
 import { env, pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 
-const CORE = "tiny-speech 0.1.0";
+const CORE = "tiny-speech 0.3.0";
 
-// The site this worker runs for. Each keeps the cache names it had before the shared core (19 Nov 2026), so its visitors' stored
-// engine files and voice are found again and nothing is downloaded twice. From the worker's address (?site=mapsma | credbrief),
-// else the host name; anywhere else (a test copy) the caches get names of their own.
-const SITES = {
-  mapsma: { libs: "mapsma-voice-libs-1", voice: "mapsma-tinyvoca-" },
-  credbrief: { libs: "credbrief-page40-libs-1", voice: "credbrief-tinyvoca-" },
-};
 const HERE = new URL(self.location.href);
-const SITE_NAME = HERE.searchParams.get("site")
-  || (/(^|\.)mapsma\.com$/.test(HERE.hostname) ? "mapsma" : /(^|\.)credbrief\.com$/.test(HERE.hostname) ? "credbrief" : "");
-const SITE = SITES[SITE_NAME] || { libs: "tiny-speech-libs-1", voice: "tiny-speech-tinyvoca-" };
+const SITE = { libs: HERE.searchParams.get("libs") || "tiny-speech-libs-1" };
 
 // One core: a 3-second question takes about 0.3 s on one thread (measured 16 Nov), and the rest of the machine stays free.
 env.backends.onnx.wasm.numThreads = 1;
@@ -144,6 +138,21 @@ function hintFor(model, id, text, language) {
   hint = { id, text, language, init: [sop, ...ids, sot, ...langTokens(model, id, language), ...(nts != null ? [nts] : [])], prefix: tok.decode(ids, { skip_special_tokens: true }).trim() };
   return hint;
 }
+// Names in order of need (core/pack/hint.js hintNames: the hardest to hear first) packed into the budget with this model's own
+// tokenizer, so the count is exact: a name that does not fit is left out, and a shorter one after it may still go in. The same
+// rule as fitHint in core/pack/hint.js, which the build report uses with the same tokenizer.
+let fitted = null;  // {key, text}
+function fitNames(model, id, names, budget) {
+  if (!Array.isArray(names) || !names.length || !/whisper/i.test(id)) return "";
+  const limit = Math.min(HINT_TOKENS, Number.isFinite(budget) ? budget : HINT_TOKENS);
+  const key = `${id}|${limit}|${names.join("\u0001")}`;
+  if (fitted && fitted.key === key) return fitted.text;
+  const count = (list) => model.tokenizer.encode(" " + list.join(", ") + ".", { add_special_tokens: false }).length;
+  const used = [];
+  for (const name of names) if (count([...used, name]) <= limit) used.push(name);
+  fitted = { key, text: used.length ? used.join(", ") + "." : "" };
+  return fitted.text;
+}
 function withoutHint(text, h) {
   const t = String(text || "").trim();
   if (!h) return t;
@@ -162,7 +171,10 @@ onmessage = async ({ data }) => {
       const model = await load(data.model);
       let began = 0;  // for the page's timing window: waiting for the model (and its warm-up) vs turning speech into text
       let h = null;
-      try { h = hintFor(model, data.model, data.hint, data.language); } catch (error) { h = null; }  // a hint that cannot be built: plain Whisper
+      try {
+        const text = data.hint || fitNames(model, data.model, data.hintNames, data.hintBudget);
+        h = hintFor(model, data.model, text, data.language);
+      } catch (error) { h = null; }  // a hint that cannot be built: plain Whisper
       const lang = !h && data.language && multilingual(data.model) ? { language: data.language, task: "transcribe" } : {};
       const opts = { ...genOpts(data.model, data.audio.length), ...(h ? { decoder_input_ids: h.init } : lang) };
       const out = await serial(() => { began = performance.now(); return model(data.audio, opts); });

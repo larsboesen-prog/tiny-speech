@@ -1,0 +1,11 @@
+{
+  "app": "credbrief",
+  "about": "CredBrief /page40: news questions, answered by CredBrief's server as text",
+  "hosts": ["credbrief.com"],
+  "domains": ["news"],
+  "langs": ["en"],
+  "caches": { "libs": "credbrief-page40-libs-1", "voice": "credbrief-tinyvoca-", "voiceJs": "credbrief-tinyvoca-js-", "packs": "credbrief" },
+  "voice": { "dizione": "/page40/tinyvoca/dizione.zip" },
+  "asr": { "models": { "en": "onnx-community/whisper-tiny.en" }, "hintBudget": 0 },
+  "limits": { "recMaxMs": 5000 }
+}

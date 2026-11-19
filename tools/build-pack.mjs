@@ -44,6 +44,7 @@ export function build(src, { date }) {
     schema: SCHEMA, id: city.id, version, built: date, core: CORE_RANGE,
     names: city.names, say: city.say, tz: city.tz, country: city.country, currency: city.currency, langs: city.langs, variety: city.variety,
     centre: city.centre, bbox: city.bbox, farM: city.farM, walkMPerMin: city.walkMPerMin, meals: city.meals, kinds: city.kinds, text: city.text,
+    ...(city.hint?.lead ? { hint: { lead: city.hint.lead } } : {}),  // the recognizer's first names (core/pack/hint.js)
     files: {
       base: { path: "base.json", bytes: sizes.base.bytes, sha256: sha(base) },
       live: { path: `../${liveName}`, bytes: sizes.live.bytes, sha256: sha(live) },

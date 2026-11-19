@@ -49,13 +49,13 @@ after(async () => { await browser?.close(); web?.server.close(); });
 
 test("the page names the core and the site", { skip }, async () => {
   await page.waitForFunction(() => window.tinySpeechCheck);
-  assert.match(await page.textContent("#about"), /tiny-speech 0\.1\.0 · site: mapsma · voice: tiny-voca ONNX \+ Pyodide, dizione: \/page5\/tinyvoca\/dizione\.zip/);
+  assert.match(await page.textContent("#about"), /tiny-speech 0\.3\.0 · site: mapsma · voice: tiny-voca ONNX \+ Pyodide, dizione: \/page5\/tinyvoca\/dizione\.zip/);
 });
 
 test("both workers load, and the voice is taught the names", { skip }, async () => {
   await page.click("#loadAsr");
   await page.waitForSelector("#heard .ok");
-  assert.match(await page.textContent("#heard"), /Ready: onnx-community\/whisper-tiny\.en \(tiny-speech 0\.1\.0/);
+  assert.match(await page.textContent("#heard"), /Ready: onnx-community\/whisper-tiny\.en \(tiny-speech 0\.3\.0/);
   await page.click("#teachBtn");
   await page.click("#loadVoice");
   await page.waitForFunction(() => /Voice ready|Taught/.test(document.querySelector("#spoken").textContent));

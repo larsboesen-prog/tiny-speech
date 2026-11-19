@@ -1,4 +1,4 @@
-// tiny-speech shared core v0.1.0 (browser/tinyvoca-worker.js): tiny-voca text to speech for MapSMA /page5 and CredBrief /page40, run
+// tiny-speech shared core v0.3.0 (browser/tinyvoca-worker.js): tiny-voca text to speech for MapSMA /page5 and CredBrief /page40, run
 // off the page's main thread. Until 19 Nov 2026 each site had its own copy (built and tested on /page40, then copied to /page5, which
 // added "teach" for the Spanish names and "phones"). This one file replaces both: /page40 sends neither and gets what it got before.
 //
@@ -7,25 +7,19 @@
 // cannot change this page; the dizione phonemizer (https://github.com/n4ze3m/dizione, commit 8cd889e, Apache-2.0) is served by
 // each site (tinyvoca/dizione.zip beside this worker, or the address in ?dizione=); cache keys carry those revisions.
 //
-// Address: tinyvoca-worker.js?v=…&site=mapsma|credbrief&dizione=/page5/tinyvoca/dizione.zip (a classic worker).
+// Address: tinyvoca-worker.js?v=…&libs=<cache for engine files>&voice=<cache prefix for the voice>&dizione=/page5/tinyvoca/dizione.zip
+// (a classic worker), made by core/config.js workerUrl from the site's config (apps/*.json). Each site keeps the cache names it had
+// before the shared core, so its visitors' stored engine files and voice are found again and nothing is downloaded twice; without
+// them (a test copy) the caches get names of their own. No site or host names here (plan step B9).
 // Messages in: {type: "load"}, {type: "speak", id, text | sentences, base, voice, speed, pitch, open}, {type: "more", id, sentences, last},
 // {type: "teach", words} (MapSMA's Spanish names), {type: "phones", id, text} (for testing) and {type: "stop"}. With "sentences" (the page's
 // own split of an answer) each piece of audio carries index = base + its place in that list, so the page can show which sentence is read.
 // Messages out: status, ready {voices, sampleRate, core, ...}, sentence (its audio, as soon as it is made), done, taught, phones, error.
 
-const CORE = "tiny-speech 0.1.0";
+const CORE = "tiny-speech 0.3.0";
 
-// The site this worker runs for. Each keeps the cache names it had before the shared core (19 Nov 2026), so its visitors' stored
-// engine files and voice are found again and nothing is downloaded twice. From the worker's address (?site=mapsma | credbrief),
-// else the host name; anywhere else (a test copy) the caches get names of their own.
-const SITES = {
-  mapsma: { libs: "mapsma-voice-libs-1", voice: "mapsma-tinyvoca-" },
-  credbrief: { libs: "credbrief-page40-libs-1", voice: "credbrief-tinyvoca-" },
-};
 const HERE = new URL(self.location.href);
-const SITE_NAME = HERE.searchParams.get("site")
-  || (/(^|\.)mapsma\.com$/.test(HERE.hostname) ? "mapsma" : /(^|\.)credbrief\.com$/.test(HERE.hostname) ? "credbrief" : "");
-const SITE = SITES[SITE_NAME] || { libs: "tiny-speech-libs-1", voice: "tiny-speech-tinyvoca-" };
+const SITE = { libs: HERE.searchParams.get("libs") || "tiny-speech-libs-1", voice: HERE.searchParams.get("voice") || "tiny-speech-tinyvoca-" };
 
 const PYODIDE = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
 // onnxruntime-web 1.18.0, not newer: from 1.19 every build is the multi-thread one, which reserves a 4 GB shared memory block even on

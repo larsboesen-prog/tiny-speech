@@ -1,20 +1,30 @@
 // tiny-speech check page: tries the shared core's files on a phone or a computer before a site switches to them.
 // It uses the files exactly as a page does: listen.js and pcm-worklet.js for the microphone, asr-worker.js for speech to text,
-// tinyvoca-worker.js for the voice. Put next to them (e.g. mapsma.com/tiny-speech/check.html) it uses that site's cache names,
-// so what it loads is what the site's page finds later. ?site= and ?dizione= override the defaults.
-import { CORE, detector, speechAt16k, to16k } from "./listen.js?v=0.1.0";
+// tinyvoca-worker.js for the voice. Put next to them (e.g. mapsma.com/tiny-speech/browser/check.html) it uses that site's config
+// (apps/index.json by host name; plan step B9), so what it loads is what the site's page finds later. ?app= (or ?site=) picks a
+// config by name; ?dizione= overrides where the phonemizer comes from.
+import { CORE, detector, speechAt16k, to16k } from "./listen.js?v=0.3.0";
+import { appConfig, appForHost, workerUrl, limitsOf } from "../core/config.js";
 
-const V = "0.1.0";
+const V = "0.3.0";
 const params = new URLSearchParams(location.search);
-const HOST_SITE = /(^|\.)mapsma\.com$/.test(location.hostname) ? "mapsma" : /(^|\.)credbrief\.com$/.test(location.hostname) ? "credbrief" : "";
-const SITE = params.get("site") ?? HOST_SITE;
-const DIZIONE = params.get("dizione") ?? ({ mapsma: "/page5/tinyvoca/dizione.zip", credbrief: "/page40/tinyvoca/dizione.zip" }[SITE] || "");
-const ASR_URL = `asr-worker.js?v=${V}&site=${encodeURIComponent(SITE)}`;
+async function siteConfig() {
+  const name = params.get("app") || params.get("site");
+  try {
+    const index = await (await fetch("../apps/index.json", { cache: "no-cache" })).json();
+    const entry = name ? index.apps.find((a) => a.app === name) : appForHost(index, location.hostname);
+    if (entry) return appConfig(await (await fetch(`../apps/${entry.config}`, { cache: "no-cache" })).json());
+  } catch { /* no app list here: test cache names */ }
+  return appConfig({});
+}
+const CONFIG = await siteConfig();
+const SITE = CONFIG.app;
+const LIMITS = limitsOf(CONFIG);
+const DIZIONE = params.get("dizione") ?? CONFIG.voice.dizione;
+const ASR_URL = workerUrl(CONFIG, "asr", { v: V });
 // ?voice=js: tiny-voca in plain JavaScript (one 8 MB file; Spanish sentences in Spanish sounds); else the ONNX + Pyodide worker the sites use.
 const VOICE_JS = params.get("voice") === "js";
-const VOICE_URL = VOICE_JS
-  ? `tinyvoca-js-worker.js?v=${V}&site=${encodeURIComponent(SITE)}${params.get("model") ? "&model=" + encodeURIComponent(params.get("model")) : ""}`
-  : `tinyvoca-worker.js?v=${V}&site=${encodeURIComponent(SITE)}${DIZIONE ? "&dizione=" + encodeURIComponent(DIZIONE) : ""}`;
+const VOICE_URL = VOICE_JS ? workerUrl(CONFIG, "voiceJs", { v: V, model: params.get("model") }) : workerUrl(CONFIG, "voice", { v: V, dizione: DIZIONE });
 
 const $ = (id) => document.getElementById(id);
 const t0 = performance.now();
@@ -88,7 +98,7 @@ async function startRec() {
   let stream;
   try { stream = await getMic(); } catch (err) { ctx.close().catch(() => {}); show("heard", `<span class="bad">No microphone: ${esc(err.name || "")} ${esc(err.message || err)}</span>`); log("mic error", String(err)); return; }
   stream.getAudioTracks().forEach((t) => { t.enabled = true; });
-  const r = { ctx, d: detector(ctx.sampleRate), began: 0, tick: 0, src: null, node: null, mute: null, via: "" };
+  const r = { ctx, d: detector(ctx.sampleRate, LIMITS), began: 0, tick: 0, src: null, node: null, mute: null, via: "" };
   try {
     if (ctx.state === "suspended") await ctx.resume();
     r.src = ctx.createMediaStreamSource(stream);
@@ -303,4 +313,7 @@ $("cacheList").onclick = listCaches;
 $("model").onchange = () => { if (asrLoaded) loadAsr(); };
 
 // For automated checks (and the console): the same steps the buttons take.
-window.tinySpeechCheck = { CORE, SITE, DIZIONE, loadAsr, loadVoice, teach, speak, transcribeAudio, roundTrip, listCaches };
+// The longest question: the site's own limit (config), unless chosen above.
+if ([...$("maxRec").options].some((o) => Number(o.value) === LIMITS.REC_MAX_MS)) $("maxRec").value = String(LIMITS.REC_MAX_MS);
+
+window.tinySpeechCheck = { CORE, SITE, CONFIG, ASR_URL, VOICE_URL, DIZIONE, loadAsr, loadVoice, teach, speak, transcribeAudio, roundTrip, listCaches };

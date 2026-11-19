@@ -2,18 +2,24 @@
 // test/fixtures/before/) and the shared one through the same messages, in a fresh browser profile, with stand-in libraries
 // (harness/fakes.mjs), and compares: every message posted back, every call into the libraries, and the Cache Storage it leaves
 // (names and keys: what a visitor keeps between visits). Run: npm test   (needs Playwright's Chromium)
+// Since plan step B9 the shared workers take their cache names from the site's config (apps/*.json, through core/config.js
+// workerUrl), not from a table of sites inside them: the addresses below are built exactly as a site's page builds them.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
 import { startServer } from "./harness/server.mjs";
 import { installFakes } from "./harness/fakes.mjs";
+import { workerUrl } from "../core/config.js";
 
 const require = createRequire(import.meta.url);
 let chromium = null;
 try { ({ chromium } = require("playwright")); } catch { /* not installed: the tests are skipped */ }
 const skip = chromium ? false : "Playwright is not installed";
 
-const CORE = "tiny-speech 0.1.0";
+const CORE = "tiny-speech 0.3.0";
+const APPS = Object.fromEntries(["mapsma", "credbrief"].map((a) => [a, JSON.parse(readFileSync(new URL(`../apps/${a}.json`, import.meta.url), "utf8"))]));
+const fromConfig = (app, which, v = "1") => workerUrl(APPS[app], which, { base: "/tiny-speech/", v });
 const TIMING = new Set(["ms", "waitMs", "runMs", "totalTime", "parts"]);
 
 let web, browser;
@@ -110,14 +116,14 @@ const VOICE_PAGE5 = [
 ];
 
 test("speech to text: CredBrief /page40 gets exactly what it got before", { skip }, async () => {
-  const { shared } = await same("/page40/asr-worker.js?v=1", "/tiny-speech/asr-worker.js?v=1&site=credbrief", { module: true, steps: ASR_PAGE40 });
+  const { shared } = await same("/page40/asr-worker.js?v=1", fromConfig("credbrief", "asr"), { module: true, steps: ASR_PAGE40 });
   const texts = shared.posted.filter((m) => m.type === "text");
   assert.equal(texts.length, 3);
   assert.ok(texts[2].error, "a model that cannot load gives an error, as before");
 });
 
 test("speech to text: MapSMA /page5 keeps the name hint and the Spanish language", { skip }, async () => {
-  const { shared } = await same("/page5/asr-worker.js?v=1", "/tiny-speech/asr-worker.js?v=1&site=mapsma", { module: true, steps: ASR_PAGE5 });
+  const { shared } = await same("/page5/asr-worker.js?v=1", fromConfig("mapsma", "asr"), { module: true, steps: ASR_PAGE5 });
   const texts = shared.posted.filter((m) => m.type === "text").map((m) => m.text);
   assert.deepEqual(texts, ["what is open tonight 32000", "what is open tonight 16000", "what is open tonight 24000", "what is open tonight 16000"],
     "the names Whisper writes back are cut off");
@@ -127,14 +133,12 @@ test("speech to text: MapSMA /page5 keeps the name hint and the Spanish language
 });
 
 test("voice: CredBrief /page40 gets exactly what it got before", { skip }, async () => {
-  const { shared } = await same("/page40/tinyvoca-worker.js?v=1", "/tiny-speech/tinyvoca-worker.js?v=1&site=credbrief&dizione=/page40/tinyvoca/dizione.zip",
-    { steps: VOICE_PAGE40 });
+  const { shared } = await same("/page40/tinyvoca-worker.js?v=1", fromConfig("credbrief", "voice"), { steps: VOICE_PAGE40 });
   assert.ok(shared.posted.filter((m) => m.type === "sentence").length >= 4);
 });
 
 test("voice: MapSMA /page5 keeps teaching the Spanish names", { skip }, async () => {
-  const { shared } = await same("/page5/tinyvoca-worker.js?v=1", "/tiny-speech/tinyvoca-worker.js?v=1&site=mapsma&dizione=/page5/tinyvoca/dizione.zip",
-    { steps: VOICE_PAGE5 });
+  const { shared } = await same("/page5/tinyvoca-worker.js?v=1", fromConfig("mapsma", "voice"), { steps: VOICE_PAGE5 });
   assert.deepEqual(shared.posted.filter((m) => m.type === "taught").map((m) => m.words), [2, 1]);
   assert.equal(shared.posted.find((m) => m.type === "phones").text, "ph(La Azotea)");
 });
@@ -156,10 +160,7 @@ for (const [site, page] of [["mapsma", "page5"], ["credbrief", "page40"]]) {
       return { voiceNet: voice.network, asrNet: asr.network, zip, voiceSeen: [ready(voice).kept, ready(voice).fetched], asrSeen: [ready(asr).kept, ready(asr).fetched] };
     };
     const asBefore = await visit({ voice: `/${page}/tinyvoca-worker.js?v=2`, asr: `/${page}/asr-worker.js?v=2` });
-    const shared = await visit({
-      voice: `/tiny-speech/tinyvoca-worker.js?v=2&site=${site}&dizione=/${page}/tinyvoca/dizione.zip`,
-      asr: `/tiny-speech/asr-worker.js?v=2&site=${site}`,
-    });
+    const shared = await visit({ voice: fromConfig(site, "voice", "2"), asr: fromConfig(site, "asr", "2") });
     assert.deepEqual(shared, asBefore);
     assert.equal(shared.zip, 0, "dizione.zip comes from this device");
     assert.deepEqual(Object.keys(shared.voiceNet).filter((u) => !/\.js$/.test(u)), [`https://huggingface.co/n4ze3m/tiny-voca/resolve/d94d2a0338fd1e0eab7dd896ec0ad23d8cdf7c14/config.json`]);
@@ -167,8 +168,14 @@ for (const [site, page] of [["mapsma", "page5"], ["credbrief", "page40"]]) {
   });
 }
 
-// Without ?site=, the host name decides; anywhere else the caches get names of their own.
-test("without ?site=, the host name picks the site's cache names", { skip }, async () => {
+// The host name picks the site's config (apps/index.json, as the check page reads it), and the config the cache names; anywhere
+// else the caches get names of their own. The workers themselves name no site and no host (plan step B9).
+test("on each site's host, its config picks its cache names; the workers name no site", { skip }, async () => {
+  for (const file of ["asr-worker.js", "tinyvoca-worker.js"]) {
+    // the code without its comments (JavaScript's, and the Python comments in the phonemizer's script): history may name a site
+    const code = readFileSync(new URL(`../browser/${file}`, import.meta.url), "utf8").split("\n").map((l) => l.replace(/(^|\s)\/\/.*$/, "").replace(/^\s*#.*$/, "")).join("\n");
+    assert.doesNotMatch(code, /mapsma|credbrief/i, `${file} names a site`);
+  }
   const hosts = ["mapsma.com", "credbrief.com"];
   const own = await chromium.launch({
     channel: "chromium",  // full Chromium: the headless shell ignores the flag that makes these origins secure (Cache Storage)
@@ -180,10 +187,14 @@ test("without ?site=, the host name picks the site's cache names", { skip }, asy
     for (const origin of [...hosts.map((h) => `http://${h}:${web.port}`), `http://localhost:${web.port}`]) {
       const context = await own.newContext();
       await installFakes(context, {});
+      const check = await context.newPage();
+      await check.goto(`${origin}/tiny-speech/check.html`);
+      await check.waitForFunction(() => window.tinySpeechCheck);
+      const voiceUrl = await check.evaluate(() => window.tinySpeechCheck.VOICE_URL);
+      await check.close();
       const page = await context.newPage();
       await page.goto(`${origin}/harness/harness.html`);
-      const result = await page.evaluate(() => window.run("/tiny-speech/tinyvoca-worker.js?v=1&dizione=/page5/tinyvoca/dizione.zip",
-        { steps: [{ send: { type: "load" } }, { wait: "ready" }] }));
+      const result = await page.evaluate((u) => window.run(u, { steps: [{ send: { type: "load" } }, { wait: "ready" }] }), "/tiny-speech/" + voiceUrl);
       names[new URL(origin).hostname] = Object.keys(result.caches);
       await context.close();
     }

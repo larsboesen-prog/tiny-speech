@@ -1,4 +1,4 @@
-// tiny-speech shared core v0.1.0 (browser/listen.js): one copy for MapSMA /page5 and CredBrief /page40, which kept identical
+// tiny-speech shared core v0.3.0 (browser/listen.js): one copy for MapSMA /page5 and CredBrief /page40, which kept identical
 // copies of this file until 19 Nov 2026.
 // page40 (Ask CredBrief): when a spoken question has ended, and which part of the recording is speech (17 Nov 2026; Lars: "allowing
 // questions to last five seconds max with a timer so it's auto sent without waiting for a long pause or send").
@@ -7,8 +7,10 @@
 // the quietest block so far (never below 0.006 or above 0.03 RMS, so a silent room and a noisy one both work). After at least
 // MIN_SPEECH_MS of speech, END_SILENCE_MS of quiet ends the question; the page also ends it at REC_MAX_MS. Only the speech, with
 // LEAD_MS before and TAIL_MS after, is turned into text: no silence to read.
+// These are the defaults; a site's own come from its config (plan step B9: core/config.js limitsOf), passed to detector() and
+// speechAt16k() as `limits` ({END_SILENCE_MS, MIN_SPEECH_MS, LEAD_MS, TAIL_MS}; REC_MAX_MS is the page's timer).
 
-export const CORE = "tiny-speech 0.1.0";
+export const CORE = "tiny-speech 0.3.0";
 
 export const REC_MAX_MS = 5000;
 export const END_SILENCE_MS = 700;
@@ -16,8 +18,9 @@ export const MIN_SPEECH_MS = 250;
 export const LEAD_MS = 250;
 export const TAIL_MS = 300;
 
-export function detector(rate) {
-  const d = { rate, chunks: [], n: 0, loud: 0, runStart: -1, speechAt: -1, lastVoice: -1, voicedMs: 0, noise: Infinity };
+export function detector(rate, limits = {}) {
+  const minSpeechMs = limits.MIN_SPEECH_MS ?? MIN_SPEECH_MS, endSilenceMs = limits.END_SILENCE_MS ?? END_SILENCE_MS;
+  const d = { rate, chunks: [], n: 0, loud: 0, runStart: -1, speechAt: -1, lastVoice: -1, voicedMs: 0, noise: Infinity, limits };
   // One block in; "end" once the question is over, "speech" on the block where speech starts, else null.
   d.feed = (buf) => {
     d.chunks.push(buf);
@@ -35,7 +38,7 @@ export function detector(rate) {
       if (d.loud >= 2 && d.speechAt < 0) { d.speechAt = d.runStart; event = "speech"; }
       if (d.speechAt >= 0) { d.lastVoice = d.n; d.voicedMs += (1000 * buf.length) / rate; }
     } else d.loud = 0;
-    if (d.speechAt >= 0 && d.voicedMs >= MIN_SPEECH_MS && ((d.n - d.lastVoice) * 1000) / rate >= END_SILENCE_MS) return "end";
+    if (d.speechAt >= 0 && d.voicedMs >= minSpeechMs && ((d.n - d.lastVoice) * 1000) / rate >= endSilenceMs) return "end";
     return event;
   };
   return d;
@@ -49,9 +52,10 @@ export function joinPcm(chunks, n) {
 }
 
 // The speech of a recording at 16 kHz, the rate the speech models read: all of it when no speech was found (the model decides then).
-export function speechAt16k(d) {
+export function speechAt16k(d, limits = d.limits || {}) {
+  const lead = limits.LEAD_MS ?? LEAD_MS, tail = limits.TAIL_MS ?? TAIL_MS;
   let pcm = joinPcm(d.chunks, d.n);
-  if (d.speechAt >= 0) pcm = pcm.subarray(Math.max(0, d.speechAt - Math.round((d.rate * LEAD_MS) / 1000)), Math.min(d.n, d.lastVoice + Math.round((d.rate * TAIL_MS) / 1000)));
+  if (d.speechAt >= 0) pcm = pcm.subarray(Math.max(0, d.speechAt - Math.round((d.rate * lead) / 1000)), Math.min(d.n, d.lastVoice + Math.round((d.rate * tail) / 1000)));
   return to16k(pcm, d.rate);
 }
 
