@@ -25,6 +25,7 @@ def main():
     parser.add_argument("--voice", default="MX1")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--listen", type=int, default=20)
+    parser.add_argument("--limit", type=int, help="Only the first N sentences of each language (a dry run)")
     args = parser.parse_args()
     from faster_whisper import WhisperModel
     from jiwer import wer
@@ -33,6 +34,8 @@ def main():
     model = load_model(args.checkpoint, args.device)
     asr = WhisperModel("small", device="cuda" if args.device.startswith("cuda") else "cpu", compute_type="float16" if args.device.startswith("cuda") else "int8")
     rows = [json.loads(line) for line in (args.data / "holdout.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    if args.limit:
+        rows = [r for lang in ("es", "en") for r in [x for x in rows if x["lang"] == lang][:args.limit]]
     listen = args.out / "listen"
     listen.mkdir(parents=True, exist_ok=True)
     results, refs, hyps = [], {"es": [], "en": []}, {"es": [], "en": []}

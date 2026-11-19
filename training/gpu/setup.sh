@@ -31,7 +31,12 @@ path = hf_hub_download("n4ze3m/tiny-voca", "tiny-voca.pt", revision="$MODEL_REVI
 digest = hashlib.sha256(open(path, "rb").read()).hexdigest()
 assert digest == "$MODEL_SHA256", f"tiny-voca.pt: sha256 {digest}"
 shutil.copy(path, "$WORK/tiny-voca.pt")
-snapshot_download("facebook/wav2vec2-lv-60-espeak-cv-ft", revision="$ALIGNER_REVISION")
+aligner = snapshot_download("facebook/wav2vec2-lv-60-espeak-cv-ft", revision="$ALIGNER_REVISION")
+# upstream's aligner loads it by name, offline: point "main" at the pinned revision
+import pathlib
+refs = pathlib.Path(aligner).parents[1] / "refs"
+refs.mkdir(exist_ok=True)
+(refs / "main").write_text("$ALIGNER_REVISION")
 snapshot_download("Qwen/Qwen3-TTS-12Hz-1.7B-Base")
 snapshot_download("Systran/faster-whisper-small")
 print("models ready")

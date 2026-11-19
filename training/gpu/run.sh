@@ -38,7 +38,11 @@ annotate() { "$PY" -m tiny_voca.annotate --features features --output annotation
 train() {
   local common=(--train annotations/train.jsonl --validation annotations/validation.jsonl --output runs/bilingual --config config.json
     --steps "$STEPS" --learning-rate "$LR" --gan-start 4000 --gan-ratio 0.7 --teacher-final 0 --max-seconds 86400 --deadline-file deadline.json)
-  if [ -f runs/bilingual/last.pt ]; then "$PY" -m tiny_voca.train "${common[@]}" --resume runs/bilingual/last.pt
+  if [ -f runs/bilingual/last.pt ]; then
+    local reached
+    reached=$("$PY" -c "import torch; print(torch.load('runs/bilingual/last.pt', map_location='cpu', weights_only=True)['step'])")
+    if [ "$reached" -ge "$STEPS" ]; then echo "training already reached step $reached"; return; fi
+    "$PY" -m tiny_voca.train "${common[@]}" --resume runs/bilingual/last.pt
   else "$PY" -m tiny_voca.train "${common[@]}" --init-from init.pt --new-data; fi
 }
 dump() { "$PY" "$GPU/dump.py" --checkpoint runs/bilingual/inference.pt --out dump; }
