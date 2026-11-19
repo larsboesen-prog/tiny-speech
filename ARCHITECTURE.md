@@ -17,6 +17,7 @@ a 4.5M-parameter TTS model that runs on a CPU and in the browser.
 | D2 | **Language detected on every question**, with a manual EN/ES override | A language gate before recognition. Near term: Whisper's own language guess on the recorded question. Streaming: a race of two recognizers, later a small classifier or one bilingual model. |
 | D3 | **A shared core in this repo** used by MapSMA /page5 and CredBrief /page40 | The voice plumbing both sites copy by hand moves here once, versioned; each domain plugs in its own reader and actions. |
 | D4 | **Build around tiny-voca**: extend what that model does, and keep the whole stack small with its ideas (19 Nov 2026) | The voice is tiny-voca, made bilingual. The other parts follow the same recipe (section 4a), so large off-the-shelf engines become baselines and fallbacks, not the target. |
+| D5 | **Music means live music venues in San Miguel** (19 Nov 2026), alongside food, drink and news | Music is a facet of MapSMA's places, not playback: data per venue (genres, nights, times), the reader's existing `music` topic extended, genre and band words in the ears' dictionary (section 4b). |
 
 ## 1. Starting point: MapSMA /page5 and CredBrief /page40
 
@@ -129,6 +130,32 @@ dictation. So:
   measured against, not the target.
 - News: deterministic commands locally on the feed (this repo's `feed.xml`, or CredBrief's archive);
   open questions go to CredBrief's server as one permitted action, as page40 does today.
+
+Flexibility for unexpected questions, still small: a full English and Spanish dictionary (tiny-voca packs
+125k English words into 0.55 MB; Spanish needs only a word list, its sounds follow from spelling) with a
+language model weighted to food, drink, music and San Miguel; words outside it kept as sound-spellings
+and matched by sound; the reader spots known concepts in any wording (a bilingual concept table) and
+searches the site's data for the rest; a large language model writes and labels thousands of possible
+questions at build time (never on the phone) to fill the concept table, a tiny classifier and the ears'
+training text; low confidence asks one short question back. About 8–12 MB in all.
+
+### 4b. Music venues (D5)
+
+MapSMA already has most of the reading: `read.js` has a `music` topic ("live music", "jazz",
+"música en vivo", "conciertos"…) matched to the `live_music` feature in `facts.js`, but only two places
+carry that feature (18 Nov 2026). What music needs:
+
+- **Data, per venue** (in `data/facts.json`, beside `c`, `d`, `f`): `live_music` in `f`, plus
+  `m: {g: ["jazz", "trova"], when: {"thu": "20:00–23:00", "fri": "21:00–00:30"}}`: genres, and the music's own
+  hours in the opening-hours format (past midnight allowed). Music-first places (bars, jazz clubs) join
+  `data.js` like any place; the Jardín's mariachis are already a sight.
+- **Reading:** genre words in English and Spanish (jazz, blues, rock, trova, bolero, son, mariachi, salsa,
+  cumbia, flamenco, DJ, karaoke, open mic, acoustic…), "who is playing", "para bailar"; "tonight" and
+  "now" measured against the music's hours, not only the kitchen's; "quiet", "sin música" as a wish too.
+- **Answers:** "Three places with live jazz tonight: …, music from 9 p.m." / "Tres lugares con jazz en
+  vivo esta noche: …, música desde las nueve."
+- **Ears:** genre words and venue and band names in the dictionary and the language model, refreshed
+  with the data.
 
 ## 5. Design steps
 
