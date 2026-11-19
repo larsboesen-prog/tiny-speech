@@ -159,11 +159,14 @@ actions; the reader's grammar; language and variety packs; answer templates; loa
 - **Plain-JS tiny-voca** (upstream `js/`, one 8 MB GGUF) behind `VoiceEngine`, English first, gated on first-sound
   time and peak memory on two phones (upstream measured 9.7× real time and 238 MB peak in Node on an Apple M5; phones
   unmeasured). The ONNX worker stays as the fallback.
-- **Spanish:** recommended: keep the phone's Mexican voice for Spanish answers until the bilingual voice passes a
-  listening test; tiny-voca's Spanish (American accent) as a setting. Owner to confirm (section 12).
-- **Bilingual voice:** an experiment with its own gate: about ten Spanish phones and a language token added to the
-  inventory (`vocab_size` is 76 today), fine-tuned from the released checkpoint on Mexican teacher audio in one voice;
-  judged by Whisper on names and by the owner's ear. No existing port is bilingual or Mexican.
+- **Spanish:** the phone's Mexican voice for Spanish answers until the bilingual voice passes its gates (D7).
+- **Bilingual voice** (`training/RECIPE.md`): ten Mexican Spanish sounds and `<es>` appended to the inventory (76 → 87
+  symbols, every English id unchanged: `engines/bilingual.js`), a new speaker MX1 copied from a real speaker who reads
+  about 500 sentences (`training/record/`, 20 Nov 2026), and a teacher (Qwen3-TTS) reading about 8 hours more in that
+  voice; fine-tuned from the released checkpoint on a rented GPU (`training/gpu/`, about 7–9 GPU hours, $5–12). The page's
+  engine already reads a bilingual file: an untrained one (`node tools/voice-gguf.mjs init`) speaks English with exactly
+  the released samples. Every stage but the teacher has run here on a CPU (`training/gpu/SMOKE.md`). Gates: Whisper hears
+  ≥90% of the words of 400 held-out sentences, the names gate, the owner's ear, size and speed on the iPhone.
 - **Spanish text for the voice:** the responder emits only speakable words (as MapSMA's `sayTimeEs` does). Reading
   news aloud in Spanish needs Spanish text normalisation and stays out of scope until then.
 
@@ -229,8 +232,8 @@ From the review (section 4). B0 → B3 in order; the rest in any order after B3.
 
 **Waits on others:** phone measurements (the owner's iPhone, one Android); the recorded question set (speakers,
 phones, real places); the bilingual voice (GPU, a Mexican teacher voice, a listening test); the ears (data, GPU, the
-gate); San Miguel's music nights (the template, D8); a real second city (on hold); switching the live sites (their
-sources and deploys).
+gate); the bilingual voice's GPU run (after the recording session; `training/gpu/README.md`); San Miguel's music
+nights confirmed with the venues (D8); a real second city (on hold); switching the live sites (their sources and deploys).
 
 ## 12. Questions for the owner
 
