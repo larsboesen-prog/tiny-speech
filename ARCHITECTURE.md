@@ -162,8 +162,8 @@ actions; the reader's grammar; language and variety packs; answer templates; loa
   of about 78 prompts and 6 cards said in one's own words), as a sampling rule; general speech (FLEURS) so nothing else is
   lost; every transcript checked by Whisper large-v3. Baseline on 144 synthetic Mexican requests: stock Whisper tiny got
   41.1% of the words wrong and the reader understood 34.7% as said; with the sites' name hint, 52.8% wrong (it loops or
-  copies the hint). Decision (owner, 19 Nov 2026: "a lot of effort for what gain?"): measure stock Whisper on 5–10 real
-  speakers first; fine-tune only if it is far from good, and keep the phone's Spanish voice unless it disappoints. It ships as an 8-bit file of the same layout and size
+  copies the hint). Decision (owner, 19 Nov 2026: "a lot of effort for what gain?", then "put ear on hold"): **on hold**.
+  When it is picked up: measure stock Whisper on 5–10 real speakers first; fine-tune only if it is far from good. It ships as an 8-bit file of the same layout and size
   as today's (decoder 30.1 MB), only if the real speakers' test improves on words, places and understanding, and FLEURS
   is no worse. About 3 GPU hours.
 
@@ -247,11 +247,11 @@ From the review (section 4). B0 → B3 in order; the rest in any order after B3.
 | B11 | `tools/sizes.mjs`; check page shows pack load and first-sound time | size table generated | done: `tools/sizes.mjs` → `docs/sizes.md` (MapSMA English 129.7 MB raw / 57.5 MB brotli; plain-JS voice path 74.6 / 35.4 MB); check page shows pack load, first sound and memory |
 | B12 | News, small (search titles, read, next, stop, hand-off) | works on `feed.xml`; "latest" says the feed has no dates | done: `domains/news/` on `feed.xml` (71 stories): search, read, next, stop, hand-off; "latest" says the feed has no dates |
 | B13 | Self-hosting manifest; no request leaves the origin or carries audio | Playwright | done: `browser/engines.json` lists 33 engine files (180.9 MB) with SHA-256; `tools/manifest.mjs --fetch` (Whisper pinned to the revisions recorded); workers take `?engines=`; Playwright with a proxy trap shows no request leaves and none carries a body |
-| B14 | Ears fine-tuned on Mexican Spanish restaurant requests (70% synthetic voices, 30% native speakers) | on the real speakers' test: fewer word errors, more places found, more requests understood as said; FLEURS no worse | ready: `training/asr/` (text, Piper voices here, made-up voices and the fine-tune on a GPU, 8-bit export in today's layout); waits for speakers and a GPU run |
+| B14 | Ears fine-tuned on Mexican Spanish restaurant requests (70% synthetic voices, 30% native speakers) | on the real speakers' test: fewer word errors, more places found, more requests understood as said; FLEURS no worse | **on hold** (owner, 19 Nov 2026): `training/asr/` is ready (text, packets, Piper voices, made-up voices, fine-tune, 8-bit export) and waits; picking it up starts with measuring stock Whisper on real speakers |
 
 **Waits on others:** phone measurements (the owner's iPhone, one Android); the recorded question set (speakers,
 phones, real places); the bilingual voice (GPU, a Mexican teacher voice, a listening test); the ears (data, GPU, the
-gate); native Mexican speakers for the ears' recordings (`training/record/?set=asr`, B14); the bilingual voice's GPU run (after the recording session; `training/gpu/README.md`); San Miguel's music
+gate); the bilingual voice's GPU run (after the recording session; `training/gpu/README.md`); San Miguel's music
 nights confirmed with the venues (D8); a real second city (on hold); switching the live sites (their sources and deploys).
 
 ## 12. Questions for the owner

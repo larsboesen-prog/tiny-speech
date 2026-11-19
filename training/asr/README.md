@@ -1,5 +1,8 @@
 # Teaching the ears Mexican Spanish restaurant requests
 
+**On hold (owner, 19 Nov 2026).** Everything below is built and checked on a CPU, and waits. Picking it up starts with
+"What to do first": measure stock Whisper tiny on 5–10 real speakers before spending on a GPU.
+
 The sites hear questions with Whisper tiny (39M parameters, about 40 MB at 8 bits, in the browser). It was not trained on
 people asking a phone for tacos in San Miguel, and it shows. On 144 held-out synthetic Mexican Spanish requests (Piper's two
 Mexican voices, dev split) stock Whisper tiny got **41.1% of the words wrong**; the app found the named place in 62.5% and
