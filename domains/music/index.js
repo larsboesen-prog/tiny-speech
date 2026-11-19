@@ -60,7 +60,17 @@ export function answerMusic(text, pack, now, lang = "en", { staleDays = 60, name
   const genresOf = (p, slot) => slot.genres || p.music.genres;
   const plays = (p, slot) => !q.genres.length || q.genres.some((g) => genresOf(p, slot).includes(g));
   const players = venues.filter((p) => p.music.slots.some((s) => plays(p, s)));
-  if (!players.length) return null;
+  if (!players.length) {
+    // nobody's listed nights play it; a venue that lists the genre among its own (without saying which night) is still named, so
+    // the question is not answered with places that have nothing to do with it. Nobody at all: the places answer answers.
+    const some = venues.filter((p) => q.genres.some((g) => p.music.genres.includes(g)));
+    if (!some.length) return null;
+    const asked = q.genres.map((g) => (es ? GENRE_ES[g] : GENRE_EN[g])).join(es ? " o " : " or ");
+    const names = listWords(some.slice(0, 3).map((p) => p.name), es);
+    const say = [{ text: es ? `No tengo noches de ${asked} en la lista.` : `I don't have ${asked} nights on the list.` },
+      { text: es ? `${names} ${some.length > 1 ? "tienen" : "tiene"} ${asked} algunas noches; no sé cuáles.` : `${names} ${some.length > 1 ? "have" : "has"} ${asked} on some nights; I don't know which.` }];
+    return { kind: "music", request: q, ids: some.slice(0, 3).map((p) => p.id), say: withAge(say, some, now, es, staleDays) };
+  }
   const day = q.when.day ?? (q.when.tomorrow ? (now.d + 1) % 7 : now.d);
   // tonight's nights, and, in the small hours, last night's that are still playing (a DJ from 22:00 to 1:00 at 0:30)
   const nights = [[day, 0]];
@@ -116,16 +126,18 @@ export function answerMusic(text, pack, now, lang = "en", { staleDays = 60, name
   }
   // music changes often: say how old the list is when it is old (the oldest of the venues in this answer)
   const used = ids.length ? ids.map((id) => byVenue.get(id)[0].p) : players.slice(0, 3);
-  const checked = used.map((p) => p.music.checked).filter(Boolean).sort()[0];
-  if (checked && now.date && (now.date - new Date(checked + "T12:00:00")) / 864e5 > staleDays) {
-    const d = new Date(checked + "T12:00:00"), year = d.getFullYear() !== now.date.getFullYear() ? { year: "numeric" } : {};
-    say.push({ text: es ? `La lista de música es del ${d.toLocaleDateString("es-MX", { day: "numeric", month: "long", ...year })}; conviene confirmar.`
-      : `The music list was last checked on ${d.toLocaleDateString("en-US", { month: "long", day: "numeric", ...year })}; worth confirming.` });
-  }
-  return { kind: "music", request: q, ids, say };
+  return { kind: "music", request: q, ids, say: withAge(say, used, now, es, staleDays) };
 }
 
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+// the answer, and how old the music list of these venues is when that is over staleDays
+function withAge(say, venues, now, es, staleDays) {
+  const checked = venues.map((p) => p.music.checked).filter(Boolean).sort()[0];
+  if (!checked || !now.date || (now.date - new Date(checked + "T12:00:00")) / 864e5 <= staleDays) return say;
+  const d = new Date(checked + "T12:00:00"), year = d.getFullYear() !== now.date.getFullYear() ? { year: "numeric" } : {};
+  return [...say, { text: es ? `La lista de música es del ${d.toLocaleDateString("es-MX", { day: "numeric", month: "long", ...year })}; conviene confirmar.`
+    : `The music list was last checked on ${d.toLocaleDateString("en-US", { month: "long", day: "numeric", ...year })}; worth confirming.` }];
+}
 const end = (s) => (/[.!?]$/.test(s) ? s : s + ".");  // "… to 1 a.m." keeps its one full stop
 const diasPl = (d) => (DIAS[d].endsWith("s") ? DIAS[d] : DIAS[d] + "s");  // los domingos, los lunes
 // "Fridays and Saturdays from 10 p.m. to 12:30 a.m." · "los viernes y sábados de las 10 de la noche a las 12 y media de la noche"

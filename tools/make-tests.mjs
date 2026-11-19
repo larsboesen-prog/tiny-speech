@@ -86,8 +86,9 @@ const stats = { en: [0, 0, 0, 0], es: [0, 0, 0, 0], mixed: [0, 0, 0, 0] };  // t
 const missed = [];
 for (const x of qs) {
   const r = requestOf(asker.parse(x.q));
-  const understood = Object.keys(r).some((k) => ["what", "kinds", "where", "when", "price", "unique", "local", "best", "place", "surprise", "exists"].includes(k));
   const a = asker.answer(x.q, now, null, null);
+  // understood: the places reader found a topic, time, place, price…, or the music layer answered it (domains/music)
+  const understood = a.kind === "music" || Object.keys(r).some((k) => ["what", "kinds", "where", "when", "price", "unique", "local", "best", "place", "surprise", "exists"].includes(k));
   const answered = !/^(I'm not sure|No estoy seguro)/.test(a.say?.[0]?.text || "");
   const lang = decideLanguage({ text: x.q, names }).lang;
   const s = stats[x.lang] || (stats[x.lang] = [0, 0, 0, 0]);
@@ -113,7 +114,7 @@ ${lost.map((l) => `- ${l}`).join("\n")}
 
 ## Unexpected questions (${qs.length})
 
-| Language | Questions | Understood something (a topic, time, place, price…) | Answered (not "I'm not sure") | Language decided right |
+| Language | Questions | Understood something (a topic, time, place, price…, or a music answer) | Answered (not "I'm not sure") | Language decided right |
 |---|---|---|---|---|
 ${Object.entries(stats).map(([l, [t, u, a, g]]) => `| ${l} | ${t} | ${pct(u, t)} | ${pct(a, t)} | ${l === "mixed" ? "—" : pct(g, t)} |`).join("\n")}
 

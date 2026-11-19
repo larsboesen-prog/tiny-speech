@@ -1,0 +1,4 @@
+{
+  "note": "Cases where the shared core, with San Miguel's pack as imported, may answer differently from /page5 on purpose. Each entry: the case's key (as in mapsma.snapshot.jsonl) and one line why. The parity test fails on any other difference, and on an entry that no longer differs (so the list cannot grow stale). Empty on 19 Nov 2026: the concept tables added that day change no recorded answer.",
+  "approved": []
+}
