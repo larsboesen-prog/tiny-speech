@@ -128,6 +128,10 @@
    "localClaim": "Todos los lugares de este sitio los eligió gente que vive en San Miguel"
   }
  },
+ "hint": {
+  "lead": ["Centro", "Jardín", "Susan York"],
+  "note": "Words Whisper mishears without help (Centro as central, Susan York as sues in York): first in the recognizer's name hint, as /page5 had them"
+ },
  "credits": [
   "Places, positions and facts: MapSMA (mapsma.com), researched 17–18 Nov 2026",
   "Names and positions partly from © OpenStreetMap contributors"

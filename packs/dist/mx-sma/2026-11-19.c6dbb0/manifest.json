@@ -131,6 +131,13 @@
    "localClaim": "Todos los lugares de este sitio los eligió gente que vive en San Miguel"
   }
  },
+ "hint": {
+  "lead": [
+   "Centro",
+   "Jardín",
+   "Susan York"
+  ]
+ },
  "files": {
   "base": {
    "path": "base.json",

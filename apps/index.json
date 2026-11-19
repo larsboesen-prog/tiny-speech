@@ -1,0 +1,7 @@
+{
+  "note": "The apps built on tiny-speech: which config a page on a host uses (the check page looks here).",
+  "apps": [
+    { "app": "mapsma", "config": "mapsma.json", "hosts": ["mapsma.com"] },
+    { "app": "credbrief", "config": "credbrief.json", "hosts": ["credbrief.com"] }
+  ]
+}

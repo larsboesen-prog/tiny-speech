@@ -1,20 +1,32 @@
 // tiny-speech check page: tries the shared core's files on a phone or a computer before a site switches to them.
 // It uses the files exactly as a page does: listen.js and pcm-worklet.js for the microphone, asr-worker.js for speech to text,
-// tinyvoca-worker.js for the voice. Put next to them (e.g. mapsma.com/tiny-speech/check.html) it uses that site's cache names,
-// so what it loads is what the site's page finds later. ?site= and ?dizione= override the defaults.
-import { CORE, detector, speechAt16k, to16k } from "./listen.js?v=0.1.0";
+// tinyvoca-worker.js for the voice. Put next to them (e.g. mapsma.com/tiny-speech/browser/check.html) it uses that site's config
+// (apps/index.json by host name; plan step B9), so what it loads is what the site's page finds later. ?app= (or ?site=) picks a
+// config by name; ?dizione= overrides where the phonemizer comes from.
+import { CORE, detector, speechAt16k, to16k } from "./listen.js?v=0.3.0";
+import { appConfig, appForHost, workerUrl, limitsOf } from "../core/config.js";
+import { createPackLoader } from "../core/pack/loader.js";
 
-const V = "0.1.0";
+const V = "0.3.0";
 const params = new URLSearchParams(location.search);
-const HOST_SITE = /(^|\.)mapsma\.com$/.test(location.hostname) ? "mapsma" : /(^|\.)credbrief\.com$/.test(location.hostname) ? "credbrief" : "";
-const SITE = params.get("site") ?? HOST_SITE;
-const DIZIONE = params.get("dizione") ?? ({ mapsma: "/page5/tinyvoca/dizione.zip", credbrief: "/page40/tinyvoca/dizione.zip" }[SITE] || "");
-const ASR_URL = `asr-worker.js?v=${V}&site=${encodeURIComponent(SITE)}`;
+async function siteConfig() {
+  const name = params.get("app") || params.get("site");
+  try {
+    const index = await (await fetch("../apps/index.json", { cache: "no-cache" })).json();
+    const entry = name ? index.apps.find((a) => a.app === name) : appForHost(index, location.hostname);
+    if (entry) return appConfig(await (await fetch(`../apps/${entry.config}`, { cache: "no-cache" })).json());
+  } catch { /* no app list here: test cache names */ }
+  return appConfig({});
+}
+// ?engines=/folder/: try the site's own copies of the engine files (plan step B13) before the site's config says so.
+const CONFIG = params.has("engines") ? appConfig({ ...(await siteConfig()), engines: params.get("engines") }) : await siteConfig();
+const SITE = CONFIG.app;
+const LIMITS = limitsOf(CONFIG);
+const DIZIONE = params.get("dizione") ?? CONFIG.voice.dizione;
+const ASR_URL = workerUrl(CONFIG, "asr", { v: V });
 // ?voice=js: tiny-voca in plain JavaScript (one 8 MB file; Spanish sentences in Spanish sounds); else the ONNX + Pyodide worker the sites use.
 const VOICE_JS = params.get("voice") === "js";
-const VOICE_URL = VOICE_JS
-  ? `tinyvoca-js-worker.js?v=${V}&site=${encodeURIComponent(SITE)}${params.get("model") ? "&model=" + encodeURIComponent(params.get("model")) : ""}`
-  : `tinyvoca-worker.js?v=${V}&site=${encodeURIComponent(SITE)}${DIZIONE ? "&dizione=" + encodeURIComponent(DIZIONE) : ""}`;
+const VOICE_URL = VOICE_JS ? workerUrl(CONFIG, "voiceJs", { v: V, model: params.get("model") }) : workerUrl(CONFIG, "voice", { v: V, dizione: DIZIONE });
 
 const $ = (id) => document.getElementById(id);
 const t0 = performance.now();
@@ -27,7 +39,8 @@ function log(...parts) {
 const show = (id, html) => { $(id).innerHTML = html; };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
-$("about").textContent = `${CORE} · site: ${SITE || "(none: test cache names)"} · voice: ${VOICE_JS ? "tiny-voca in plain JS" : "tiny-voca ONNX + Pyodide, dizione: " + (DIZIONE || "next to the worker")}`;
+$("about").textContent = `${CORE} · site: ${SITE || "(none: test cache names)"} · voice: ${VOICE_JS ? "tiny-voca in plain JS" : "tiny-voca ONNX + Pyodide, dizione: " + (DIZIONE || "next to the worker")}` +
+  (CONFIG.engines ? ` · engine files from this site: ${CONFIG.engines}` : "");
 log("check page", { core: CORE, site: SITE, asr: ASR_URL, voice: VOICE_URL });
 
 // ---------- speech to text: asr-worker.js ----------
@@ -88,7 +101,7 @@ async function startRec() {
   let stream;
   try { stream = await getMic(); } catch (err) { ctx.close().catch(() => {}); show("heard", `<span class="bad">No microphone: ${esc(err.name || "")} ${esc(err.message || err)}</span>`); log("mic error", String(err)); return; }
   stream.getAudioTracks().forEach((t) => { t.enabled = true; });
-  const r = { ctx, d: detector(ctx.sampleRate), began: 0, tick: 0, src: null, node: null, mute: null, via: "" };
+  const r = { ctx, d: detector(ctx.sampleRate, LIMITS), began: 0, tick: 0, src: null, node: null, mute: null, via: "" };
   try {
     if (ctx.state === "suspended") await ctx.resume();
     r.src = ctx.createMediaStreamSource(stream);
@@ -233,12 +246,48 @@ function teach() {
   voice().postMessage({ type: "teach", words });
   show("spoken", `Teaching ${Object.keys(words).length} names (taught once the voice has loaded)…`);
 }
+// First sound (plan step B11): from asking the voice to the first sentence's audio, the wait a reader hears before an answer.
+let lastFirstSoundMs = null;
 function speak(text, { play = true } = {}) {
-  const id = ++speakId;
+  const id = ++speakId, asked = performance.now();
   return new Promise((resolve, reject) => {
-    speaking.set(id, { chunks: [], resolve, reject, play });
+    const chunks = [];
+    chunks.push = function (...items) {
+      if (!this.length && items.length) { lastFirstSoundMs = Math.round(performance.now() - asked); timing(`Voice: first sound after ${lastFirstSoundMs} ms.`); }
+      return Array.prototype.push.apply(this, items);
+    };
+    speaking.set(id, { chunks, resolve, reject, play });
     voice().postMessage({ type: "speak", id, text, voice: Number($("voice").value), speed: 1.0, pitch: Number($("pitch").value), lang: $("sayLang").value });
   });
+}
+
+// ---------- the city pack, timings and memory (plan step B11) ----------
+const timings = [];
+function timing(line) {
+  timings.push(line);
+  $("timings").textContent = [...timings, memoryLine()].join("\n");
+  log("timing", line);
+}
+// Chromium reports its JavaScript heap (performance.memory); other browsers report nothing here, and the page says so.
+function memoryLine() {
+  const m = performance.memory;
+  return m ? `Memory: ${Math.round(m.usedJSHeapSize / 1e6)} MB used of the page's JavaScript heap (the workers' memory is not included).`
+    : "Memory: not reported by this browser.";
+}
+async function loadPack() {
+  const packs = params.get("packs") || (CONFIG.packs ? CONFIG.packs.replace(/[^/]*$/, "") : "../packs/");
+  const loader = createPackLoader({ base: packs, cachePrefix: CONFIG.caches.packs });
+  const started = performance.now();
+  try {
+    const city = params.get("city") || CONFIG.city || (await loader.list()).index.cities[0].id;
+    const r = await loader.load(city);
+    const ms = Math.round(performance.now() - started);
+    timing(`City pack ${city} ${r.version}: ${r.pack.places.length} places, from ${r.from === "device" ? "this device" : "the network"}${r.offline ? " (offline)" : ""}, in ${ms} ms.`);
+    return { city, version: r.version, from: r.from, places: r.pack.places.length, ms };
+  } catch (err) {
+    timing(`City pack: could not load (${err.message || err}).`);
+    return { error: String(err.message || err) };
+  }
 }
 const join = (chunks) => {
   const out = new Float32Array(chunks.reduce((n, c) => n + c.audio.length, 0));
@@ -274,7 +323,7 @@ async function roundTrip() {
     show("trip", `Spoke ${(audio.length / rate).toFixed(1)} s in ${spokeMs} ms. Listening…`);
     const out = await transcribeAudio(to16k(audio, rate));
     const heard = spoken(out.text), score = overlap(text, heard);
-    const result = { said: text, heard, score, spokeMs, waitMs: out.waitMs, runMs: out.runMs, seconds: audio.length / rate };
+    const result = { said: text, heard, score, spokeMs, firstSoundMs: lastFirstSoundMs, waitMs: out.waitMs, runMs: out.runMs, seconds: audio.length / rate };
     show("trip", `Said: ${esc(text)}\nHeard: <b>${esc(heard || "(nothing)")}</b>\n<span class="${score >= 0.8 ? "ok" : "bad"}">${Math.round(score * 100)}% of the words heard</span> <span class="small">· voice ${spokeMs} ms · speech to text ${out.runMs} ms (+${out.waitMs} ms waiting for the model)</span>`);
     log("round trip", result);
     return result;
@@ -300,7 +349,12 @@ $("phones").onclick = () => voice().postMessage({ type: "phones", id: 0, text: $
 $("roundTrip").onclick = roundTrip;
 $("clearLog").onclick = () => { $("log").textContent = ""; };
 $("cacheList").onclick = listCaches;
+$("loadPack").onclick = loadPack;
+$("memoryBtn").onclick = () => timing("(now)");
 $("model").onchange = () => { if (asrLoaded) loadAsr(); };
 
+// The longest question: the site's own limit (config), unless chosen above.
+if ([...$("maxRec").options].some((o) => Number(o.value) === LIMITS.REC_MAX_MS)) $("maxRec").value = String(LIMITS.REC_MAX_MS);
+
 // For automated checks (and the console): the same steps the buttons take.
-window.tinySpeechCheck = { CORE, SITE, DIZIONE, loadAsr, loadVoice, teach, speak, transcribeAudio, roundTrip, listCaches };
+window.tinySpeechCheck = { CORE, SITE, CONFIG, ASR_URL, VOICE_URL, DIZIONE, loadAsr, loadVoice, teach, speak, transcribeAudio, roundTrip, listCaches, loadPack, memoryLine };

@@ -1,4 +1,4 @@
-// tiny-speech shared core v0.1.0 (browser/tinyvoca-worker.js): tiny-voca text to speech for MapSMA /page5 and CredBrief /page40, run
+// tiny-speech shared core v0.3.0 (browser/tinyvoca-worker.js): tiny-voca text to speech for MapSMA /page5 and CredBrief /page40, run
 // off the page's main thread. Until 19 Nov 2026 each site had its own copy (built and tested on /page40, then copied to /page5, which
 // added "teach" for the Spanish names and "phones"). This one file replaces both: /page40 sends neither and gets what it got before.
 //
@@ -7,25 +7,19 @@
 // cannot change this page; the dizione phonemizer (https://github.com/n4ze3m/dizione, commit 8cd889e, Apache-2.0) is served by
 // each site (tinyvoca/dizione.zip beside this worker, or the address in ?dizione=); cache keys carry those revisions.
 //
-// Address: tinyvoca-worker.js?v=…&site=mapsma|credbrief&dizione=/page5/tinyvoca/dizione.zip (a classic worker).
+// Address: tinyvoca-worker.js?v=…&libs=<cache for engine files>&voice=<cache prefix for the voice>&dizione=/page5/tinyvoca/dizione.zip
+// (a classic worker), made by core/config.js workerUrl from the site's config (apps/*.json). Each site keeps the cache names it had
+// before the shared core, so its visitors' stored engine files and voice are found again and nothing is downloaded twice; without
+// them (a test copy) the caches get names of their own. No site or host names here (plan step B9).
 // Messages in: {type: "load"}, {type: "speak", id, text | sentences, base, voice, speed, pitch, open}, {type: "more", id, sentences, last},
 // {type: "teach", words} (MapSMA's Spanish names), {type: "phones", id, text} (for testing) and {type: "stop"}. With "sentences" (the page's
 // own split of an answer) each piece of audio carries index = base + its place in that list, so the page can show which sentence is read.
 // Messages out: status, ready {voices, sampleRate, core, ...}, sentence (its audio, as soon as it is made), done, taught, phones, error.
 
-const CORE = "tiny-speech 0.1.0";
+const CORE = "tiny-speech 0.3.0";
 
-// The site this worker runs for. Each keeps the cache names it had before the shared core (19 Nov 2026), so its visitors' stored
-// engine files and voice are found again and nothing is downloaded twice. From the worker's address (?site=mapsma | credbrief),
-// else the host name; anywhere else (a test copy) the caches get names of their own.
-const SITES = {
-  mapsma: { libs: "mapsma-voice-libs-1", voice: "mapsma-tinyvoca-" },
-  credbrief: { libs: "credbrief-page40-libs-1", voice: "credbrief-tinyvoca-" },
-};
 const HERE = new URL(self.location.href);
-const SITE_NAME = HERE.searchParams.get("site")
-  || (/(^|\.)mapsma\.com$/.test(HERE.hostname) ? "mapsma" : /(^|\.)credbrief\.com$/.test(HERE.hostname) ? "credbrief" : "");
-const SITE = SITES[SITE_NAME] || { libs: "tiny-speech-libs-1", voice: "tiny-speech-tinyvoca-" };
+const SITE = { libs: HERE.searchParams.get("libs") || "tiny-speech-libs-1", voice: HERE.searchParams.get("voice") || "tiny-speech-tinyvoca-" };
 
 const PYODIDE = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
 // onnxruntime-web 1.18.0, not newer: from 1.19 every build is the multi-thread one, which reserves a 4 GB shared memory block even on
@@ -35,6 +29,13 @@ const PYODIDE = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
 const ORT = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/";
 const MODEL_REV = "d94d2a0338fd1e0eab7dd896ec0ad23d8cdf7c14";
 const HF = `https://huggingface.co/n4ze3m/tiny-voca/resolve/${MODEL_REV}/`;
+// Self-hosting (plan step B13): with ?engines=<folder>, Pyodide, onnxruntime and the model come from the site itself, at the same path
+// under that folder as on their own hosts (https://cdn.jsdelivr.net/… → <folder>cdn.jsdelivr.net/…), pinned by SHA-256 in
+// browser/manifest.json. Files are still kept under their original addresses, so a visitor's stored copies are found either way.
+const ENGINES = HERE.searchParams.get("engines");
+const MIRROR = ENGINES ? new URL(ENGINES, HERE).href : "";
+const mirror = (url) => (MIRROR && new URL(url).origin !== HERE.origin ? MIRROR + url.replace(/^https:\/\//, "").replace(/(@\d[\w.-]*)$/, "$1/index.js") : url);  // the site's own files (dizione.zip) as they are
+const original = (url) => (MIRROR && url.startsWith(MIRROR) ? "https://" + url.slice(MIRROR.length) : url);
 // dizione commit 8cd889e, as each site serves it: ?dizione=/page5/tinyvoca/dizione.zip, else tinyvoca/dizione.zip beside this worker.
 // The same address as before gives the same cache key, so a visitor's stored copy is found again.
 const DIZIONE_ZIP = new URL(HERE.searchParams.get("dizione") || "tinyvoca/dizione.zip", HERE).href;
@@ -49,7 +50,7 @@ const LIBS = SITE.libs;
 const seen = { kept: 0, fetched: 0 };
 const netFetch = self.fetch.bind(self);
 self.fetch = async (input, init) => {
-  const url = String(input instanceof Request ? input.url : input);
+  const url = original(String(input instanceof Request ? input.url : input));
   if (!url.startsWith(PYODIDE) && !url.startsWith(ORT)) return netFetch(input, init);
   let store = null;
   try {
@@ -63,7 +64,7 @@ self.fetch = async (input, init) => {
   return response;
 };
 
-importScripts(PYODIDE + "pyodide.js", ORT + "ort.wasm.min.js");
+importScripts(mirror(PYODIDE) + "pyodide.js", mirror(ORT) + "ort.wasm.min.js");
 
 let pyodide, phonemize, session, config;
 let lexicon = null, taught = 0;  // MapSMA: {word: phones} for the Spanish names, from the page ("teach"); taught once the phonemizer is up
@@ -85,7 +86,7 @@ async function download(url, label) {
     const hit = await store.match(url);
     if (hit) { seen.kept += 1; return new Uint8Array(await hit.arrayBuffer()); }
   } catch (error) { store = null; }
-  const bytes = await fetchBytes(url, label);
+  const bytes = await fetchBytes(mirror(url), label);
   seen.fetched += 1;
   if (store) store.put(url, new Response(bytes)).catch(() => {});
   return bytes;
@@ -114,7 +115,7 @@ async function fetchBytes(url, label) {
 
 async function loadPhonemizer() {
   status("Loading the tiny-voca phonemizer");
-  pyodide = await loadPyodide({ indexURL: PYODIDE });
+  pyodide = await loadPyodide({ indexURL: mirror(PYODIDE) });
   await pyodide.loadPackage("numpy");
   const [source, ...files] = await Promise.all([
     download(DIZIONE_ZIP, "Loading the tiny-voca phonemizer"),
@@ -159,10 +160,10 @@ phonemize_json("Warm up.")
 }
 
 async function loadModel() {
-  config = await (await fetch(HF + "config.json")).json();
+  config = await (await fetch(mirror(HF + "config.json"))).json();
   const bytes = await download(HF + "onnx/model.onnx", "Loading the tiny-voca voice");
   status("Starting the tiny-voca voice");
-  ort.env.wasm.wasmPaths = ORT;
+  ort.env.wasm.wasmPaths = mirror(ORT);
   ort.env.wasm.numThreads = 1;
   session = await ort.InferenceSession.create(bytes, { executionProviders: ["wasm"] });
 }

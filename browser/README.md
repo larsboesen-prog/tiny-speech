@@ -1,4 +1,4 @@
-# tiny-speech shared core v0.1.0 — the browser files
+# tiny-speech shared core v0.3.0 — the browser files
 
 One copy of the voice files that MapSMA /page5 and CredBrief /page40 kept as separate copies until
 19 Nov 2026. Built from MapSMA's copies, which are /page40's plus the name hint, the Spanish language
@@ -12,10 +12,12 @@ and the Spanish-name lessons; /page40 never sends those and gets what it got bef
 | `tinyvoca-worker.js` | tiny-voca voice (onnxruntime-web 1.18 + Pyodide dizione), classic worker | both pages |
 | `check.html`, `check.js` | A page to try all four on a phone before a site switches | testing only |
 
-Each worker keeps its site's cache names (`?site=mapsma` or `?site=credbrief`, else the host name), and the
-voice worker takes the address of the site's `dizione.zip` (`?dizione=`), so a visitor's stored engine
-files and voice are found again: switching downloads nothing twice. `npm test` in `tiny-speech/` proves
-this against the sites' original files (`test/fixtures/before/`).
+Each worker keeps its site's cache names, and the voice worker takes the address of the site's `dizione.zip`,
+so a visitor's stored engine files and voice are found again: switching downloads nothing twice. Since 0.3.0
+(plan step B9) the names come from the site's config (`apps/mapsma.json`, `apps/credbrief.json`) in the
+worker's address (`?libs=`, `?voice=`, `?dizione=`), built by `core/config.js` `workerUrl`; the workers hold
+no table of sites and read no host name. `npm test` in `tiny-speech/` proves this against the sites' original
+files (`test/fixtures/before/`).
 
 ## MapSMA: try it, then switch /page5
 
@@ -33,10 +35,13 @@ this against the sites' original files (`test/fixtures/before/`).
 
    | Line (18 Nov copy) | Before | After |
    |---|---|---|
-   | 41 | `import { detector, speechAt16k } from './listen.js?v=20261118d';` | `import { detector, speechAt16k } from '/tiny-speech/browser/listen.js?v=0.1.0';` |
-   | 401 | `new Worker('asr-worker.js?v=20261118d', { type: 'module' })` | `new Worker('/tiny-speech/browser/asr-worker.js?v=0.1.0&site=mapsma', { type: 'module' })` |
-   | 538 | `ctx.audioWorklet.addModule('pcm-worklet.js?v=20261118d')` | `ctx.audioWorklet.addModule('/tiny-speech/browser/pcm-worklet.js?v=0.1.0')` |
-   | 723 | `new Worker('tinyvoca-worker.js?v=20261118d')` | `new Worker('/tiny-speech/browser/tinyvoca-worker.js?v=0.1.0&site=mapsma&dizione=/page5/tinyvoca/dizione.zip')` |
+   | 41 | `import { detector, speechAt16k } from './listen.js?v=20261118d';` | `import { detector, speechAt16k } from '/tiny-speech/browser/listen.js?v=0.3.0';` |
+   | 401 | `new Worker('asr-worker.js?v=20261118d', { type: 'module' })` | `new Worker('/tiny-speech/browser/asr-worker.js?v=0.3.0&libs=mapsma-voice-libs-1', { type: 'module' })` |
+   | 538 | `ctx.audioWorklet.addModule('pcm-worklet.js?v=20261118d')` | `ctx.audioWorklet.addModule('/tiny-speech/browser/pcm-worklet.js?v=0.3.0')` |
+   | 723 | `new Worker('tinyvoca-worker.js?v=20261118d')` | `new Worker('/tiny-speech/browser/tinyvoca-worker.js?v=0.3.0&libs=mapsma-voice-libs-1&voice=mapsma-tinyvoca-&dizione=/page5/tinyvoca/dizione.zip')` |
+
+   The worker addresses are what `workerUrl(config, "asr" | "voice")` (`core/config.js`) makes from `apps/mapsma.json`; a page
+   that imports the core can build them instead of writing them out.
 
    `dizione.zip` stays where it is (`/page5/tinyvoca/`). `ask.js`, `read.js`, `spanish.js` stay MapSMA's until the places domain
    (`domains/places/`, identical answers proven by the golden tests) replaces them in a later switch.
@@ -49,10 +54,10 @@ this against the sites' original files (`test/fixtures/before/`).
 
 | Line (18 Nov copy) | After |
 |---|---|
-| 8 | `import { REC_MAX_MS, detector, speechAt16k } from '/tiny-speech/browser/listen.js?v=0.1.0';` |
-| 265 | `new Worker('/tiny-speech/browser/asr-worker.js?v=0.1.0&site=credbrief', { type: 'module' })` |
-| 391 | `await ctx.audioWorklet.addModule('/tiny-speech/browser/pcm-worklet.js?v=0.1.0');` |
-| 924 | `new Worker('/tiny-speech/browser/tinyvoca-worker.js?v=0.1.0&site=credbrief&dizione=/page40/tinyvoca/dizione.zip')` |
+| 8 | `import { REC_MAX_MS, detector, speechAt16k } from '/tiny-speech/browser/listen.js?v=0.3.0';` |
+| 265 | `new Worker('/tiny-speech/browser/asr-worker.js?v=0.3.0&libs=credbrief-page40-libs-1', { type: 'module' })` |
+| 391 | `await ctx.audioWorklet.addModule('/tiny-speech/browser/pcm-worklet.js?v=0.3.0');` |
+| 924 | `new Worker('/tiny-speech/browser/tinyvoca-worker.js?v=0.3.0&libs=credbrief-page40-libs-1&voice=credbrief-tinyvoca-&dizione=/page40/tinyvoca/dizione.zip')` |
 
 Workers must come from the page's own site (browsers do not start a worker from another site), so each
 site serves its own copy of these files; the copies are the same files, from this folder, at one version.
@@ -96,5 +101,23 @@ memory on the owner's iPhone and a cheap Android decide whether the sites switch
 
 ## Releasing a new version
 
-Change `0.1.0` in the files' headers, `CORE` in the three scripts, `package.json`, and every `?v=` the
-pages use, together; `npm test` checks the version the files report.
+Change the version in the files' headers, `CORE` in the three scripts and `package.json` together; `npm test` checks the
+version the files report. The `?v=` of each address is its file's content hash (plan step B13): `node tools/manifest.mjs
+--addresses mapsma` prints a site's addresses, and `node tools/manifest.mjs` writes `browser/manifest.json` (every core file
+and every engine file with its size and SHA-256) to deploy with them.
+
+## Serving the engine files from the site itself (B13)
+
+Today the workers fetch transformers.js, Whisper, onnxruntime, Pyodide and tiny-voca from jsDelivr and Hugging Face, so those
+hosts see each visitor. `browser/engines.json` lists all 33 files (180.9 MB, recorded with the real libraries, each with its
+SHA-256). `node tools/manifest.mjs --fetch DIR` downloads them and checks every hash; copy `DIR` to the site as
+`/tiny-speech/engines/` and set `"engines": "/tiny-speech/engines/"` in the site's config (try it first with
+`check.html?engines=/tiny-speech/engines/`). Files stay stored on a visitor's phone under their original addresses, so switching
+downloads nothing again. Whisper's files are taken from the models' `main` revision: when Hugging Face changes one, `--fetch`
+stops with a SHA-256 mismatch rather than serve a different model.
+
+## Sizes
+
+`node tools/sizes.mjs` writes `docs/sizes.md` from the files themselves (B11): each part raw, gzip and brotli, and what a page's
+first visit costs. The check page's section 4 shows, on a phone, how long the city pack and the voice's first sound take, and
+the memory the browser reports.

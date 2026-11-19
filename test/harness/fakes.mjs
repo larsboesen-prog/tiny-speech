@@ -7,13 +7,16 @@ const LOG = `var __fakeLog = (...entry) => self.postMessage({ type: "__fake", en
 
 // transformers.js 3.8.1 (an ES module): pipeline() and a Whisper-like tokenizer with the special tokens the ASR worker looks up.
 export const TRANSFORMERS = `${LOG}
-export const env = { backends: { onnx: { wasm: {} } } };
+// As the real library: models from env.remoteHost, onnxruntime's engine from env.backends.onnx.wasm.wasmPaths (both settable).
+export const env = { remoteHost: "https://huggingface.co/", backends: { onnx: { wasm: { wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0-dev/dist/" } } } };
 const SPECIAL = new Map([["<|startofprev|>", 1], ["<|startoftranscript|>", 2], ["<|notimestamps|>", 3], ["<|es|>", 4], ["<|en|>", 5], ["<|transcribe|>", 6]]);
 export async function pipeline(task, id, options) {
   __fakeLog("pipeline", task, id, { device: options.device, dtype: options.dtype, numThreads: env.backends.onnx.wasm.numThreads });
   if (id.startsWith("fail/")) throw new Error("no such model: " + id);
+  const config = await fetch(env.remoteHost + id + "/resolve/main/config.json");
+  __fakeLog("model config", config.status);
   // As onnxruntime does: its engine (.wasm) is fetched through the worker's fetch, which keeps it in Cache Storage.
-  const engine = await fetch("https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0-dev/dist/ort-wasm-simd-threaded.jsep.wasm");
+  const engine = await fetch(env.backends.onnx.wasm.wasmPaths + "ort-wasm-simd-threaded.jsep.wasm");
   __fakeLog("engine", engine.status, (await engine.arrayBuffer()).byteLength);
   options.progress_callback({ status: "progress", file: "onnx/encoder_model_q8.onnx", loaded: 30, total: 60 });
   options.progress_callback({ status: "progress", file: "onnx/decoder_model_q8.onnx", loaded: 40, total: 40 });
@@ -93,25 +96,32 @@ self.ort = {
 export const TINY_VOCA_REV = "d94d2a0338fd1e0eab7dd896ec0ad23d8cdf7c14";
 const CONFIG = JSON.stringify({ voices: ["F2", "M2"], sample_rate: 24000, model: { max_tokens: 40 } });
 
+/** The stand-in for one library or model address: {status, contentType, body}. Used by the routes below, and by the test server's
+ *  /mirror/ (a site serving its own copies: plan step B13), where https://<host>/<path> is /mirror/<host>/<path>. */
+export function fakeResponse(url) {
+  const base = `https://huggingface.co/n4ze3m/tiny-voca/resolve/${TINY_VOCA_REV}/`;
+  const ok = (contentType, body) => ({ status: 200, contentType, body });
+  if (url === "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1") return ok("text/javascript", TRANSFORMERS);
+  if (url.startsWith("https://cdn.jsdelivr.net/")) {
+    if (url.endsWith("/pyodide/v0.26.4/full/pyodide.js")) return ok("text/javascript", PYODIDE);
+    if (url.endsWith("/onnxruntime-web@1.18.0/dist/ort.wasm.min.js")) return ok("text/javascript", ORT);
+    if (url.endsWith(".wasm")) return ok("application/wasm", Buffer.alloc(1500, 7));
+  }
+  if (url === base + "config.json") return ok("application/json", CONFIG);
+  if (/^https:\/\/huggingface\.co\/[^/]+\/[^/]+\/resolve\/main\/config\.json$/.test(url)) return ok("application/json", '{"model_type":"whisper"}');
+  if (url === base + "onnx/model.onnx") return ok("application/octet-stream", Buffer.alloc(4000, 3));
+  if (url.startsWith(base + "phonemizer/")) return ok("application/octet-stream", Buffer.alloc(700, 5));
+  return { status: 404, contentType: "text/plain", body: "not faked: " + url };
+}
+
 /** Route every network library and model file of the workers to the stand-ins; count each request in `hits`. */
 export async function installFakes(context, hits) {
   const count = (url) => { hits[url] = (hits[url] || 0) + 1; };
-  await context.route("https://cdn.jsdelivr.net/**", (route) => {
+  const serve = (route) => {
     const url = route.request().url();
     count(url);
-    if (url === "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1") return route.fulfill({ contentType: "text/javascript", body: TRANSFORMERS });
-    if (url.endsWith("/pyodide/v0.26.4/full/pyodide.js")) return route.fulfill({ contentType: "text/javascript", body: PYODIDE });
-    if (url.endsWith("/onnxruntime-web@1.18.0/dist/ort.wasm.min.js")) return route.fulfill({ contentType: "text/javascript", body: ORT });
-    if (url.endsWith(".wasm")) return route.fulfill({ contentType: "application/wasm", body: Buffer.alloc(1500, 7) });
-    return route.fulfill({ status: 404, body: "not faked: " + url });
-  });
-  await context.route("https://huggingface.co/**", (route) => {
-    const url = route.request().url();
-    count(url);
-    const base = `https://huggingface.co/n4ze3m/tiny-voca/resolve/${TINY_VOCA_REV}/`;
-    if (url === base + "config.json") return route.fulfill({ contentType: "application/json", body: CONFIG });
-    if (url === base + "onnx/model.onnx") return route.fulfill({ contentType: "application/octet-stream", body: Buffer.alloc(4000, 3) });
-    if (url.startsWith(base + "phonemizer/")) return route.fulfill({ contentType: "application/octet-stream", body: Buffer.alloc(700, 5) });
-    return route.fulfill({ status: 404, body: "not faked: " + url });
-  });
+    return route.fulfill(fakeResponse(url));
+  };
+  await context.route("https://cdn.jsdelivr.net/**", serve);
+  await context.route("https://huggingface.co/**", serve);
 }

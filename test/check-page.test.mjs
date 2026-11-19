@@ -43,19 +43,19 @@ before(async () => {
   errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
-  await page.goto(`http://localhost:${web.port}/tiny-speech/check.html?site=mapsma&dizione=/page5/tinyvoca/dizione.zip`);
+  await page.goto(`http://localhost:${web.port}/tiny-speech/check.html?site=mapsma&dizione=/page5/tinyvoca/dizione.zip&packs=/packs/`);
 });
 after(async () => { await browser?.close(); web?.server.close(); });
 
 test("the page names the core and the site", { skip }, async () => {
   await page.waitForFunction(() => window.tinySpeechCheck);
-  assert.match(await page.textContent("#about"), /tiny-speech 0\.1\.0 · site: mapsma · voice: tiny-voca ONNX \+ Pyodide, dizione: \/page5\/tinyvoca\/dizione\.zip/);
+  assert.match(await page.textContent("#about"), /tiny-speech 0\.3\.0 · site: mapsma · voice: tiny-voca ONNX \+ Pyodide, dizione: \/page5\/tinyvoca\/dizione\.zip/);
 });
 
 test("both workers load, and the voice is taught the names", { skip }, async () => {
   await page.click("#loadAsr");
   await page.waitForSelector("#heard .ok");
-  assert.match(await page.textContent("#heard"), /Ready: onnx-community\/whisper-tiny\.en \(tiny-speech 0\.1\.0/);
+  assert.match(await page.textContent("#heard"), /Ready: onnx-community\/whisper-tiny\.en \(tiny-speech 0\.3\.0/);
   await page.click("#teachBtn");
   await page.click("#loadVoice");
   await page.waitForFunction(() => /Voice ready|Taught/.test(document.querySelector("#spoken").textContent));
@@ -69,6 +69,19 @@ test("round trip: the voice's audio reaches speech to text", { skip }, async () 
   assert.ok(!result.error, result.error);
   assert.ok(result.seconds > 0, "audio was made");
   assert.match(result.heard, /what is open tonight \d+/, "the stand-in model heard the audio");
+  assert.ok(Number.isFinite(result.firstSoundMs) && result.firstSoundMs >= 0, "the time to the voice's first sound");
+});
+
+test("the city pack's load time, the voice's first sound and the memory are shown (plan step B11)", { skip }, async () => {
+  const first = await page.evaluate(() => window.tinySpeechCheck.loadPack());
+  const again = await page.evaluate(() => window.tinySpeechCheck.loadPack());
+  assert.deepEqual([first.city, first.from, again.from], ["mx-sma", "network", "device"], "the site's city, then from this device");
+  assert.ok(first.places >= 96 && first.ms >= 0);
+  const shown = await page.textContent("#timings");
+  assert.match(shown, /City pack mx-sma 2026-\d\d-\d\d\.[0-9a-f]{6}: \d+ places, from the network, in \d+ ms\./);
+  assert.match(shown, /from this device, in \d+ ms\./);
+  assert.match(shown, /Voice: first sound after \d+ ms\./);
+  assert.match(shown, /Memory: \d+ MB used of the page's JavaScript heap/, "Chromium reports its heap");
 });
 
 test("recording from the microphone ends by itself on the pause", { skip }, async () => {
