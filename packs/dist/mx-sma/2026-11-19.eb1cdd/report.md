@@ -1,14 +1,14 @@
-# San Miguel de Allende (mx-sma) — pack 2026-11-19.c6dbb0
+# San Miguel de Allende (mx-sma) — pack 2026-11-19.eb1cdd
 
-Built 2026-11-19 by tools/build-pack.mjs. 100 places (62 picks, 22 extras, 17 sights), 192 names, 5 areas, 1 collections.
+Built 2026-11-19 by tools/build-pack.mjs. 100 places (62 picks, 22 extras, 17 sights), 210 names, 5 areas, 1 collections.
 
 Live music: 3 venues, in live.a6f7f223.json.
 
 | File | Bytes | Gzipped |
 |---|---|---|
-| base.json | 59627 | 15694 |
+| base.json | 60222 | 15828 |
 | live.a6f7f223.json | 12499 | 1730 |
-| **total** | 72126 | **17424** (budget 30000: 300 a place) |
+| **total** | 72721 | **17558** (budget 30000: 300 a place) |
 
 ## Warnings (14)
 

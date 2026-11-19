@@ -354,7 +354,13 @@
    "hours": "Mon–Thu 9:00–17:00 · Fri–Sat 9:00–22:00 · Sun 9:00–15:00",
    "source": "https://wanderlog.com/place/details/2017182/races-restaurante-sma",
    "note": ""
-  }
+  },
+  "names": [
+   {
+    "t": "rye ces",
+    "exact": true
+   }
+  ]
  },
  {
   "id": "16",
@@ -647,7 +653,15 @@
    "hours": null,
    "source": null,
    "note": "Street stand"
-  }
+  },
+  "names": [
+   {
+    "t": "mollejitas"
+   },
+   {
+    "t": "esquites and mollejitas"
+   }
+  ]
  },
  {
   "id": "27",
@@ -733,7 +747,15 @@
    "hours": null,
    "source": null,
    "note": "Not found online"
-  }
+  },
+  "names": [
+   {
+    "t": "amor and cacao"
+   },
+   {
+    "t": "amor y cacao"
+   }
+  ]
  },
  {
   "id": "32",
@@ -882,7 +904,13 @@
    "hours": null,
    "source": null,
    "note": "Name read from a logo; not found online"
-  }
+  },
+  "names": [
+   {
+    "t": "back all",
+    "exact": true
+   }
+  ]
  },
  {
   "id": "39",
@@ -2150,7 +2178,12 @@
    ],
    "w": "winery",
    "w_es": "viñedo"
-  }
+  },
+  "names": [
+   {
+    "t": "vineyard san miguel"
+   }
+  ]
  },
  {
   "id": "80",
@@ -2165,6 +2198,18 @@
   "names": [
    {
     "t": "the restaurant",
+    "exact": true
+   },
+   {
+    "t": "the restaurante",
+    "exact": true
+   },
+   {
+    "t": "ze restaurant",
+    "exact": true
+   },
+   {
+    "t": "ze restauran",
     "exact": true
    }
   ],
@@ -2634,6 +2679,14 @@
    {
     "t": "kan bai",
     "exact": true
+   },
+   {
+    "t": "kam bei",
+    "exact": true
+   },
+   {
+    "t": "can bei",
+    "exact": true
    }
   ],
   "exactName": true,
@@ -3019,6 +3072,12 @@
    },
    {
     "t": "churros san agustin"
+   },
+   {
+    "t": "saint augustine"
+   },
+   {
+    "t": "churreria saint augustine"
    }
   ],
   "info": {
@@ -3224,6 +3283,22 @@
   "names": [
    {
     "t": "la vista rooftop",
+    "exact": true
+   },
+   {
+    "t": "lavista",
+    "exact": true
+   },
+   {
+    "t": "terraza lavista",
+    "exact": true
+   },
+   {
+    "t": "terrace la vista",
+    "exact": true
+   },
+   {
+    "t": "terasa la vista",
     "exact": true
    }
   ],

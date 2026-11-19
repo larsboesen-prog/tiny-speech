@@ -32,3 +32,9 @@ from /page5's is listed in `test/golden/changes.md`. After changing these files:
   web listings, each with its source; positions from neighbouring places on the same street (`acc`: `address` or
   `street`); Johnny's hours from a listing; Mama Mía's and Raindog's hours not found. 181 of 1,756 recorded answers
   changed: 56 music questions now answered from the music nights, and 125 lists that hold the new places further down.
+- 19 Nov 2026: other names for 9 places, from the ways speech to text misheard them (`test/llm/REPORT.md`): Raíces ("rye
+  ces"), Esquites y mollejitas, Amor & Cacao ("amor and cacao"), Bacal ("back all"), Viñedo San Miguel ("vineyard san
+  miguel"), The Restaurant ("the restaurante", "ze restaurant"), Kan Bei ("kam bei", "can bei"), Churrería San Agustín
+  ("saint augustine"), Terraza La Vista ("lavista", "terrace la vista"). Exact-only where the words are ordinary. Not added:
+  "noodle" for Nudol (it would take questions about noodle soup) and "de restaurant" (ordinary Spanish). No recorded answer
+  changed.

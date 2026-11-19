@@ -1,7 +1,7 @@
 {
  "schema": 1,
  "id": "mx-sma",
- "version": "2026-11-19.c6dbb0",
+ "version": "2026-11-19.eb1cdd",
  "built": "2026-11-19",
  "core": ">=0.2 <1",
  "names": {
@@ -141,8 +141,8 @@
  "files": {
   "base": {
    "path": "base.json",
-   "bytes": 59627,
-   "sha256": "2226a7fc614dbba8577df8327b2f46a0fec58d3b35607f986f654966464a6fd8"
+   "bytes": 60222,
+   "sha256": "af536dc044e3fe8bccf8fad077fa6f13acdde6d117ef5e0548fbee0d3bb94e17"
   },
   "live": {
    "path": "../live.a6f7f223.json",
@@ -155,7 +155,7 @@
   "picks": 62,
   "extras": 22,
   "sights": 17,
-  "names": 192,
+  "names": 210,
   "areas": 5,
   "collections": 1
  },
