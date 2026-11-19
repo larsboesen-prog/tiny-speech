@@ -40,7 +40,7 @@ Facts checked in the review and here:
 - `read.js` + `ask.js` + `spanish.js` are 122 KB (40 KB gzipped). San Miguel's voice-relevant place data (places,
   info, hours, facts) is 58.5 KB (14.9 KB gzipped). Of `data.js`'s 1.3 MB, 1.25 MB is the map.
 - The Whisper name hint is full: 214 of 223 prompt tokens, "our picks only".
-- Opening hours have two sources (`data.js` and `/photos/hours.json`) that disagree for 29 of 54 places.
+- Opening hours have two sources: `/photos/hours.json` has 54 places; 45 are also in `data.js`, and 20 of those disagree (9 are only in `hours.json`).
 - `live_music` is on three places (43, 69, X17).
 - San Miguel is written into the code: name tables keyed by place id, area regexes, Susan York's picks as a request
   field, the time zone, the Jardín as centre, walking speed "for hills and cobbles" (review 1.1).
@@ -188,8 +188,8 @@ From the review (section 4). B0 → B3 in order; the rest in any order after B3.
 
 | # | Step | Done means | Status |
 |---|---|---|---|
-| B0 | Golden tests of today's reader and asker (300+ questions, EN/ES/mixed/mis-hearings, fixed clocks) | snapshot reviewed once; passes against the originals | next |
-| B1 | Pack schema, builder, validator; San Miguel as `mx-sma` | `dist/` built; report lists hours conflicts, missing data, collisions, size | |
+| B0 | Golden tests of today's reader and asker (300+ questions, EN/ES/mixed/mis-hearings, fixed clocks) | snapshot reviewed once; passes against the originals | done: 434 questions + 5 conversations, 1,756 answers |
+| B1 | Pack schema, builder, validator; San Miguel as `mx-sma` | `dist/` built; report lists hours conflicts, missing data, collisions, size | done: 16.5 KB gzipped (budget 28.8 KB), 10 warnings |
 | B2 | Reader split: grammar in core, tables in `lang/` and `domains/places`, names and areas from the pack | requests identical to B0; proper-noun grep passes | |
 | B3 | Asker and responder split: time zone, centre, meals, walking, collections from the pack | answers identical to B0; another time zone shifts answers correctly | |
 | B4 | A made-up second city and a generated 5,000-place pack | suite runs per pack with no code change; name matching under 50 ms at 5,000 places | |

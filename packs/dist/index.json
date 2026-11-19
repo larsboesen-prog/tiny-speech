@@ -1,0 +1,23 @@
+{
+ "schema": 1,
+ "cities": [
+  {
+   "id": "mx-sma",
+   "names": {
+    "en": "San Miguel de Allende",
+    "es": "San Miguel de Allende"
+   },
+   "say": [
+    "san miguel",
+    "san miguel de allende",
+    "sma"
+   ],
+   "centre": {
+    "lat": 20.914212,
+    "lng": -100.743801
+   },
+   "version": "2026-11-19.082ab8",
+   "manifest": "mx-sma/2026-11-19.082ab8/manifest.json"
+  }
+ ]
+}
