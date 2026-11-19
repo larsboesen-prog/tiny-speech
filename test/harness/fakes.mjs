@@ -26,6 +26,10 @@ export async function pipeline(task, id, options) {
     // Whisper writes a prompt's words back before the transcript; the worker cuts them off.
     const ids = opts.decoder_input_ids || [];
     const said = ids.includes(1) ? model.tokenizer.decode(ids.slice(ids.indexOf(1) + 1, ids.indexOf(2))) : "";
+    // 12345 samples: with the name hint, Whisper tiny loops (as it does on some Mexican requests); without it, it hears right.
+    // 12346: with the hint it writes the hint's names back. The shared worker's guard must hear both again without the hint.
+    if (said && audio.length === 12345) return { text: said + " de de de de de de" };
+    if (said && audio.length === 12346) return { text: said + " " + said.replace(/\.$/, "") };
     return { text: said + " what is open tonight " + audio.length };
   };
   model.tokenizer = {

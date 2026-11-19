@@ -177,6 +177,22 @@ function withoutHint(text, h) {
   return k >= 0 ? t.slice(k + tail.length).trim() : t;
 }
 
+// The name hint can pull Whisper tiny off course: on 144 Mexican Spanish requests (synthetic voices, 19 Nov 2026) it got 41% of
+// the words wrong without the hint and 53% with it, looping ("de de de de…") or writing the names back as a comma list. An
+// answer like that is heard again, once, without the hint (training/asr/README.md).
+const WORD = "[\\p{L}\\p{N}']+", EDGE = "(?<![\\p{L}\\p{N}'])", END = "(?![\\p{L}\\p{N}'])";
+const LOOP_1 = new RegExp(`${EDGE}(${WORD})${END}(?:[\\s,.]+\\1${END}){3,}`, "iu");                 // a word four times in a row
+const LOOP_2 = new RegExp(`${EDGE}(${WORD}\\s+${WORD})${END}(?:[\\s,.]+\\1${END}){2,}`, "iu");  // two words three times
+export function hintWentWrong(text, hintText) {
+  const t = String(text || "").trim();
+  if (!t) return true;  // only the hint came back
+  if (LOOP_1.test(t) || LOOP_2.test(t)) return true;
+  const names = String(hintText || "").replace(/\.$/, "").split(/,\s*/).filter((n) => n.length > 3);
+  const copied = names.filter((n) => t.toLowerCase().includes(n.toLowerCase())).length;
+  const words = t.split(/\s+/).length, commas = (t.match(/,/g) || []).length;
+  return copied >= 4 || (words >= 4 && commas >= words * 0.6);  // the hint's names, or its comma list, written back
+}
+
 onmessage = async ({ data }) => {
   if (data.type === "load") {
     if (asr && asrId === data.model) postMessage({ type: "ready", id: data.model, core: CORE });  // already loaded: say so again
@@ -191,10 +207,16 @@ onmessage = async ({ data }) => {
         const text = data.hint || fitNames(model, data.model, data.hintNames, data.hintBudget);
         h = hintFor(model, data.model, text, data.language);
       } catch (error) { h = null; }  // a hint that cannot be built: plain Whisper
-      const lang = !h && data.language && multilingual(data.model) ? { language: data.language, task: "transcribe" } : {};
-      const opts = { ...genOpts(data.model, data.audio.length), ...(h ? { decoder_input_ids: h.init } : lang) };
+      const plain = data.language && multilingual(data.model) ? { language: data.language, task: "transcribe" } : {};
+      const opts = { ...genOpts(data.model, data.audio.length), ...(h ? { decoder_input_ids: h.init } : plain) };
       const out = await serial(() => { began = performance.now(); return model(data.audio, opts); });
-      postMessage({ type: "text", reqId: data.reqId, text: withoutHint(out.text, h), waitMs: Math.round(began - asked), runMs: Math.round(performance.now() - began) });
+      let text = withoutHint(out.text, h), retried = null;
+      if (h && hintWentWrong(text, h.prefix)) {  // the hint led it astray: the same audio once more, without it
+        const again = await serial(() => model(data.audio, { ...genOpts(data.model, data.audio.length), ...plain }));
+        text = String(again.text || "").trim();
+        retried = "hint";
+      }
+      postMessage({ type: "text", reqId: data.reqId, text, ...(retried ? { retried } : {}), waitMs: Math.round(began - asked), runMs: Math.round(performance.now() - began) });
     } catch (error) {
       postMessage({ type: "text", reqId: data.reqId, error: String((error && error.message) || error) });
     }

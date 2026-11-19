@@ -207,3 +207,20 @@ test("on each site's host, its config picks its cache names; the workers name no
     localhost: ["tiny-speech-libs-1", "tiny-speech-tinyvoca-d94d2a0-8cd889e"],
   });
 });
+
+test("speech to text: when the name hint leads Whisper astray (a loop, the names written back), the shared worker hears it again without", { skip }, async () => {
+  const HINTED = "Centro, Jardín, Susan York, Jacques, Lavanda, Santa Ana, Café Umarán, Tío Lucas.";
+  const r = await runWorker(fromConfig("mapsma", "asr"), { module: true, steps: [
+    { send: { type: "transcribe", reqId: 1, model: "onnx-community/whisper-tiny", language: "es", hint: HINTED, audio: { samples: 12345 } } }, { wait: "text" },
+    { send: { type: "transcribe", reqId: 2, model: "onnx-community/whisper-tiny", language: "es", hint: HINTED, audio: { samples: 12346 } } }, { wait: "text" },
+    { send: { type: "transcribe", reqId: 3, model: "onnx-community/whisper-tiny", language: "es", hint: HINTED, audio: { samples: 16001 } } }, { wait: "text" },
+  ] });
+  const texts = r.posted.filter((m) => m.type === "text");
+  assert.deepEqual(texts.map((m) => [m.reqId, m.text, m.retried ?? null]), [
+    [1, "what is open tonight 12345", "hint"], [2, "what is open tonight 12346", "hint"], [3, "what is open tonight 16001", null]]);
+  const runs = r.posted.filter((m) => m.type === "__fake" && m.entry[0] === "run").map((m) => m.entry);
+  const second = runs.filter((e) => e[2] === 12345)[1][3];
+  assert.equal(second.decoder_input_ids, undefined, "the second hearing has no hint");
+  assert.deepEqual([second.language, second.task], ["es", "transcribe"], "and still the page's language");
+  assert.equal(runs.filter((e) => e[2] === 16001).length, 1, "a good answer is heard once (16,000 samples is the warm-up's)");
+});

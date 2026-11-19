@@ -150,6 +150,10 @@ actions; the reader's grammar; language and variety packs; answer templates; loa
   loaded at a time. The two-recognizer race (`core/lid/race.js`) is parked: it contradicts the memory lesson.
 - **Name hints** are a ranked budget per pack and language, not "the names": rank by how hard a name is to hear
   without help and how often it is asked; the rest goes through sound matching after the fact.
+  **Guard (19 Nov 2026):** the hint can pull Whisper tiny off course (it loops, or writes the names back); the speech worker
+  hears such an answer again without the hint (`browser/asr-worker.js` hintWentWrong). On 144 synthetic Mexican requests:
+  52.8% of words wrong with the hint, 41.1% without, **38.7% with the hint and the guard** (it fired on 10); understood as
+  said 35.4 → 36.1%; places found 21 → 19 of 32 (two fewer than the hint alone: a cost to watch on real speakers).
 - **Ears (research):** a tiny phone recognizer with a language head, built tiny-voca's way. It ships only if, on
   the recorded test set, command success is not worse than Whisper tiny + the reader for each language and first
   partials come sooner. Requirement: a new city needs zero training (words and names come from the pack at load).
