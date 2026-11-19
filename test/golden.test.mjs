@@ -8,6 +8,7 @@ import { runAll, lines, differences, SNAPSHOT, ORIGINAL } from "../tools/golden.
 
 const IMPLEMENTATIONS = [
   { name: "MapSMA /page5 as served on 18 Nov 2026", dir: ORIGINAL },
+  { name: "the shared core (domains/places) with San Miguel's pack", dir: "core" },
 ];
 
 const snapshot = readFileSync(SNAPSHOT, "utf8");

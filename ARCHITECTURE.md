@@ -190,8 +190,8 @@ From the review (section 4). B0 → B3 in order; the rest in any order after B3.
 |---|---|---|---|
 | B0 | Golden tests of today's reader and asker (300+ questions, EN/ES/mixed/mis-hearings, fixed clocks) | snapshot reviewed once; passes against the originals | done: 434 questions + 5 conversations, 1,756 answers |
 | B1 | Pack schema, builder, validator; San Miguel as `mx-sma` | `dist/` built; report lists hours conflicts, missing data, collisions, size | done: 16.5 KB gzipped (budget 28.8 KB), 10 warnings |
-| B2 | Reader split: grammar in core, tables in `lang/` and `domains/places`, names and areas from the pack | requests identical to B0; proper-noun grep passes | |
-| B3 | Asker and responder split: time zone, centre, meals, walking, collections from the pack | answers identical to B0; another time zone shifts answers correctly | |
+| B2 | Reader split: grammar in core, tables in `lang/` and `domains/places`, names and areas from the pack | requests identical to B0; proper-noun grep passes | done: `domains/places/read.js`; language tables move to `lang/` in B6 |
+| B3 | Asker and responder split: time zone, centre, meals, walking, collections from the pack | answers identical to B0; another time zone shifts answers correctly | done: all 1,756 answers identical |
 | B4 | A made-up second city and a generated 5,000-place pack | suite runs per pack with no code change; name matching under 50 ms at 5,000 places | |
 | B5 | Pack loader in the browser (hash check, cache, swap, offline, `setCity`) | Playwright: loads two cities, refuses a corrupted file, works offline | |
 | B6 | Language packs and the language decision (numbers and clock both ways; names masked) | table tests; text-only language accuracy on B0's questions | |

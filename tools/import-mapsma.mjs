@@ -81,14 +81,17 @@ const areas = [
 
 const picks = win.SUSAN.picks;
 const collections = [
-  { id: "susan", requestKey: "susan",
+  { id: "susan",
     words: ["susan", "suzanne", "suzan", "susanne", "york", "blogger", "cupcakes", "bloguera"],
-    recentDays: 548,
+    recentDays: 548,     // "recent" picks: written about in the last 18 months (ask.js RECENT_DAYS)
+    count: 3,            // a question about her picks gets three places, not four (ask.js)
+    alsoKinds: ["wine"], // her picks include wineries (ask.js)
     source: { blog: win.SUSAN.blog, checked: win.SUSAN.checked },
     places: picks,
     text: {
       en: { who: "Susan York", picks: "Susan York's picks", recentPicks: "Susan York's recent picks", wrote: "Susan York wrote about it in {month}" },
-      es: { who: "Susan York", picks: "las recomendaciones de Susan York", recentPicks: "las recomendaciones recientes de Susan York", wrote: "Susan York escribió sobre este lugar en {month}" },
+      es: { who: "Susan York", picks: "las recomendaciones de Susan York", recentPicks: "las recomendaciones recientes de Susan York", wrote: "Susan York escribió sobre este lugar en {month}",
+        more: "recomendaciones más de Susan York", gender: "f" },
     } },
 ];
 

@@ -1,7 +1,6 @@
 [
  {
   "id": "susan",
-  "requestKey": "susan",
   "words": [
    "susan",
    "suzanne",
@@ -13,6 +12,10 @@
    "bloguera"
   ],
   "recentDays": 548,
+  "count": 3,
+  "alsoKinds": [
+   "wine"
+  ],
   "source": {
    "blog": "http://www.cupcakesandcrablegs.com",
    "checked": "2026-11-17"
@@ -94,7 +97,9 @@
     "who": "Susan York",
     "picks": "las recomendaciones de Susan York",
     "recentPicks": "las recomendaciones recientes de Susan York",
-    "wrote": "Susan York escribió sobre este lugar en {month}"
+    "wrote": "Susan York escribió sobre este lugar en {month}",
+    "more": "recomendaciones más de Susan York",
+    "gender": "f"
    }
   }
  }

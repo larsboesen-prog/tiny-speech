@@ -110,7 +110,8 @@ export function validate(src, today) {
   for (const c of collections) {
     if (!c.id || !Array.isArray(c.words) || !c.words.length) err(`collections.json: collection "${c.id}" needs an id and words`);
     for (const x of c.places || []) if (!ids.has(x.id)) err(`collections.json: "${c.id}" lists unknown place ${x.id}`);
-    for (const l of city?.langs || []) if (!c.text?.[l]) err(`collections.json: "${c.id}" has no text in ${l}`);
+    for (const l of city?.langs || []) for (const k of ["who", "picks", "recentPicks", "wrote"]) if (!c.text?.[l]?.[k]) err(`collections.json: "${c.id}" text.${l}.${k} is missing`);
+    if (city?.langs?.includes("es") && !(c.text?.es?.more && c.text?.es?.gender)) err(`collections.json: "${c.id}" text.es needs "more" and "gender"`);
   }
 
   // names: every key a question can say, its collisions, names that are ordinary words, names that need a reading

@@ -1,7 +1,7 @@
 {
  "schema": 1,
  "id": "mx-sma",
- "version": "2026-11-19.082ab8",
+ "version": "2026-11-19.77a310",
  "built": "2026-11-19",
  "core": ">=0.2 <1",
  "names": {
@@ -134,8 +134,8 @@
  "files": {
   "base": {
    "path": "base.json",
-   "bytes": 56762,
-   "sha256": "d8ae08f2575440fee53f123d07eebffcaa13ff8f7cf4795fbf77baedbd085a38"
+   "bytes": 56829,
+   "sha256": "fa3e851658f9fb1e062491c116a0c042439aa6a02e5a5eccc23db6e6c9bc06b1"
   },
   "live": {
    "path": "../live.6687cdce.json",

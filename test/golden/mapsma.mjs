@@ -39,23 +39,61 @@ export async function loadSite(dir) {
     });
   };
   const askers = { en: makeAsker("en"), es: makeAsker("es") };
+  return runner({ askers, now: (d) => ask.nowMX(d), requestOf: ask.requestOf, reseed: () => { rng = seeded(7); } });
+}
+
+/**
+ * The shared core (domains/places) with San Miguel's built pack, loaded as a browser would: index.json → manifest → base and live,
+ * each checked against the manifest's SHA-256. MapSMA's request and answer have a field "susan" where the core has "collection"
+ * (any city's curated list): the core's is renamed back, in place, so the two can be compared word for word.
+ */
+export async function loadCore(root = new URL("../../", import.meta.url), cityId = "mx-sma") {
+  const { createHash } = await import("node:crypto");
+  const ask = await import(new URL("domains/places/ask.js", root).href);
+  const { assemble, checked } = await import(new URL("core/pack/assemble.js", root).href);
+  const dist = new URL("packs/dist/", root);
+  const index = JSON.parse(readFileSync(new URL("index.json", dist), "utf8"));
+  const entry = index.cities.find((c) => c.id === cityId);
+  const manifestUrl = new URL(entry.manifest, dist);
+  const manifest = JSON.parse(readFileSync(manifestUrl, "utf8"));
+  const sha = (t) => createHash("sha256").update(t).digest("hex");
+  const file = (f) => checked(readFileSync(new URL(f.path, manifestUrl), "utf8"), f, sha);
+  const pack = assemble(manifest, await file(manifest.files.base), await file(manifest.files.live));
+  let rng = seeded(1);
+  const makeAsker = (lang) => ask.createAsker({ pack, random: () => rng(), lang });
+  const askers = { en: makeAsker("en"), es: makeAsker("es") };
+  const asMapsma = (o) => renameKey(o, "collection", "susan", (v) => !!v);
+  return {
+    pack,
+    ...runner({ askers, now: (d) => ask.nowAt(pack.tz, d), reseed: () => { rng = seeded(7); },
+      requestOf: (q) => { const r = ask.requestOf(q); return "collection" in r ? renameKey(r, "collection", "susan", () => true) : r; },
+      answerOf: (res) => ("collection" in res ? asMapsma(res) : res) }),
+  };
+}
+
+// A key renamed where it stands (key order is part of the snapshot's text).
+function renameKey(o, from, to, value) {
+  return Object.fromEntries(Object.entries(o).map(([k, v]) => (k === from ? [to, value(v)] : [k, v])));
+}
+
+function runner({ askers, now: nowOf, requestOf, reseed, answerOf = (r) => r }) {
   /** One conversation (a question, or several with "more"), at one clock, answered in `lang`. */
   function run(questions, clock, lang) {
     const asker = askers[lang];
-    const now = ask.nowMX(new Date(CLOCKS[clock]));
+    const now = nowOf(new Date(CLOCKS[clock]));
     let lastList = null;
     const out = [];
     for (const text of questions) {
-      rng = seeded(7);  // "surprise me" draws the same places every run
+      reseed();  // "surprise me" draws the same places every run
       const pq = asker.parse(text);
       const here = pq.near || pq.howFar ? HERE : null;
       const res = asker.answer(text, now, lastList, here);
       if (res.kind === "list" && res.ids.length && !(res.ids.length === 1 && !res.all.length)) lastList = res;
-      out.push({ request: ask.requestOf(pq), answer: plainAnswer(res) });
+      out.push({ request: requestOf(pq), answer: plainAnswer(answerOf(res)) });
     }
     return out;
   }
-  return { ask, askers, run };
+  return { askers, run };
 }
 
 // What an answer says and shows, without the request object (recorded separately) and with places as their ids.

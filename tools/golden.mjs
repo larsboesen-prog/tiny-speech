@@ -5,15 +5,15 @@
 //   node tools/golden.mjs --digest  rewrite test/golden/mapsma-digest.md: question → first spoken sentence, for reading by eye
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { loadSite } from "../test/golden/mapsma.mjs";
+import { loadSite, loadCore } from "../test/golden/mapsma.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 export const SNAPSHOT = ROOT + "test/golden/mapsma.snapshot.jsonl";
 export const ORIGINAL = ROOT + "test/fixtures/before/mapsma-page5";
 
-/** Every case: {key, turns} for a site implementation. */
+/** Every case: {key, turns}, for MapSMA's original files (a folder) or "core" (domains/places with the built pack). */
 export async function runAll(dir = ORIGINAL) {
-  const site = await loadSite(dir);
+  const site = dir === "core" ? await loadCore() : await loadSite(dir);
   const q = JSON.parse(readFileSync(ROOT + "test/golden/questions-mapsma.json", "utf8"));
   const cases = [];
   for (const conversation of q.conversations) {
@@ -39,7 +39,7 @@ export function differences(expected, actual, max = 20) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const cases = await runAll();
+  const cases = await runAll(process.argv.includes("--core") ? "core" : ORIGINAL);
   const now = lines(cases);
   if (process.argv.includes("--update")) {
     writeFileSync(SNAPSHOT, now);
