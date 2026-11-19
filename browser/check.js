@@ -17,7 +17,8 @@ async function siteConfig() {
   } catch { /* no app list here: test cache names */ }
   return appConfig({});
 }
-const CONFIG = await siteConfig();
+// ?engines=/folder/: try the site's own copies of the engine files (plan step B13) before the site's config says so.
+const CONFIG = params.has("engines") ? appConfig({ ...(await siteConfig()), engines: params.get("engines") }) : await siteConfig();
 const SITE = CONFIG.app;
 const LIMITS = limitsOf(CONFIG);
 const DIZIONE = params.get("dizione") ?? CONFIG.voice.dizione;
@@ -37,7 +38,8 @@ function log(...parts) {
 const show = (id, html) => { $(id).innerHTML = html; };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
-$("about").textContent = `${CORE} · site: ${SITE || "(none: test cache names)"} · voice: ${VOICE_JS ? "tiny-voca in plain JS" : "tiny-voca ONNX + Pyodide, dizione: " + (DIZIONE || "next to the worker")}`;
+$("about").textContent = `${CORE} · site: ${SITE || "(none: test cache names)"} · voice: ${VOICE_JS ? "tiny-voca in plain JS" : "tiny-voca ONNX + Pyodide, dizione: " + (DIZIONE || "next to the worker")}` +
+  (CONFIG.engines ? ` · engine files from this site: ${CONFIG.engines}` : "");
 log("check page", { core: CORE, site: SITE, asr: ASR_URL, voice: VOICE_URL });
 
 // ---------- speech to text: asr-worker.js ----------

@@ -13,15 +13,29 @@
 // Whisper only), hint (names, as text) or hintNames (names in order of need) with hintBudget (tokens)}.
 // Messages out: progress {id, frac}, ready {id, core}, warm {id, ms}, error {id, message}, text {reqId, text | error, waitMs, runMs}.
 
-import { env, pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
-
 const CORE = "tiny-speech 0.3.0";
+const TRANSFORMERS = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 
 const HERE = new URL(self.location.href);
 const SITE = { libs: HERE.searchParams.get("libs") || "tiny-speech-libs-1" };
 
-// One core: a 3-second question takes about 0.3 s on one thread (measured 16 Nov), and the rest of the machine stays free.
-env.backends.onnx.wasm.numThreads = 1;
+// Self-hosting (plan step B13): with ?engines=<folder>, every engine file comes from the site itself, at the same path under that
+// folder as on its own host (https://cdn.jsdelivr.net/npm/… → <folder>cdn.jsdelivr.net/npm/…, models under <folder>huggingface.co/),
+// pinned by SHA-256 in browser/manifest.json: no third party sees the visitor. Without it, the files come from their hosts as before.
+const ENGINES = HERE.searchParams.get("engines");
+const mirror = (url) => (ENGINES ? new URL(ENGINES + url.replace(/^https:\/\//, ""), HERE).href : url);
+
+// The library, loaded once (from its host, or the site's copy); the settings below are made before anything uses it.
+const libs = import(mirror(TRANSFORMERS)).then(({ env, pipeline }) => {
+  // One core: a 3-second question takes about 0.3 s on one thread (measured 16 Nov), and the rest of the machine stays free.
+  env.backends.onnx.wasm.numThreads = 1;
+  if (ENGINES) {
+    env.remoteHost = mirror("https://huggingface.co/");
+    const wasm = env.backends.onnx.wasm.wasmPaths;
+    if (typeof wasm === "string") env.backends.onnx.wasm.wasmPaths = mirror(wasm);
+  }
+  return { env, pipeline };
+});
 
 // transformers.js keeps the model files in cache storage itself, but fetches onnxruntime's engine (a .wasm of 10-20 MB) through the
 // browser's ordinary cache, which iPhone Safari may empty. That file is kept in cache storage here (17 Nov 2026); its URL carries its
@@ -31,7 +45,8 @@ const seen = { kept: 0, fetched: 0 };
 const netFetch = self.fetch.bind(self);
 self.fetch = async (input, init) => {
   const url = String(input instanceof Request ? input.url : input);
-  if (!/^https:\/\/cdn\.jsdelivr\.net\/npm\/[^?#]+\.wasm$/.test(url)) return netFetch(input, init);
+  const engine = /^https:\/\/cdn\.jsdelivr\.net\/npm\/[^?#]+\.wasm$/.test(url) || (ENGINES && url.startsWith(mirror("https://cdn.jsdelivr.net/npm/")) && /\.wasm$/.test(url));
+  if (!engine) return netFetch(input, init);
   let store = null;
   try {
     store = await caches.open(LIBS);
@@ -83,7 +98,7 @@ function load(id) {
   if (asr && asrId === id) return Promise.resolve(asr);
   if (loading && loading.id === id) return loading.promise;
   const files = {}, started = performance.now();
-  const promise = pipeline("automatic-speech-recognition", id, {
+  const promise = libs.then(({ pipeline }) => pipeline("automatic-speech-recognition", id, {
     device: "wasm",
     dtype: "q8",  // the small quantized files (about 40 MB for Whisper tiny.en, 30 MB for Moonshine Tiny, 63 MB for Moonshine Base)
     progress_callback: (p) => {
@@ -93,7 +108,7 @@ function load(id) {
         postMessage({ type: "progress", id, frac: v.reduce((a, x) => a + x[0], 0) / v.reduce((a, x) => a + x[1], 0) });
       }
     },
-  }).then((model) => {
+  })).then((model) => {
     const old = asr;
     asr = model;
     asrId = id;

@@ -29,6 +29,13 @@ const PYODIDE = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
 const ORT = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/";
 const MODEL_REV = "d94d2a0338fd1e0eab7dd896ec0ad23d8cdf7c14";
 const HF = `https://huggingface.co/n4ze3m/tiny-voca/resolve/${MODEL_REV}/`;
+// Self-hosting (plan step B13): with ?engines=<folder>, Pyodide, onnxruntime and the model come from the site itself, at the same path
+// under that folder as on their own hosts (https://cdn.jsdelivr.net/… → <folder>cdn.jsdelivr.net/…), pinned by SHA-256 in
+// browser/manifest.json. Files are still kept under their original addresses, so a visitor's stored copies are found either way.
+const ENGINES = HERE.searchParams.get("engines");
+const MIRROR = ENGINES ? new URL(ENGINES, HERE).href : "";
+const mirror = (url) => (MIRROR && new URL(url).origin !== HERE.origin ? MIRROR + url.replace(/^https:\/\//, "") : url);  // the site's own files (dizione.zip) as they are
+const original = (url) => (MIRROR && url.startsWith(MIRROR) ? "https://" + url.slice(MIRROR.length) : url);
 // dizione commit 8cd889e, as each site serves it: ?dizione=/page5/tinyvoca/dizione.zip, else tinyvoca/dizione.zip beside this worker.
 // The same address as before gives the same cache key, so a visitor's stored copy is found again.
 const DIZIONE_ZIP = new URL(HERE.searchParams.get("dizione") || "tinyvoca/dizione.zip", HERE).href;
@@ -43,7 +50,7 @@ const LIBS = SITE.libs;
 const seen = { kept: 0, fetched: 0 };
 const netFetch = self.fetch.bind(self);
 self.fetch = async (input, init) => {
-  const url = String(input instanceof Request ? input.url : input);
+  const url = original(String(input instanceof Request ? input.url : input));
   if (!url.startsWith(PYODIDE) && !url.startsWith(ORT)) return netFetch(input, init);
   let store = null;
   try {
@@ -57,7 +64,7 @@ self.fetch = async (input, init) => {
   return response;
 };
 
-importScripts(PYODIDE + "pyodide.js", ORT + "ort.wasm.min.js");
+importScripts(mirror(PYODIDE) + "pyodide.js", mirror(ORT) + "ort.wasm.min.js");
 
 let pyodide, phonemize, session, config;
 let lexicon = null, taught = 0;  // MapSMA: {word: phones} for the Spanish names, from the page ("teach"); taught once the phonemizer is up
@@ -79,7 +86,7 @@ async function download(url, label) {
     const hit = await store.match(url);
     if (hit) { seen.kept += 1; return new Uint8Array(await hit.arrayBuffer()); }
   } catch (error) { store = null; }
-  const bytes = await fetchBytes(url, label);
+  const bytes = await fetchBytes(mirror(url), label);
   seen.fetched += 1;
   if (store) store.put(url, new Response(bytes)).catch(() => {});
   return bytes;
@@ -108,7 +115,7 @@ async function fetchBytes(url, label) {
 
 async function loadPhonemizer() {
   status("Loading the tiny-voca phonemizer");
-  pyodide = await loadPyodide({ indexURL: PYODIDE });
+  pyodide = await loadPyodide({ indexURL: mirror(PYODIDE) });
   await pyodide.loadPackage("numpy");
   const [source, ...files] = await Promise.all([
     download(DIZIONE_ZIP, "Loading the tiny-voca phonemizer"),
@@ -153,10 +160,10 @@ phonemize_json("Warm up.")
 }
 
 async function loadModel() {
-  config = await (await fetch(HF + "config.json")).json();
+  config = await (await fetch(mirror(HF + "config.json"))).json();
   const bytes = await download(HF + "onnx/model.onnx", "Loading the tiny-voca voice");
   status("Starting the tiny-voca voice");
-  ort.env.wasm.wasmPaths = ORT;
+  ort.env.wasm.wasmPaths = mirror(ORT);
   ort.env.wasm.numThreads = 1;
   session = await ort.InferenceSession.create(bytes, { executionProviders: ["wasm"] });
 }
