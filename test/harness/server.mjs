@@ -16,6 +16,8 @@ const MOUNTS = [
   ["/core/", join(ROOT, "core")],
   ["/domains/", join(ROOT, "domains")],
   ["/lang/", join(ROOT, "lang")],
+  ["/engines/", join(ROOT, "engines")],
+  ["/vendor/", join(ROOT, "vendor")],
 ];
 const TYPES = { ".js": "text/javascript", ".mjs": "text/javascript", ".html": "text/html; charset=utf-8", ".json": "application/json", ".wav": "audio/wav" };
 
@@ -27,6 +29,12 @@ export function startServer({ dizione = DIZIONE } = {}) {
   const server = createServer(async (req, res) => {
     const path = decodeURIComponent(new URL(req.url, "http://x").pathname);
     hits[path] = (hits[path] || 0) + 1;
+    if (path === "/corrupt/tiny-voca-js.gguf") {  // the voice file with one byte changed (a route would stop module workers starting)
+      const bytes = await readFile(join(ROOT, "vendor/tiny-voca/tiny-voca-js.gguf"));
+      bytes[bytes.length - 100] ^= 0xff;
+      res.writeHead(200, { "content-type": "application/octet-stream", "content-length": bytes.length });
+      return res.end(bytes);
+    }
     if (path.endsWith("/tinyvoca/dizione.zip")) {
       res.writeHead(200, { "content-type": "application/zip", "content-length": dizione.length });
       return res.end(dizione);

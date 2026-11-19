@@ -198,7 +198,7 @@ From the review (section 4). B0 → B3 in order; the rest in any order after B3.
 | B7 | Spanish spelling → sounds for sentences (from `spanish.js`) | name outputs unchanged; every template sentence valid for the phoneset | done: `lang/es/sounds.js`; names identical to MapSMA's; every Spanish answer sentence (5,862 words) in valid sounds |
 | B8 | Music facet | "live jazz tonight" / "¿dónde hay trova el jueves?" answered from test slots | |
 | B9 | Config instead of the `SITES` table; hint builder with a token budget; `AsrEngine` result shape | the 19 parity tests still pass | |
-| B10 | Plain-JS voice worker behind `VoiceEngine` | same messages as the ONNX worker; real-file test when the GGUF is present | |
+| B10 | Plain-JS voice worker behind `VoiceEngine` | same messages as the ONNX worker; real-file test when the GGUF is present | done: `engines/tinyvoca-js.js`, `browser/tinyvoca-js-worker.js`; English 100% in the live round trip, Spanish 11–55% (needs training), 3–4 × real time here |
 | B11 | `tools/sizes.mjs`; check page shows pack load and first-sound time | size table generated | |
 | B12 | News, small (search titles, read, next, stop, hand-off) | works on `feed.xml`; "latest" says the feed has no dates | |
 | B13 | Self-hosting manifest; no request leaves the origin or carries audio | Playwright | |

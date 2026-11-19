@@ -72,6 +72,27 @@ The Spanish line is the English voice reading Spanish (only names are taught Spa
 the gap the bilingual tiny-voca voice is for. Speech to text here is slower than on the phones the
 pages measured (0.3–1.5 s for a 3-second question): the container's CPU, not the files.
 
+## The plain-JS voice (B10, 19 Nov 2026)
+
+`tinyvoca-js-worker.js` is tiny-voca in plain JavaScript (`engines/tinyvoca-js.js`, upstream `js/` vendored in `vendor/tiny-voca/`):
+one 8 MB file (`npm run fetch:voice`), no onnxruntime, no Pyodide, the model's SHA-256 checked before use. Same messages as
+`tinyvoca-worker.js`, so a page switches by its address; new: `speak {lang: "es"}` reads Spanish sentences with Spanish sounds, and
+`{type: "city", english, readings, names}` says which words inside the city's names stay English. Try it on the check page with
+`check.html?voice=js`.
+
+Live round trip on 19 Nov (headless Chromium in a cloud container, one thread; Whisper tiny.en for English, Whisper tiny told
+Spanish for Spanish):
+
+| | ONNX + Pyodide voice (sites today) | plain-JS voice |
+|---|---|---|
+| English, 2 sentences | 100%, 100% of words heard | 100%, 100% |
+| Spanish, 3 sentences | 56%, 14%, 18% (Spanish through the English phonemizer) | 11%, 43%, 55% (Spanish sounds) |
+| Speed | 12–16 × real time | 3–4 × real time |
+
+Spanish is not usable from either until the voice is trained on Spanish (plan step 5): keep the phone's Mexican voice for Spanish
+answers until then (review 1.4). The plain-JS voice is slower here than the ONNX one but faster than real time; its speed and
+memory on the owner's iPhone and a cheap Android decide whether the sites switch to it.
+
 ## Releasing a new version
 
 Change `0.1.0` in the files' headers, `CORE` in the three scripts, `package.json`, and every `?v=` the

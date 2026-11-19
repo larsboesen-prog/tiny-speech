@@ -10,7 +10,11 @@ const HOST_SITE = /(^|\.)mapsma\.com$/.test(location.hostname) ? "mapsma" : /(^|
 const SITE = params.get("site") ?? HOST_SITE;
 const DIZIONE = params.get("dizione") ?? ({ mapsma: "/page5/tinyvoca/dizione.zip", credbrief: "/page40/tinyvoca/dizione.zip" }[SITE] || "");
 const ASR_URL = `asr-worker.js?v=${V}&site=${encodeURIComponent(SITE)}`;
-const VOICE_URL = `tinyvoca-worker.js?v=${V}&site=${encodeURIComponent(SITE)}${DIZIONE ? "&dizione=" + encodeURIComponent(DIZIONE) : ""}`;
+// ?voice=js: tiny-voca in plain JavaScript (one 8 MB file; Spanish sentences in Spanish sounds); else the ONNX + Pyodide worker the sites use.
+const VOICE_JS = params.get("voice") === "js";
+const VOICE_URL = VOICE_JS
+  ? `tinyvoca-js-worker.js?v=${V}&site=${encodeURIComponent(SITE)}${params.get("model") ? "&model=" + encodeURIComponent(params.get("model")) : ""}`
+  : `tinyvoca-worker.js?v=${V}&site=${encodeURIComponent(SITE)}${DIZIONE ? "&dizione=" + encodeURIComponent(DIZIONE) : ""}`;
 
 const $ = (id) => document.getElementById(id);
 const t0 = performance.now();
@@ -23,7 +27,7 @@ function log(...parts) {
 const show = (id, html) => { $(id).innerHTML = html; };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
-$("about").textContent = `${CORE} · site: ${SITE || "(none: test cache names)"} · dizione: ${DIZIONE || "next to the worker"}`;
+$("about").textContent = `${CORE} · site: ${SITE || "(none: test cache names)"} · voice: ${VOICE_JS ? "tiny-voca in plain JS" : "tiny-voca ONNX + Pyodide, dizione: " + (DIZIONE || "next to the worker")}`;
 log("check page", { core: CORE, site: SITE, asr: ASR_URL, voice: VOICE_URL });
 
 // ---------- speech to text: asr-worker.js ----------
@@ -191,7 +195,7 @@ let voiceWorker = null, voiceReady = null, speakId = 0;
 const speaking = new Map();  // id -> {chunks, resolve, reject, play}
 function voice() {
   if (voiceWorker) return voiceWorker;
-  voiceWorker = new Worker(VOICE_URL);
+  voiceWorker = new Worker(VOICE_URL, VOICE_JS ? { type: "module" } : undefined);
   voiceWorker.onmessage = ({ data }) => {
     if (data.type === "status") { show("spoken", `${esc(data.text)}${data.progress != null ? ` ${Math.round(data.progress * 100)}%` : ""}`); return; }
     if (data.type === "sentence") {
@@ -233,7 +237,7 @@ function speak(text, { play = true } = {}) {
   const id = ++speakId;
   return new Promise((resolve, reject) => {
     speaking.set(id, { chunks: [], resolve, reject, play });
-    voice().postMessage({ type: "speak", id, text, voice: Number($("voice").value), speed: 1.0, pitch: Number($("pitch").value) });
+    voice().postMessage({ type: "speak", id, text, voice: Number($("voice").value), speed: 1.0, pitch: Number($("pitch").value), lang: $("sayLang").value });
   });
 }
 const join = (chunks) => {
@@ -292,7 +296,7 @@ $("loadVoice").onclick = loadVoice;
 $("teachBtn").onclick = teach;
 $("speak").onclick = () => { if (!voiceReady) loadVoice(); stopSound(); speak($("say").value).then(() => log("spoken"), (err) => show("spoken", `<span class="bad">${esc(err.message)}</span>`)); };
 $("stop").onclick = () => { voice().postMessage({ type: "stop" }); stopSound(); };
-$("phones").onclick = () => voice().postMessage({ type: "phones", id: 0, text: $("say").value });
+$("phones").onclick = () => voice().postMessage({ type: "phones", id: 0, text: $("say").value, lang: $("sayLang").value });
 $("roundTrip").onclick = roundTrip;
 $("clearLog").onclick = () => { $("log").textContent = ""; };
 $("cacheList").onclick = listCaches;
