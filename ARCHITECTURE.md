@@ -2,8 +2,9 @@
 
 A bilingual (English / Mexican Spanish) voice front end for local data: restaurant finder
 ("sushi tonight, what's open?") and news search and playback. Speech in, speech out, on the device.
-Status: **proposal; no engine chosen yet.** The three files in `src/` are early drafts written
-before this proposal (text normalization, text language ID, a two-recognizer language "race").
+Status: **shared core v0 built** (`browser/`, tested in `test/`); the voice is tiny-voca (D4). The files
+in `core/` are early drafts written before this proposal (text normalization, text language ID, a
+two-recognizer language "race", which the tiny recognizer's language head would make unnecessary).
 
 Voice credit: [tiny-voca](https://github.com/n4ze3m/tiny-voca) by Muhammed Nazeem (Apache-2.0),
 a 4.5M-parameter TTS model that runs on a CPU and in the browser.
@@ -15,6 +16,7 @@ a 4.5M-parameter TTS model that runs on a CPU and in the browser.
 | D1 | **Browser first, app later** | Everything sits behind engine interfaces; only engines that also run natively (Sherpa-ONNX, tiny-voca GGUF via plain JS / llama.cpp / Rust). The app starts as a shell around the web build (Capacitor for phones, Tauri for desktop), then swaps in native engines. |
 | D2 | **Language detected on every question**, with a manual EN/ES override | A language gate before recognition. Near term: Whisper's own language guess on the recorded question. Streaming: a race of two recognizers, later a small classifier or one bilingual model. |
 | D3 | **A shared core in this repo** used by MapSMA /page5 and CredBrief /page40 | The voice plumbing both sites copy by hand moves here once, versioned; each domain plugs in its own reader and actions. |
+| D4 | **Build around tiny-voca**: extend what that model does, and keep the whole stack small with its ideas (19 Nov 2026) | The voice is tiny-voca, made bilingual. The other parts follow the same recipe (section 4a), so large off-the-shelf engines become baselines and fallbacks, not the target. |
 
 ## 1. Starting point: MapSMA /page5 and CredBrief /page40
 
@@ -93,36 +95,59 @@ Each site loads a pinned version (the `?v=` pattern both pages use). Interfaces:
 - `Domain`: `read(text, lang, context) -> request`, `answer(request) -> {sentences, cards, effects}`.
 - `VoiceEngine`: `speak([{lang, text}])`, `stop()`; one voice for both languages.
 
-### Recommendations
+### 4a. tiny-voca's ideas, applied to the whole stack (D4)
 
-1. ASR: **bake-off before committing**: transformers.js Whisper/Moonshine (baseline), Sherpa en-20M +
-   a Spanish Zipformer, Vosk. Sherpa likely, if a Spanish model holds up on Mexican speech; it also
-   runs natively for the app (D1).
-2. Voice: **tiny-voca plain-JS build** (one 8 MB GGUF, no Pyodide, no onnxruntime): removes the second
-   runtime that ran the iPhone out of memory, and the same GGUF runs in llama.cpp and Rust for the app.
-   Interim Spanish: same voice through `es-mx.js` (American accent). Then train the bilingual voice.
-3. News: deterministic commands locally on the feed (this repo's `feed.xml`, or CredBrief's archive);
-   open questions go to CredBrief's server as one permitted action, as page40 does today.
+What keeps tiny-voca small (4.5M parameters, one 8 MB file):
 
-Size: VAD 2 MB + EN ASR ~42 MB + ES ASR 35–70 MB + runtime ~10 MB (to measure) + voice 25–40 MB
-(~10 MB quantized) + interpreter and data 1–5 MB = about 100–170 MB. With one bilingual ASR: ~70–90 MB.
+1. **A narrow job, trained from scratch, taught by a big model.** Its audio came from a large TTS
+   (Qwen3-TTS) and was screened by Whisper; the whole model cost $9.56 of GPU time.
+2. **Known structure in code, not in weights.** Durations, pitch and energy are explicit, and the
+   waveform comes from a source-filter synthesizer (26k parameters) instead of a neural vocoder.
+3. **Rules and tables first, a tiny learned part for the rest.** The phonemizer (dizione) is a
+   dictionary, rules and a small model for unknown words.
+4. **One small file, no runtime.** GGUF with 8-bit matrices; plain JavaScript in the browser, Node and
+   Bun; the same file in llama.cpp, a Rust port and an ESP32.
+
+| Part | Built the tiny-voca way | Target size |
+|---|---|---|
+| Voice | tiny-voca made bilingual: one voice for English and Mexican Spanish. About ten Spanish phones and a language token are added to its inventory; Spanish phones come from rules (Spanish spelling is regular: `spanish.js`, from names to sentences); fine-tuned from the released checkpoint on teacher audio in one voice, with Mexican-accent checks | 8–10 MB (8-bit), at most ~32 MB |
+| Ears | tiny-voca in reverse: a small streaming phone recognizer over the voice's own phone set, with a two-way language head on the same encoder. Words come from a lexicon of what the app knows (commands, cuisines, times, place names, news terms), and spoken names are matched by sound as MapSMA's `read.js` already does. Trained on real English and Mexican Spanish speech (Common Voice incl. México, CIEMPIESS) plus synthetic speech, labelled by a big recognizer and forced alignment | 5–15 MB |
+| Language | the recognizer's language head: no second model, no race | ~0 |
+| End of speech | `listen.js` (loudness), as today | 0 |
+| Interpreter | MapSMA's `read.js` / `ask.js`: rules and tables | 1–5 MB |
+| Runtime | plain JavaScript like tiny-voca's `js/`: no onnxruntime, no Pyodide (also ends the iPhone memory problem); GGUF files carry over to the app | — |
+
+Total about 20–35 MB, against 100–170 MB for the off-the-shelf stack in section 2.
+
+Risk, plainly: the voice is the safe part (tiny-voca already has more than a dozen language ports).
+The ears are the research bet: a recognizer trained from scratch should handle a closed vocabulary
+(commands and names; Sherpa's 3M-parameter keyword spotter shows how small that can be), but not open
+dictation. So:
+
+- Open questions ("ask CredBrief anything") keep Whisper tiny (~40 MB) as an optional download.
+- Whisper/Moonshine (today's pages), Sherpa and Vosk become the baselines the tiny recognizer is
+  measured against, not the target.
+- News: deterministic commands locally on the feed (this repo's `feed.xml`, or CredBrief's archive);
+  open questions go to CredBrief's server as one permitted action, as page40 does today.
 
 ## 5. Design steps
 
 0. **Test set and timing.** 150–200 recorded questions (EN, es-MX, mixed, name-heavy, news). Metrics:
    language accuracy, command success, first partial, page40's timing split, iPhone memory, download size.
 1. **Shared core v0, no behavior change.** Move `listen.js`, the capture worklet, the ASR worker (union of
-   both variants: name hints and language) and the voice worker here; both pages switch to it.
-2. **Auto language per question** on today's engine (Whisper's language guess, then the matching
-   model), with the override. Swap to plain-JS tiny-voca; Spanish answers in the same voice.
-3. **Command layer.** Lift `read.js` / `ask.js` into `domains/places`; build `domains/news`
+   both variants: name hints and language) and the voice worker here; both pages switch to it. (Built.)
+2. **Voice v1, the tiny-voca way.** Swap the voice worker to plain-JS tiny-voca (one 8 MB GGUF instead
+   of onnxruntime + Pyodide, about 45 MB); Spanish answers in the same voice through rules (American
+   accent until step 5).
+3. **Auto language per question** on today's engine (Whisper's language guess, then the matching
+   model), with the override, until the tiny recognizer replaces it.
+4. **Command layer.** Lift `read.js` / `ask.js` into `domains/places`; build `domains/news`
    (search, read, next, pause, stop) plus the CredBrief hand-off. Node tests.
-4. **Streaming bake-off** in the browser: Sherpa WASM (EN + ES candidates, hotwords) vs baseline;
-   race-based language gate.
 5. **Train the bilingual tiny-voca voice** (extended phone inventory, fine-tune from upstream,
    Mexican teacher voice, accent checks).
-6. **App shell** (Capacitor / Tauri) around the web build; native Sherpa adapter. Optional: train one
-   bilingual streaming recognizer, using Nemotron es-US to label Mexican audio.
+6. **Ears, research track.** Data and test set first; a phone recognizer prototype with a language
+   head; measured against Whisper tiny and Sherpa on the step-0 questions.
+7. **App shell** (Capacitor / Tauri) around the web build; the same GGUF files natively.
 
 ## Open points
 

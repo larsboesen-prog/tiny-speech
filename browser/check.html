@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tiny-speech check</title>
+<style>
+  :root { --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --line: #dcd9d2; --card: #ffffff; --accent: #0b6e4f; --warn: #a33b20; --ok: #0b6e4f; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151514; --fg: #ecebe7; --muted: #a3a29c; --line: #34332f; --card: #1e1e1c; --accent: #49c49a; --warn: #f08a6c; --ok: #49c49a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.3rem; margin: 0 0 4px; }
+  h2 { font-size: 1.05rem; margin: 0 0 10px; }
+  .sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 16px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin: 0 0 14px; }
+  label { display: block; font-size: 0.85rem; color: var(--muted); margin: 8px 0 4px; }
+  select, textarea, input[type=text] { width: 100%; font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+  textarea { min-height: 3.2em; resize: vertical; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+  .row > * { flex: 0 0 auto; }
+  .grow { flex: 1 1 180px; }
+  button { font: inherit; padding: 9px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.rec { background: var(--warn); border-color: var(--warn); color: #fff; }
+  .meter { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; flex: 1 1 120px; }
+  .meter > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 60ms linear; }
+  .out { margin-top: 10px; padding: 10px; border-radius: 8px; background: var(--bg); border: 1px dashed var(--line); min-height: 2.6em; white-space: pre-wrap; word-break: break-word; }
+  .small { font-size: 0.85rem; color: var(--muted); }
+  .ok { color: var(--ok); } .bad { color: var(--warn); }
+  #log { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; max-height: 260px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+  .check { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; margin-top: 6px; }
+  .check input { width: auto; }
+</style>
+</head>
+<body>
+<main>
+  <h1>tiny-speech check</h1>
+  <p class="sub" id="about">Shared voice core: loading…</p>
+
+  <section>
+    <h2>1 · Speech to text</h2>
+    <label for="model">Model</label>
+    <select id="model">
+      <option value="onnx-community/whisper-tiny.en|">Whisper tiny.en (English, about 40 MB) · CredBrief, MapSMA English</option>
+      <option value="onnx-community/whisper-tiny|es">Whisper tiny, told Spanish (about 40 MB) · MapSMA Spanish</option>
+      <option value="onnx-community/whisper-tiny|en">Whisper tiny, told English (about 40 MB)</option>
+      <option value="onnx-community/moonshine-tiny-ONNX|">Moonshine Tiny (English, about 30 MB) · CredBrief</option>
+      <option value="onnx-community/moonshine-base-ONNX|">Moonshine Base (English, about 63 MB) · CredBrief</option>
+    </select>
+    <label for="hint">Names Whisper should expect (MapSMA sends its place names)</label>
+    <textarea id="hint">La Azotea, Bocaciega, Tostévere, Café Umarán, Estoril, Centro, Jardín, Susan York</textarea>
+    <div class="check"><input type="checkbox" id="useHint" checked><label for="useHint" style="margin:0">Send the names (Whisper only)</label></div>
+    <label for="maxRec">Longest question</label>
+    <select id="maxRec"><option value="5000">5 seconds (CredBrief)</option><option value="8000" selected>8 seconds (MapSMA)</option></select>
+    <div class="row">
+      <button id="loadAsr">Load</button>
+      <button id="mic" class="primary">🎙 Record</button>
+      <div class="meter" aria-hidden="true"><i id="level"></i></div>
+    </div>
+    <div class="out" id="heard" aria-live="polite"></div>
+  </section>
+
+  <section>
+    <h2>2 · Voice (tiny-voca)</h2>
+    <label for="say">Text</label>
+    <textarea id="say">La Azotea is open until ten tonight. Bocaciega closes at eleven.</textarea>
+    <div class="row">
+      <div class="grow"><label for="voice">Voice</label><select id="voice"><option value="1">M2 (male)</option><option value="0">F2 (female)</option></select></div>
+      <div class="grow"><label for="pitch">Pitch</label>
+        <select id="pitch"><option value="0">As the model speaks (about 189 Hz)</option><option value="-0.1">A little deeper (about 170 Hz)</option>
+          <option value="-0.2">Deeper (about 155 Hz)</option><option value="-0.3" selected>Deep (about 140 Hz) · MapSMA default</option></select></div>
+    </div>
+    <label for="teach">Spanish names to teach the voice, as {"word": "phones"} (MapSMA's spanish.js makes these)</label>
+    <textarea id="teach">{"azotea": "ɑː s oʊ t ˈeɪ ɑː", "bocaciega": "b oʊ k ɑː s j ˈeɪ ɡ ɑː"}</textarea>
+    <div class="row">
+      <button id="loadVoice">Load</button>
+      <button id="teachBtn">Teach names</button>
+      <button id="speak" class="primary">▶ Speak</button>
+      <button id="stop">■ Stop</button>
+      <button id="phones">Show phones</button>
+    </div>
+    <div class="out" id="spoken" aria-live="polite"></div>
+  </section>
+
+  <section>
+    <h2>3 · Round trip: voice → text, no microphone</h2>
+    <p class="small">Speaks the text above with tiny-voca, hands that audio to the speech-to-text model above, and compares the words. Both workers, start to end.</p>
+    <div class="row"><button id="roundTrip" class="primary">Run round trip</button></div>
+    <div class="out" id="trip" aria-live="polite"></div>
+  </section>
+
+  <section>
+    <h2>Log</h2>
+    <div class="row" style="margin-top:0"><button id="clearLog">Clear</button><button id="cacheList">List this site's caches</button></div>
+    <div class="out" id="log"></div>
+  </section>
+</main>
+<script type="module" src="check.js?v=0.1.0"></script>
+</body>
+</html>

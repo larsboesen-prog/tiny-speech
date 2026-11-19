@@ -1,0 +1,62 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>tiny-speech worker harness</title>
+<script>
+// Runs one worker through a list of steps and returns everything it posted, plus this origin's Cache Storage (names and keys).
+// Steps: {send: message} | {wait: type, n = 1} (n more messages of that type since the last send) | {sleep: ms}.
+// In a message, audio: {samples: n} becomes a Float32Array of n samples (a quiet 220 Hz tone), sent as a transfer like the pages do.
+window.run = async (url, { module = false, steps = [], timeoutMs = 8000 } = {}) => {
+  const worker = new Worker(url, module ? { type: "module" } : undefined);
+  const posted = [];
+  let notify = null;
+  worker.onmessage = (event) => { posted.push(event.data); if (notify) notify(); };
+  worker.onerror = (event) => { posted.push({ type: "__onerror", message: event.message }); if (notify) notify(); };
+  const count = (type) => posted.filter((m) => m && m.type === type).length;
+  let snapshot = {};
+  const waitFor = (type, n) => new Promise((resolve, reject) => {
+    const target = (snapshot[type] || 0) + n;
+    const timer = setTimeout(() => reject(new Error(`timeout: ${n} more "${type}"; posted ${JSON.stringify(posted.map((m) => m && m.type))}`)), timeoutMs);
+    const check = () => { if (count(type) >= target) { clearTimeout(timer); notify = null; resolve(); } };
+    notify = check;
+    check();
+  });
+  const types = () => Object.fromEntries([...new Set(posted.map((m) => m && m.type))].map((t) => [t, count(t)]));
+  for (const step of steps) {
+    if (step.send) {
+      const message = { ...step.send };
+      const transfer = [];
+      if (message.audio && message.audio.samples) {
+        const audio = new Float32Array(message.audio.samples);
+        for (let i = 0; i < audio.length; i++) audio[i] = 0.1 * Math.sin((2 * Math.PI * 220 * i) / 16000);
+        message.audio = audio;
+        transfer.push(audio.buffer);
+      }
+      snapshot = types();
+      worker.postMessage(message, transfer);
+    } else if (step.wait) {
+      await waitFor(step.wait, step.n || 1);
+      snapshot = types();
+    } else if (step.sleep) {
+      await new Promise((resolve) => setTimeout(resolve, step.sleep));
+    }
+  }
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  worker.terminate();
+  const stored = {};
+  for (const name of (await caches.keys()).sort()) {
+    const cache = await caches.open(name);
+    stored[name] = (await cache.keys()).map((request) => request.url).sort();
+  }
+  const plain = (value) => {
+    if (value instanceof Float32Array) {
+      let sum = 0;
+      for (const x of value) sum += Math.abs(x);
+      return { float32: value.length, absSum: Math.round(sum * 1000) / 1000 };
+    }
+    if (Array.isArray(value)) return value.map(plain);
+    if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, plain(v)]));
+    return value;
+  };
+  return { posted: plain(posted), caches: stored };
+};
+</script>
