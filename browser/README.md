@@ -101,5 +101,23 @@ memory on the owner's iPhone and a cheap Android decide whether the sites switch
 
 ## Releasing a new version
 
-Change `0.1.0` in the files' headers, `CORE` in the three scripts, `package.json`, and every `?v=` the
-pages use, together; `npm test` checks the version the files report.
+Change the version in the files' headers, `CORE` in the three scripts and `package.json` together; `npm test` checks the
+version the files report. The `?v=` of each address is its file's content hash (plan step B13): `node tools/manifest.mjs
+--addresses mapsma` prints a site's addresses, and `node tools/manifest.mjs` writes `browser/manifest.json` (every core file
+and every engine file with its size and SHA-256) to deploy with them.
+
+## Serving the engine files from the site itself (B13)
+
+Today the workers fetch transformers.js, Whisper, onnxruntime, Pyodide and tiny-voca from jsDelivr and Hugging Face, so those
+hosts see each visitor. `browser/engines.json` lists all 33 files (180.9 MB, recorded with the real libraries, each with its
+SHA-256). `node tools/manifest.mjs --fetch DIR` downloads them and checks every hash; copy `DIR` to the site as
+`/tiny-speech/engines/` and set `"engines": "/tiny-speech/engines/"` in the site's config (try it first with
+`check.html?engines=/tiny-speech/engines/`). Files stay stored on a visitor's phone under their original addresses, so switching
+downloads nothing again. Whisper's files are taken from the models' `main` revision: when Hugging Face changes one, `--fetch`
+stops with a SHA-256 mismatch rather than serve a different model.
+
+## Sizes
+
+`node tools/sizes.mjs` writes `docs/sizes.md` from the files themselves (B11): each part raw, gzip and brotli, and what a page's
+first visit costs. The check page's section 4 shows, on a phone, how long the city pack and the voice's first sound take, and
+the memory the browser reports.

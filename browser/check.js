@@ -5,6 +5,7 @@
 // config by name; ?dizione= overrides where the phonemizer comes from.
 import { CORE, detector, speechAt16k, to16k } from "./listen.js?v=0.3.0";
 import { appConfig, appForHost, workerUrl, limitsOf } from "../core/config.js";
+import { createPackLoader } from "../core/pack/loader.js";
 
 const V = "0.3.0";
 const params = new URLSearchParams(location.search);
@@ -245,12 +246,48 @@ function teach() {
   voice().postMessage({ type: "teach", words });
   show("spoken", `Teaching ${Object.keys(words).length} names (taught once the voice has loaded)…`);
 }
+// First sound (plan step B11): from asking the voice to the first sentence's audio, the wait a reader hears before an answer.
+let lastFirstSoundMs = null;
 function speak(text, { play = true } = {}) {
-  const id = ++speakId;
+  const id = ++speakId, asked = performance.now();
   return new Promise((resolve, reject) => {
-    speaking.set(id, { chunks: [], resolve, reject, play });
+    const chunks = [];
+    chunks.push = function (...items) {
+      if (!this.length && items.length) { lastFirstSoundMs = Math.round(performance.now() - asked); timing(`Voice: first sound after ${lastFirstSoundMs} ms.`); }
+      return Array.prototype.push.apply(this, items);
+    };
+    speaking.set(id, { chunks, resolve, reject, play });
     voice().postMessage({ type: "speak", id, text, voice: Number($("voice").value), speed: 1.0, pitch: Number($("pitch").value), lang: $("sayLang").value });
   });
+}
+
+// ---------- the city pack, timings and memory (plan step B11) ----------
+const timings = [];
+function timing(line) {
+  timings.push(line);
+  $("timings").textContent = [...timings, memoryLine()].join("\n");
+  log("timing", line);
+}
+// Chromium reports its JavaScript heap (performance.memory); other browsers report nothing here, and the page says so.
+function memoryLine() {
+  const m = performance.memory;
+  return m ? `Memory: ${Math.round(m.usedJSHeapSize / 1e6)} MB used of the page's JavaScript heap (the workers' memory is not included).`
+    : "Memory: not reported by this browser.";
+}
+async function loadPack() {
+  const packs = params.get("packs") || (CONFIG.packs ? CONFIG.packs.replace(/[^/]*$/, "") : "../packs/");
+  const loader = createPackLoader({ base: packs, cachePrefix: CONFIG.caches.packs });
+  const started = performance.now();
+  try {
+    const city = params.get("city") || CONFIG.city || (await loader.list()).index.cities[0].id;
+    const r = await loader.load(city);
+    const ms = Math.round(performance.now() - started);
+    timing(`City pack ${city} ${r.version}: ${r.pack.places.length} places, from ${r.from === "device" ? "this device" : "the network"}${r.offline ? " (offline)" : ""}, in ${ms} ms.`);
+    return { city, version: r.version, from: r.from, places: r.pack.places.length, ms };
+  } catch (err) {
+    timing(`City pack: could not load (${err.message || err}).`);
+    return { error: String(err.message || err) };
+  }
 }
 const join = (chunks) => {
   const out = new Float32Array(chunks.reduce((n, c) => n + c.audio.length, 0));
@@ -286,7 +323,7 @@ async function roundTrip() {
     show("trip", `Spoke ${(audio.length / rate).toFixed(1)} s in ${spokeMs} ms. Listening…`);
     const out = await transcribeAudio(to16k(audio, rate));
     const heard = spoken(out.text), score = overlap(text, heard);
-    const result = { said: text, heard, score, spokeMs, waitMs: out.waitMs, runMs: out.runMs, seconds: audio.length / rate };
+    const result = { said: text, heard, score, spokeMs, firstSoundMs: lastFirstSoundMs, waitMs: out.waitMs, runMs: out.runMs, seconds: audio.length / rate };
     show("trip", `Said: ${esc(text)}\nHeard: <b>${esc(heard || "(nothing)")}</b>\n<span class="${score >= 0.8 ? "ok" : "bad"}">${Math.round(score * 100)}% of the words heard</span> <span class="small">· voice ${spokeMs} ms · speech to text ${out.runMs} ms (+${out.waitMs} ms waiting for the model)</span>`);
     log("round trip", result);
     return result;
@@ -312,10 +349,12 @@ $("phones").onclick = () => voice().postMessage({ type: "phones", id: 0, text: $
 $("roundTrip").onclick = roundTrip;
 $("clearLog").onclick = () => { $("log").textContent = ""; };
 $("cacheList").onclick = listCaches;
+$("loadPack").onclick = loadPack;
+$("memoryBtn").onclick = () => timing("(now)");
 $("model").onchange = () => { if (asrLoaded) loadAsr(); };
 
-// For automated checks (and the console): the same steps the buttons take.
 // The longest question: the site's own limit (config), unless chosen above.
 if ([...$("maxRec").options].some((o) => Number(o.value) === LIMITS.REC_MAX_MS)) $("maxRec").value = String(LIMITS.REC_MAX_MS);
 
-window.tinySpeechCheck = { CORE, SITE, CONFIG, ASR_URL, VOICE_URL, DIZIONE, loadAsr, loadVoice, teach, speak, transcribeAudio, roundTrip, listCaches };
+// For automated checks (and the console): the same steps the buttons take.
+window.tinySpeechCheck = { CORE, SITE, CONFIG, ASR_URL, VOICE_URL, DIZIONE, loadAsr, loadVoice, teach, speak, transcribeAudio, roundTrip, listCaches, loadPack, memoryLine };
