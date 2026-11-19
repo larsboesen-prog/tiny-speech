@@ -193,7 +193,7 @@ From the review (section 4). B0 → B3 in order; the rest in any order after B3.
 | B2 | Reader split: grammar in core, tables in `lang/` and `domains/places`, names and areas from the pack | requests identical to B0; proper-noun grep passes | done: `domains/places/read.js`; language tables move to `lang/` in B6 |
 | B3 | Asker and responder split: time zone, centre, meals, walking, collections from the pack | answers identical to B0; another time zone shifts answers correctly | done: all 1,756 answers identical |
 | B4 | A made-up second city and a generated 5,000-place pack | suite runs per pack with no code change; name matching under 50 ms at 5,000 places | done: Villa Ejemplo (`xx-test`) answers with no code change; 9–25 ms a question at 1,500 places, 28–80 ms at 5,000 (so large cities use zones of ≤1,500) |
-| B5 | Pack loader in the browser (hash check, cache, swap, offline, `setCity`) | Playwright: loads two cities, refuses a corrupted file, works offline | |
+| B5 | Pack loader in the browser (hash check, cache, swap, offline, `setCity`) | Playwright: loads two cities, refuses a corrupted file, works offline | done: `core/pack/loader.js`, 8 browser tests |
 | B6 | Language packs and the language decision (numbers and clock both ways; names masked) | table tests; text-only language accuracy on B0's questions | |
 | B7 | Spanish spelling → sounds for sentences (from `spanish.js`) | name outputs unchanged; every template sentence valid for the phoneset | |
 | B8 | Music facet | "live jazz tonight" / "¿dónde hay trova el jueves?" answered from test slots | |

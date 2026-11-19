@@ -12,6 +12,9 @@ const MOUNTS = [
   ["/page5/", join(ROOT, "test/fixtures/before/mapsma-page5")],
   ["/tiny-speech/", join(ROOT, "browser")],
   ["/harness/", join(ROOT, "test/harness")],
+  ["/packs/", join(ROOT, "packs/dist")],
+  ["/core/", join(ROOT, "core")],
+  ["/domains/", join(ROOT, "domains")],
 ];
 const TYPES = { ".js": "text/javascript", ".mjs": "text/javascript", ".html": "text/html; charset=utf-8", ".json": "application/json", ".wav": "audio/wav" };
 
