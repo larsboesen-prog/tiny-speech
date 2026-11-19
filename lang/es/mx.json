@@ -1,0 +1,36 @@
+{
+ "variety": "es-MX",
+ "note": "Mexican Spanish: what differs from Spanish elsewhere, as data (review 3.2). The reader understands every variety's words at once; answers and the voice use the city's variety. 19 Nov 2026.",
+ "locale": "es-MX",
+ "words": {
+  "ahorita": {"means": "now (or very soon)", "en": "right now"},
+  "orita": {"means": "ahorita, as speech to text often writes it"},
+  "al rato": {"means": "later today", "en": "later"},
+  "mande": {"means": "pardon? (please repeat)", "en": "pardon?"},
+  "almuerzo": {"means": "a late breakfast, around 10:00–12:00 (in Spain: lunch)", "meal": "bfast"},
+  "comida": {"means": "the main midday meal, around 14:00–17:00 (also: food)", "meal": "lunch"},
+  "cena": {"means": "supper, often light, around 20:00–22:00", "meal": "dinner"},
+  "antojitos": {"means": "street snacks: sopes, gorditas, tlayudas, quesadillas"},
+  "chela": {"means": "beer", "topic": "beer"},
+  "botana": {"means": "a snack served with drinks", "topic": "bar"},
+  "padre": {"means": "great (as an adjective)"},
+  "chido": {"means": "cool, great"},
+  "lana": {"means": "money"},
+  "varos": {"means": "pesos"},
+  "checar": {"means": "to check"}
+ },
+ "clock": {
+  "para": "cuarto para las nueve = 8:45; diez para las nueve = 8:50 (Mexico)",
+  "menos": "las nueve menos cuarto = 8:45 (Spain; understood here too)",
+  "dayParts": {"de la madrugada": "about 1:00–5:59", "de la mañana": "6:00–11:59", "de la tarde": "12:00–18:59", "de la noche": "19:00–0:59"}
+ },
+ "currency": {"code": "MXN", "say": "pesos", "symbol": "$"},
+ "voice": {
+  "seseo": "c before e/i and z sound as s (no θ)",
+  "yeismo": "ll and y sound the same (ʝ)",
+  "jota": "j, and g before e/i: a soft x or h, not Spain's χ",
+  "x": "México, Oaxaca, Xalapa: x as j; Xola, Xocolatl and many Nahuatl names: x as sh; Xochimilco: x as s. Rules cannot choose: the city pack carries the reading",
+  "tl": "tl starts a syllable (Tlaxcala: tlax-ca-la)",
+  "unstressedVowels": "central Mexico often shortens or drops unstressed vowels in fast speech (pues → ps): a recognizer must expect it"
+ }
+}

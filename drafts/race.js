@@ -1,3 +1,5 @@
+// PARKED (19 Nov 2026, review 1.5): two streaming recognizers at once contradict the iPhone memory lesson, and the language
+// decision (core/lang-decide.js) does the job from one recognizer. Kept for the day a streaming engine makes it cheap.
 // Spoken language ID by racing two streaming recognizers.
 //
 // Both the English and the Spanish model hear the first moments of an utterance.
@@ -8,8 +10,8 @@
 // (it already has the audio from the start, so nothing is replayed) and the loser
 // stops receiving audio.
 
-import { normalize } from "../text/normalize.js";
-import { lexicalFit } from "./text-lid.js";
+import { normalize } from "../core/text/normalize.js";
+import { lexicalFit } from "../core/lid/text-lid.js";
 
 export const DEFAULT_RACE = {
   minMs: 500,        // never decide before this much speech

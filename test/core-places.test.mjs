@@ -14,7 +14,7 @@ const { pack } = await loadCore();
 const clone = () => structuredClone(pack);
 
 // Every JavaScript file under these folders, without its comments (comments may give a city's examples; code may not).
-const CODE_DIRS = ["core", "domains"];
+const CODE_DIRS = ["core", "domains", "lang"];
 function codeFiles(dir) {
   return readdirSync(dir).flatMap((f) => {
     const p = join(dir, f);

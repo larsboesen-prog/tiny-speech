@@ -19,9 +19,12 @@
 // Reading the question (words -> request) lives in read.js; this file answers requests. The same ?v= as index.html's.
 import { fold, SOON, parse, TOPIC, dayOff, createReader, compiled } from './read.js';
 export { fold, SOON, parse, sound, requestOf } from './read.js';
+// Days, numbers and clock times, said: the language packs (they were here until 19 Nov 2026).
+import { DAYNAMES, clock, sayTime, sayNum } from '../../lang/en/index.js';
+import { DIAS, sayNumEs, sayTimeEs, aTimeEs, showTimeEs } from '../../lang/es/index.js';
+export { DAYNAMES, clock, sayTime, sayNum, DIAS, sayNumEs, sayTimeEs, aTimeEs, showTimeEs };
 
 export const EAT = ['bfast', 'mex', 'world', 'street', 'share', 'roof'];
-export const DAYNAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export const MIN_LEFT = 45;       // minutes a place must stay open to count as open
 // The centre's radius, how far "near me" may be, walking speed and "recent" for a curated list come from the city pack
@@ -44,37 +47,11 @@ const toMin = (t) => { const [a, b] = t.split(':').map(Number); return a * 60 + 
 export const ranges = (s) => s.split(', ').map((r) => { const [a, b] = r.split('–'); const s0 = toMin(a); let e = toMin(b); if (e <= s0) e += 1440; return [s0, e]; });
 
 // A time as the cards show it (22:00, 1:00) and as the voice says it (10 p.m., 1 a.m., noon, midnight).
-export const clock = (m) => { m = ((m % 1440) + 1440) % 1440; return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'); };
 const until = (m) => (((m % 1440) + 1440) % 1440 === 0 ? 'midnight' : clock(m));  // in a sentence: "until midnight", not "until 0:00"
-export function sayTime(m) {
-  m = ((m % 1440) + 1440) % 1440;
-  if (m === 0) return 'midnight';
-  if (m === 720) return 'noon';
-  const h = Math.floor(m / 60), mm = m % 60, h12 = h % 12 || 12, ap = h < 12 ? 'a.m.' : 'p.m.';
-  return mm ? `${h12}:${String(mm).padStart(2, '0')} ${ap}` : `${h12} ${ap}`;
-}
-const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
-export const sayNum = (n) => WORDS[n] || String(n);
 
 // ---------- Spanish (Lars, 17 Nov 2026: "Yes build that way - with phones output for Spanish and a language switch EN ES") ----------
-export const DIAS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-const NUM_ES = ['ningún', 'un', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez'];
-export const sayNumEs = (n, fem) => (n === 1 ? (fem ? 'una' : 'un') : NUM_ES[n] || String(n));
-// A time as the phone's Spanish voice says it: "la medianoche", "el mediodía", "la 1 de la tarde", "las 10 y media de la noche".
-export function sayTimeEs(m) {
-  m = ((m % 1440) + 1440) % 1440;
-  if (m === 0) return 'la medianoche';
-  if (m === 720) return 'el mediodía';
-  const h = Math.floor(m / 60), mm = m % 60, h12 = h % 12 || 12;
-  const part = h < 1 ? 'de la noche' : h < 6 ? 'de la madrugada' : h < 12 ? 'de la mañana' : h < 19 ? 'de la tarde' : 'de la noche';  // 0:30 is still "de la noche"
-  const mins = mm === 0 ? '' : mm === 30 ? ' y media' : mm === 15 ? ' y cuarto' : ` y ${mm}`;
-  return `${h12 === 1 ? 'la' : 'las'} ${h12}${mins} ${part}`;
-}
-export const aTimeEs = (m) => { const t = sayTimeEs(m); return t.startsWith('el ') ? 'al ' + t.slice(3) : 'a ' + t; };  // "a la 1 de la tarde", "al mediodía"
 const deTimeEs = (m) => { const t = sayTimeEs(m); return t.startsWith('el ') ? 'del ' + t.slice(3) : 'de ' + t; };  // "del mediodía", "de la 1 de la tarde"
 const rangeEs = (a, b) => `${deTimeEs(a)} ${aTimeEs(b)}`;  // "del mediodía a la medianoche"
-// On screen: "las 22:00", "la 1:00", "la medianoche".
-export const showTimeEs = (m) => { m = ((m % 1440) + 1440) % 1440; if (m === 0) return 'la medianoche'; const c = clock(m); return (/^1:/.test(c) ? 'la ' : 'las ') + c; };
 const untilEs = (m) => (((m % 1440) + 1440) % 1440 === 0 ? 'medianoche' : clock(m));
 export const sayDistEs = (m) => (m < 1000 ? `a unos ${round50(m)} metros` : `a unos ${(m / 1000).toFixed(1)} kilómetros`);
 // Walking minutes, and how far a place is on a card, at the city's walking speed (pack: walkMPerMin).

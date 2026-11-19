@@ -16,7 +16,8 @@ otra vez para detente callate ayuda puedes habla español ingles mande barato ba
 mejores japonesa japones mariscos tacos taqueria pozole birria tortas cafe cafeteria pan panaderia
 abren cierran abre cierra hora horas horario hasta mas despacio rapido fuerte bajo volumen primero
 primera segundo segunda tercero tercera ultimo ultima deportes politica economia negocios tecnologia
-ciencia salud mundo espectaculos buscame quiero tengo hambre algo rico donde puedo`;
+ciencia salud mundo espectaculos buscame quiero tengo hambre algo rico donde puedo
+gracias sorprendeme sorprendame sorpresa hola oye buenas buenos dias tardes noches porfa favor ahi aqui alla orita`;
 
 const EN_WORDS = `the of and to in is it you that he was for on are with as i his they be at one have this from
 or had by what where which open tonight now news find search play read next previous stop show me near any

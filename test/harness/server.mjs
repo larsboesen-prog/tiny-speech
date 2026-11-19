@@ -15,6 +15,7 @@ const MOUNTS = [
   ["/packs/", join(ROOT, "packs/dist")],
   ["/core/", join(ROOT, "core")],
   ["/domains/", join(ROOT, "domains")],
+  ["/lang/", join(ROOT, "lang")],
 ];
 const TYPES = { ".js": "text/javascript", ".mjs": "text/javascript", ".html": "text/html; charset=utf-8", ".json": "application/json", ".wav": "audio/wav" };
 
