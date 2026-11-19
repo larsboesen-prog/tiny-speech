@@ -32,7 +32,7 @@ export function build(src, { date }) {
   const hours = Object.fromEntries(Object.entries(src.hours.places).map(([id, v]) => [id, v.checked ? { h: v.h, checked: v.checked } : { h: v.h }]));
   // live music nights travel with the hours (they change as often); a city without music.json keeps the same live file as before
   const music = Object.fromEntries(Object.entries(src.music?.venues || {}).filter(([, v]) => (v.slots || []).length)
-    .map(([id, v]) => [id, { genres: v.genres, slots: v.slots.map(({ days, from, to, genres }) => ({ days, from, to, ...(genres ? { genres } : {}) })), checked: v.checked }]));
+    .map(([id, v]) => [id, { genres: v.genres, slots: v.slots.map(({ days, from, to, genres }) => ({ days, from, ...(to ? { to } : {}), ...(genres ? { genres } : {}) })), checked: v.checked }]));
   const live = JSON.stringify({ schema: SCHEMA, id: city.id, hours, ...(Object.keys(music).length ? { music } : {}) });
   const liveName = `live.${sha(live).slice(0, 8)}.json`;
   const version = `${date}.${sha(base + live).slice(0, 6)}`;

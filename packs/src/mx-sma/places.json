@@ -3364,5 +3364,157 @@
    "w": "traditional bakery since 1901",
    "w_es": "panadería tradicional desde 1901"
   }
+ },
+ {
+  "id": "X19",
+  "name": "Mama Mía",
+  "kind": "share",
+  "lat": 20.913938,
+  "lng": -100.744529,
+  "area": "Centro · Umarán",
+  "acc": "address",
+  "other": true,
+  "photo": false,
+  "names": [
+   {
+    "t": "mama mia"
+   },
+   {
+    "t": "mamma mia"
+   },
+   {
+    "t": "mama mias"
+   }
+  ],
+  "info": {
+   "address": "Umarán 8, Zona Centro",
+   "source": "https://www.fodors.com/world/mexico-and-central-america/mexico/san-miguel-de-allende-and-the-heartland/places/san-miguel-de-allende/things-to-do/nightlife",
+   "note": "Listings also give Hernández Macías 91 and Cuna de Allende 10 (a large complex); position from Café Umarán, also at Umarán 8. Added 19 Nov 2026 as a live music venue.",
+   "pick": false
+  },
+  "facts": {
+   "f": [
+    "live_music",
+    "full_bar",
+    "late_night"
+   ],
+   "w": "restaurant-bar with live music",
+   "w_es": "restaurante-bar con música en vivo"
+  }
+ },
+ {
+  "id": "X20",
+  "name": "Raindog Cantina",
+  "kind": "share",
+  "lat": 20.912335,
+  "lng": -100.746219,
+  "area": "Centro · Zacateros",
+  "acc": "street",
+  "other": true,
+  "photo": false,
+  "names": [
+   {
+    "t": "raindog"
+   },
+   {
+    "t": "rain dog"
+   },
+   {
+    "t": "raindog lounge"
+   },
+   {
+    "t": "rain dog lounge"
+   },
+   {
+    "t": "reindog"
+   }
+  ],
+  "info": {
+   "address": "Zacateros 45, upstairs (above El Tupinamba), Zona Centro",
+   "hours": "Wed–Sun from 16:00",
+   "source": "https://discoversma.com/places/mexico/guanajuato/san-miguel-de-allende/raindog-lounge/",
+   "note": "Position estimated between Zacateros 14 and 73; closing time not found, so no hours yet. Added 19 Nov 2026 as a live music venue.",
+   "pick": false
+  },
+  "facts": {
+   "f": [
+    "live_music",
+    "cocktails",
+    "patio",
+    "sunset",
+    "reservations"
+   ],
+   "w": "upstairs music bar with a terrace",
+   "w_es": "bar de música en un primer piso, con terraza"
+  }
+ },
+ {
+  "id": "X21",
+  "name": "Johnny's Piano Bar",
+  "kind": "share",
+  "lat": 20.91563,
+  "lng": -100.74519,
+  "area": "Centro · Mesones",
+  "acc": "street",
+  "other": true,
+  "photo": false,
+  "names": [
+   {
+    "t": "johnnys"
+   },
+   {
+    "t": "johnny's"
+   },
+   {
+    "t": "johnnys piano bar"
+   },
+   {
+    "t": "johnnys piano"
+   },
+   {
+    "t": "yonis"
+   }
+  ],
+  "info": {
+   "address": "Mesones 101, Zona Centro",
+   "source": "https://discoversma.com/events/mexico/guanajuato/san-miguel-de-allende/musical-event/enrique-allende-johnnys-piano-bar",
+   "note": "Position from Tío Lucas next door (Mesones 103). Added 19 Nov 2026 as a live music venue.",
+   "pick": false
+  },
+  "facts": {
+   "f": [
+    "live_music",
+    "cocktails"
+   ],
+   "w": "piano bar",
+   "w_es": "piano bar"
+  }
+ },
+ {
+  "id": "X22",
+  "name": "Casa Europa",
+  "kind": "sights",
+  "lat": 20.91459,
+  "lng": -100.74199,
+  "area": "Centro · San Francisco",
+  "acc": "street",
+  "other": true,
+  "photo": false,
+  "desc": "A cultural centre in a colonial house: concerts, recitals and opera, mostly in the evening.",
+  "names": [
+   {
+    "t": "casa europa"
+   }
+  ],
+  "sentence": {
+   "en": "Casa Europa",
+   "es": "Casa Europa"
+  },
+  "info": {
+   "address": "San Francisco 23, Zona Centro",
+   "source": "https://mexiconewsdaily.com/event-venue/casa-europa-mexico",
+   "note": "Position from Churrería San Agustín next door (San Francisco 21). Concert times vary: casaeuropamexico.mx. Added 19 Nov 2026 as a music venue.",
+   "pick": false
+  }
  }
 ]

@@ -183,10 +183,15 @@ live file, byte for byte. No band names without a source that keeps them fresh.
   `music.json` exists; any question without music words answers exactly as before (tested). "Live music tonight" lists
   tonight's nights by starting time, including last night's still playing in the small hours; "is there music at X?"
   gives X's nights; the answer says when the list is over 60 days old, and the build warns.
-- **San Miguel's data:** `packs/src/mx-sma/music.template.json` (D8): four places that already have a `live_music` fact
-  or listing (Tío Lucas, Agavia, Trino, Café Rama) waiting for their nights, and four venues from web listings that are
-  not places yet (Mama Mía, Raindog Cantina, Johnny's Piano Bar, Casa Europa): adding a place changes answers, so that
-  waits for the owner.
+- **When the music list cannot answer:** nobody on it plays the genre asked for (mariachi), or the place named is not a
+  music venue: the places answer answers, as before (mariachis → the Jardín). A genre on other nights: "I don't have salsa
+  tonight. Salsa on other nights: Mama Mía, Fridays and Saturdays from 10 p.m." Places with a `live_music` fact but no
+  nights are named after the list, so a music question never hides them.
+- **San Miguel's data** (`packs/src/mx-sma/music.json`, D8): Mama Mía, Raindog Cantina, Johnny's Piano Bar and Casa Europa
+  added as places on 19 Nov 2026 (owner: "add venues"); nights for the first three from web listings, dated by the
+  listing (2025), so every music answer says the list is worth confirming until the owner confirms it with the venues;
+  Tío Lucas, Agavia, Trino, Café Rama and Casa Europa wait for nights. 181 of the 1,756 recorded answers changed
+  (`test/golden/changes.md`); the code still gives /page5's answers exactly with the pack as imported.
 
 ## 9. Flexibility for unexpected questions
 
@@ -215,7 +220,7 @@ From the review (section 4). B0 → B3 in order; the rest in any order after B3.
 | B5 | Pack loader in the browser (hash check, cache, swap, offline, `setCity`) | Playwright: loads two cities, refuses a corrupted file, works offline | done: `core/pack/loader.js`, 8 browser tests |
 | B6 | Language packs and the language decision (numbers and clock both ways; names masked) | table tests; text-only language accuracy on B0's questions | done: `lang/`, `core/lang-decide.js`; 419/419 labelled questions right with names masked (415 without) |
 | B7 | Spanish spelling → sounds for sentences (from `spanish.js`) | name outputs unchanged; every template sentence valid for the phoneset | done: `lang/es/sounds.js`; names identical to MapSMA's; every Spanish answer sentence (5,862 words) in valid sounds |
-| B8 | Music facet | "live jazz tonight" / "¿dónde hay trova el jueves?" answered from test slots | done: `domains/music/`, `music.json` in the pack's live file; 8 tests on Villa Ejemplo's test nights; San Miguel's template waits for its nights (D8) |
+| B8 | Music facet | "live jazz tonight" / "¿dónde hay trova el jueves?" answered from test slots | done: `domains/music/`, `music.json` in the pack's live file; 9 tests; San Miguel has four venues added and three with nights from listings (D8) |
 | B9 | Config instead of the `SITES` table; hint builder with a token budget; `AsrEngine` result shape | the 19 parity tests still pass | |
 | B10 | Plain-JS voice worker behind `VoiceEngine` | same messages as the ONNX worker; real-file test when the GGUF is present | done: `engines/tinyvoca-js.js`, `browser/tinyvoca-js-worker.js`; English 100% in the live round trip, Spanish 11–55% (needs training), 3–4 × real time here |
 | B11 | `tools/sizes.mjs`; check page shows pack load and first-sound time | size table generated | |
@@ -229,15 +234,12 @@ sources and deploys).
 
 ## 12. Questions for the owner
 
-Answered on 19 Nov 2026: Spanish voice (D7), music venues (D8), OpenRouter budget (D9); the next city and one site or
+Answered on 19 Nov 2026: Spanish voice (D7), music venues (D8, and the four added), OpenRouter budget (D9); the
+bilingual voice's teacher is a real speaker, recorded on 20 Nov 2026 (`training/record/`); the next city and one site or
 one app are on hold; /page5's faults wait.
 
-1. The bilingual voice needs a rented GPU for about 3–5 hours (about $5–10; OpenRouter sells model calls, not GPU
-   time), and a teacher voice: a real Mexican speaker who agrees to it (best), or a designed one (`training/RECIPE.md`).
-   Which, and may I set it up?
-2. The four music venues that are not San Miguel places yet (Mama Mía, Raindog Cantina, Johnny's Piano Bar, Casa
-   Europa): add them to the pack? It changes some answers, so it would be a change of its own with a new snapshot.
-3. Is there a GPU budget for the ears, or should the plan assume Whisper tiny stays for a year?
+1. The GPU run (`training/gpu/`): which rental service, and its key through the secure form when the recordings exist.
+2. Is there a GPU budget for the ears, or should the plan assume Whisper tiny stays for a year?
 
 ## Appendix: background
 

@@ -8,5 +8,8 @@ city without music data, is answered exactly as before.
 - Genres: `GENRES` (17). A new genre is a line here, then it may be used in a city's `music.json` (the builder checks).
 - "Salsa" alone is a sauce; the genre needs "bailar salsa", "salsa night" and the like. A question asking for a quiet place
   without loud music is not a music question.
+- When it cannot answer it returns null and the places answer answers: nobody on the list plays the genre asked for, or the
+  place named is not a music venue. Places with a `live_music` fact but no nights are named after the nights.
+- One line a venue; a night whose genre is unknown (`"genres": []`) is said as "live music".
 - Freshness: an answer says when the list was last checked if that was over 60 days ago; the build warns as well.
 - Tests: `test/music.test.mjs` (Villa Ejemplo's test nights; San Miguel's template).

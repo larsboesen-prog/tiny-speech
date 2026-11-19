@@ -70,7 +70,9 @@ test("live music tonight, in English and Spanish", () => {
 test("a genre, a day, now, and a named place", () => {
   assert.deepEqual(es.answer("¿Dónde hay mariachi el domingo?", TUE_1330, null, null).ids, ["T3"]);
   assert.match(say(es.answer("¿Dónde hay mariachi el domingo?", TUE_1330, null, null)), /Fonda del Puerto, mariachi, de las 2 de la tarde a las 5 de la tarde/);
-  assert.equal(say(en.answer("jazz on Tuesday", TUE_1330, null, null)), "I don't have jazz on Tuesday on the list.");
+  assert.equal(say(en.answer("jazz on Tuesday", TUE_1330, null, null)),
+    "I don't have jazz on Tuesday on the list. Jazz on other nights: La Ribera Jazz, Thursdays, Fridays and Saturdays from 8 p.m. to 11:30 p.m.");
+  assert.notEqual(en.answer("where is there karaoke tonight", FRI_1900, null, null).kind, "music", "nobody on the list has karaoke: the places answer answers");
   assert.equal(say(es.answer("¿dónde hay trova el miércoles?", TUE_1330, null, null)),
     "Trova el miércoles: Fonda del Puerto, trova, de las 7 de la noche a las 9 de la noche.");
   assert.match(say(en.answer("live jazz tonight", FRI_1900, null, null)), /^Jazz tonight: La Ribera Jazz, jazz, from 8 p\.m\. to 11:30 p\.m\.$/);
@@ -78,7 +80,7 @@ test("a genre, a day, now, and a named place", () => {
   assert.equal(say(en.answer("Is there music at Terraza Volcán?", TUE_1330, null, null)), "Terraza Volcán has a DJ: Fridays and Saturdays from 10 p.m. to 1 a.m.");
   assert.equal(say(es.answer("¿Hay música en la Fonda del Puerto?", TUE_1330, null, null)),
     "Fonda del Puerto tiene mariachi y trova: mariachi los domingos de las 2 de la tarde a las 5 de la tarde; trova los miércoles de las 7 de la noche a las 9 de la noche.");
-  assert.equal(say(en.answer("Is there music at Café Brújula?", TUE_1330, null, null)), "I don't have live music at Café Brújula on the list.");
+  assert.notEqual(en.answer("Is there music at Café Brújula?", TUE_1330, null, null).kind, "music", "not a music venue: the places answer says what it is");
 });
 
 test("questions that are not about music answer exactly as without music data", () => {
@@ -104,11 +106,25 @@ test("music.json is checked", () => {
   for (const want of [/unknown place T99/, /genre "polka"/, /days \[7\]/, /from "8pm"/, /T6 needs "checked"/]) assert.ok(errors.some((e) => want.test(e)), `${want}: ${errors.join(" | ")}`);
 });
 
-test("San Miguel's venue template checks clean and names the genres the reader knows", () => {
-  const t = JSON.parse(readFileSync(ROOT + "packs/src/mx-sma/music.template.json", "utf8"));
+test("San Miguel's music.json checks clean and names the genres the reader knows", () => {
+  const t = JSON.parse(readFileSync(ROOT + "packs/src/mx-sma/music.json", "utf8"));
   const listed = t._how.find((l) => /^3\./.test(l)).split(": ")[1].split(" ");
   assert.deepEqual(listed, Object.keys(GENRES));
   const { errors, warnings } = validate({ ...readSource(ROOT + "packs/src/mx-sma"), music: t }, "2026-11-19", { genres: Object.keys(GENRES) });
   assert.deepEqual(errors, []);
-  assert.ok(warnings.some((w) => /waiting to be added to places\.json: Mama Mía/.test(w)));
+  assert.ok(warnings.some((w) => /no nights yet and are left out: 43, 69, X22, X17, X9/.test(w)));
+});
+
+test("San Miguel: one line a venue, other nights, places known for music, and the Jardín's mariachis", async () => {
+  const { loadCore } = await import("./golden/mapsma.mjs");
+  const { pack: sma } = await loadCore();
+  const a = createAsker({ pack: sma, random: () => 0.5 }), e = createAsker({ pack: sma, random: () => 0.5, lang: "es" });
+  const TUE = nowAt(sma.tz, new Date("2026-11-17T20:10:00Z"));  // Tuesday 14:10 in San Miguel
+  assert.equal(say(a.answer("live music tonight", TUE, null, null)), "Live music tonight: Mama Mía: Latin music and acoustic music from 7 p.m. to 9 p.m.; " +
+    "live music from 8 p.m. Also with live music, nights not on the list: Agavia, Trino and Tío Lucas. The music list was last checked on December 24, 2025; worth confirming.");
+  assert.equal(say(e.answer("¿dónde puedo bailar salsa hoy?", TUE, null, null)), "No tengo salsa esta noche en la lista. Salsa otras noches: Mama Mía, " +
+    "los viernes y sábados de las 10 de la noche a las 12 y media de la noche. La lista de música es del 24 de diciembre de 2025; conviene confirmar.");
+  assert.equal(a.answer("mariachi", TUE, null, null).ids[0], "S2", "nobody on the list plays mariachi: the Jardín, as /page5 answered");
+  assert.equal(say(a.answer("Is there live music at Tío Lucas?", TUE, null, null)), "Tío Lucas has live music; I don't have its nights on the list.");
+  assert.match(say(a.answer("Is there music at Johnny's Piano Bar?", TUE, null, null)), /^Johnny's Piano Bar has piano and jazz: Wednesdays, Thursdays and Sundays from 6 p\.m\. to 10 p\.m\.; Fridays and Saturdays from 6 p\.m\. to 11 p\.m\.$/);
 });

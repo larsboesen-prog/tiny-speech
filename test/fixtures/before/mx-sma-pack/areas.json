@@ -1,0 +1,85 @@
+[
+ {
+  "id": "centro",
+  "role": "centre",
+  "words": [
+   "centro",
+   "central",
+   "centra",
+   "sentro",
+   "center",
+   "centre",
+   "downtown",
+   "historic",
+   "jardin",
+   "main square",
+   "old town",
+   "zocalo",
+   "plaza principal"
+  ],
+  "notWhen": "\\b(con|un|una|en un|de|with a|a) jardin(es)?\\b|\\bjardines\\b",
+  "notCentre": []
+ },
+ {
+  "id": "san antonio",
+  "words": [
+   "san antonio"
+  ],
+  "match": [
+   "san antonio"
+  ],
+  "maskInNames": "\\b(colonia )?san antonio\\b",
+  "in": {
+   "en": " in San Antonio",
+   "es": " en San Antonio"
+  }
+ },
+ {
+  "id": "guadalupe",
+  "words": [
+   "guadalupe"
+  ],
+  "match": [
+   "guadalupe"
+  ],
+  "maskInNames": "\\bguadalupe\\b",
+  "notCentre": true,
+  "in": {
+   "en": " in Guadalupe",
+   "es": " en Guadalupe"
+  }
+ },
+ {
+  "id": "out of town",
+  "words": [
+   "out of town",
+   "countryside",
+   "campo",
+   "fuera de la ciudad",
+   "afueras"
+  ],
+  "match": [
+   "out of town",
+   "fuera de la ciudad"
+  ],
+  "role": "outOfTown",
+  "in": {
+   "en": " out of town",
+   "es": " fuera de la ciudad"
+  }
+ },
+ {
+  "id": "aurora",
+  "words": [
+   "aurora",
+   "fabrica"
+  ],
+  "match": [
+   "aurora"
+  ],
+  "in": {
+   "en": " in Aurora",
+   "es": " en Aurora"
+  }
+ }
+]

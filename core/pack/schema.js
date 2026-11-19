@@ -105,7 +105,7 @@ export function validate(src, today, { genres = null } = {}) {
     for (const g of [...(v.genres || []), ...v.slots.flatMap((sl) => sl.genres || [])]) if (genres && !genres.includes(g)) err(`music.json: place ${id} has genre "${g}", not one the reader knows (${genres.join(", ")})`);
     for (const sl of v.slots) {
       if (!Array.isArray(sl.days) || !sl.days.length || !sl.days.every((d) => Number.isInteger(d) && d >= 0 && d <= 6)) err(`music.json: place ${id} has a night with days ${JSON.stringify(sl.days)} (0–6, Monday = 0)`);
-      if (!TIME.test(sl.from || "") || !TIME.test(sl.to || "")) err(`music.json: place ${id} has a night from "${sl.from}" to "${sl.to}" (write "20:00")`);
+      if (!TIME.test(sl.from || "") || (sl.to != null && !TIME.test(sl.to))) err(`music.json: place ${id} has a night from "${sl.from}" to "${sl.to}" (write "20:00"; leave "to" out when only the start is known)`);
     }
     if (!v.checked || !DATE.test(v.checked)) err(`music.json: place ${id} needs "checked": the date someone last confirmed its nights`);
     else if (daysAgo(v.checked, today) > MUSIC_STALE_DAYS) warn(`music.json: place ${id}'s nights were checked more than ${MUSIC_STALE_DAYS} days ago`);

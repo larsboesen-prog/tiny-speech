@@ -1,0 +1,159 @@
+{
+ "schema": 1,
+ "id": "mx-sma",
+ "version": "2026-11-19.c6dbb0",
+ "built": "2026-11-19",
+ "core": ">=0.2 <1",
+ "names": {
+  "en": "San Miguel de Allende",
+  "es": "San Miguel de Allende"
+ },
+ "say": [
+  "san miguel",
+  "san miguel de allende",
+  "sma"
+ ],
+ "tz": "America/Mexico_City",
+ "country": "MX",
+ "currency": "MXN",
+ "langs": [
+  "en",
+  "es"
+ ],
+ "variety": {
+  "es": "mx",
+  "en": "us"
+ },
+ "centre": {
+  "place": "S2",
+  "lat": 20.914212,
+  "lng": -100.743801,
+  "fallback": {
+   "lat": 20.91445,
+   "lng": -100.74375
+  },
+  "radiusM": 650
+ },
+ "bbox": [
+  20.7745,
+  -100.8254,
+  21.0554,
+  -100.7077
+ ],
+ "farM": 25000,
+ "walkMPerMin": 75,
+ "meals": {
+  "bfast": {
+   "win": [
+    480,
+    630
+   ],
+   "min": 60
+  },
+  "brunch": {
+   "win": [
+    600,
+    840
+   ],
+   "min": 90
+  },
+  "lunch": {
+   "win": [
+    780,
+    960
+   ],
+   "min": 90
+  },
+  "dinner": {
+   "win": [
+    1170,
+    1290
+   ],
+   "min": 60
+  },
+  "late": {
+   "win": [
+    1380,
+    1500
+   ],
+   "min": 30
+  }
+ },
+ "kinds": {
+  "bfast": {
+   "label": "Coffee & bakery",
+   "color": "#6b4a3a"
+  },
+  "mex": {
+   "label": "Mexican",
+   "color": "#d2386c"
+  },
+  "world": {
+   "label": "World food",
+   "color": "#2f56a6"
+  },
+  "street": {
+   "label": "Street food",
+   "color": "#e0662f"
+  },
+  "share": {
+   "label": "Bars & small plates",
+   "color": "#7c2e4a"
+  },
+  "roof": {
+   "label": "Rooftops",
+   "color": "#c9971c"
+  },
+  "wine": {
+   "label": "Wineries",
+   "color": "#6f7d2b"
+  },
+  "shop": {
+   "label": "To take home",
+   "color": "#8a7a6e"
+  },
+  "sights": {
+   "label": "Sights",
+   "color": "#1d2b3a"
+  }
+ },
+ "text": {
+  "en": {
+   "city": "San Miguel",
+   "centre": "the Jardín",
+   "inCentre": " in Centro",
+   "localClaim": "Every place on this site is picked by people who live in San Miguel"
+  },
+  "es": {
+   "city": "San Miguel",
+   "centre": "el Jardín",
+   "inCentre": " en el Centro",
+   "localClaim": "Todos los lugares de este sitio los eligió gente que vive en San Miguel"
+  }
+ },
+ "files": {
+  "base": {
+   "path": "base.json",
+   "bytes": 59627,
+   "sha256": "2226a7fc614dbba8577df8327b2f46a0fec58d3b35607f986f654966464a6fd8"
+  },
+  "live": {
+   "path": "../live.a6f7f223.json",
+   "bytes": 12499,
+   "sha256": "a6f7f223aa701d99f2cfdbe1fff24ae542b7d9e7787c36e01c866d0e1e3234bb"
+  }
+ },
+ "counts": {
+  "places": 100,
+  "picks": 62,
+  "extras": 22,
+  "sights": 17,
+  "names": 192,
+  "areas": 5,
+  "collections": 1
+ },
+ "credits": [
+  "Places, positions and facts: MapSMA (mapsma.com), researched 17–18 Nov 2026",
+  "Names and positions partly from © OpenStreetMap contributors"
+ ]
+}

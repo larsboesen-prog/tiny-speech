@@ -1,0 +1,167 @@
+{
+  "_how": [
+    "Live music nights for San Miguel (plan step B8). Fill this in, save it as music.json beside it, then run: node tools/build-pack.mjs mx-sma",
+    "1. Find the venues: Google Maps' top five for 'live music' in San Miguel, or your own picks. Use Maps to choose them; take each venue's nights from the venue itself (its posts, its sign, a call), and put that link in source.",
+    "2. A venue goes under venues by its place id in places.json. A new venue first needs a place in places.json (that changes answers: re-record with node tools/golden.mjs --current --update and read test/golden/changes.md).",
+    "3. genres, from this list: jazz blues rock trova mariachi son salsa cumbia flamenco latin dj acoustic karaoke openmic classical folk piano",
+    "4. slots: one per kind of night. days 0-6 with Monday = 0 (Friday and Saturday = [4, 5]); from and to as \"20:00\"; a night past midnight ends at \"1:00\". A night with its own genres (mariachi on Sundays) gets its own genres. A night whose music is not known gets \"genres\": [] (said as \"live music\").",
+    "Nights from web listings (19 Nov 2026) carry the listing's date as checked, so answers say they are worth confirming until someone confirms them with the venue and sets today's date.",
+    "5. checked: the date you confirmed the nights. Answers say the list may be old after 60 days; the build warns too.",
+    "A venue with no slots yet is left out of the answers, so you can fill in one at a time."
+  ],
+  "venues": {
+    "X19": {
+      "name": "Mama Mía",
+      "genres": [
+        "salsa",
+        "latin",
+        "jazz"
+      ],
+      "slots": [
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "from": "20:00",
+          "genres": []
+        },
+        {
+          "days": [
+            1
+          ],
+          "from": "19:00",
+          "to": "21:00",
+          "genres": [
+            "latin",
+            "acoustic"
+          ]
+        },
+        {
+          "days": [
+            4,
+            5
+          ],
+          "from": "22:00",
+          "to": "0:30",
+          "genres": [
+            "salsa"
+          ]
+        }
+      ],
+      "checked": "2025-12-24",
+      "source": "https://mexiconewsdaily.com/event/latin-guitar-tuesdays-at-mama-mia-rumbas-boleros-and-brazilian-nights",
+      "note": "Main room nightly from 8 p.m. (no end time); Latin guitar Tuesdays 7–9 p.m. (Mexico News Daily); Cuban salsa Friday and Saturday 10 p.m.–12:30 a.m. (salsavida.com listings); Afar also names jazz and flamenco. From listings: confirm with the venue."
+    },
+    "X20": {
+      "name": "Raindog Cantina",
+      "genres": [
+        "blues",
+        "jazz",
+        "rock",
+        "flamenco",
+        "salsa",
+        "folk"
+      ],
+      "slots": [
+        {
+          "days": [
+            2
+          ],
+          "from": "20:00",
+          "genres": [
+            "jazz"
+          ]
+        },
+        {
+          "days": [
+            3,
+            6
+          ],
+          "from": "17:00",
+          "genres": []
+        }
+      ],
+      "checked": "2025-10-12",
+      "source": "https://mexiconewsdaily.com/event/new-orleans-comes-to-san-miguel-free-gypsy-jazz-gumbo-every-wednesday-night/",
+      "note": "Gypsy jazz Wednesdays from 8 p.m. (Mexico News Daily); sunset sessions on the terrace Thursday and Sunday at 5 p.m. (the venue's description on discoversma.com); live music Wednesday to Sunday. Dated by the latest listing seen (SanMiguelLive, 12 Oct 2025). Confirm with the venue."
+    },
+    "X21": {
+      "name": "Johnny's Piano Bar",
+      "genres": [
+        "piano",
+        "jazz"
+      ],
+      "slots": [
+        {
+          "days": [
+            2,
+            3,
+            6
+          ],
+          "from": "18:00",
+          "to": "22:00"
+        },
+        {
+          "days": [
+            4,
+            5
+          ],
+          "from": "18:00",
+          "to": "23:00"
+        }
+      ],
+      "checked": "2025-07-05",
+      "source": "https://discoversma.com/events/mexico/guanajuato/san-miguel-de-allende/musical-event/enrique-allende-johnnys-piano-bar",
+      "note": "Live music Wednesday to Sunday evenings, during opening hours (discoversma.com, SanMiguelLive; latest dated listing 5 Jul 2025). Confirm with the venue."
+    },
+    "X22": {
+      "name": "Casa Europa",
+      "genres": [
+        "classical"
+      ],
+      "slots": [],
+      "checked": null,
+      "source": "https://mexiconewsdaily.com/event-venue/casa-europa-mexico",
+      "note": "Concerts, recitals and opera on varying evenings (about 5 or 7 p.m.): no regular nights to list. casaeuropamexico.mx"
+    },
+    "X17": {
+      "name": "Tío Lucas",
+      "genres": [],
+      "slots": [],
+      "checked": null,
+      "source": "",
+      "note": "places.json already lists live_music"
+    },
+    "43": {
+      "name": "Agavia",
+      "genres": [],
+      "slots": [],
+      "checked": null,
+      "source": "",
+      "note": "places.json already lists live_music (rooftop)"
+    },
+    "69": {
+      "name": "Trino",
+      "genres": [],
+      "slots": [],
+      "checked": null,
+      "source": "https://www.sanmiguellive.com/venue/trino-restaurante-at-villa-pajaritos",
+      "note": "places.json already lists live_music"
+    },
+    "X9": {
+      "name": "Café Rama",
+      "genres": [],
+      "slots": [],
+      "checked": null,
+      "source": "",
+      "note": "a web listing mentions a weekend morning jazz trio: confirm"
+    }
+  },
+  "toAdd": []
+}

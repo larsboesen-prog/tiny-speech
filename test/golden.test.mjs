@@ -4,11 +4,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { runAll, lines, differences, SNAPSHOT, ORIGINAL } from "../tools/golden.mjs";
+import { runAll, lines, differences, SNAPSHOT, ORIGINAL, CURRENT } from "../tools/golden.mjs";
 
 const IMPLEMENTATIONS = [
   { name: "MapSMA /page5 as served on 18 Nov 2026", dir: ORIGINAL },
-  { name: "the shared core (domains/places) with San Miguel's pack", dir: "core" },
+  { name: "the shared core (domains/places) with San Miguel's pack as imported", dir: "core" },
 ];
 
 const snapshot = readFileSync(SNAPSHOT, "utf8");
@@ -26,3 +26,8 @@ for (const impl of IMPLEMENTATIONS) {
     assert.deepEqual(diff, [], diff.join("\n"));
   });
 }
+
+test("the shared core with San Miguel's current pack answers as last re-recorded (test/golden/changes.md says what differs from /page5)", async () => {
+  const diff = differences(readFileSync(CURRENT, "utf8"), lines(await runAll("current")));
+  assert.deepEqual(diff, [], diff.join("\n") + "\n(re-record on purpose: node tools/golden.mjs --current --update)");
+});

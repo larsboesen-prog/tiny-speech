@@ -15,15 +15,17 @@ const entry = index.cities.find((c) => c.id === "mx-sma");
 const DATE = entry.version.slice(0, 10);
 const clone = () => JSON.parse(JSON.stringify(src));
 
-test("San Miguel's pack holds every MapSMA place, with its position, kind and facts", () => {
+test("San Miguel's pack holds every MapSMA place, with its position, kind and facts, and the places added since", () => {
   const data = JSON.parse(readFileSync(ROOT + "test/fixtures/before/mapsma-page5/data.json", "utf8"));
-  assert.equal(src.places.length, data.PLACES.length);
+  const ADDED = ["X19", "X20", "X21", "X22"];  // live music venues, 19 Nov 2026 (the owner's decision D8)
+  assert.deepEqual(src.places.map((p) => p.id).filter((id) => !data.PLACES.some((p) => p.id === id)), ADDED);
+  for (const id of ADDED) assert.ok(src.places.find((p) => p.id === id).info.source, `place ${id} says where it came from`);
   for (const p of data.PLACES) {
     const q = src.places.find((x) => x.id === p.id);
     assert.ok(q, `place ${p.id}`);
     assert.deepEqual([q.name, q.lat, q.lng, q.kind, q.area, !!q.other], [p.name, p.lat, p.lng, p.cat, p.area, !!p.other]);
   }
-  assert.deepEqual(src.places.filter((p) => (p.facts?.f || []).includes("live_music")).map((p) => p.id), ["43", "69", "X17"]);
+  assert.deepEqual(src.places.filter((p) => (p.facts?.f || []).includes("live_music")).map((p) => p.id), ["43", "69", "X17", "X19", "X20", "X21"]);
   assert.deepEqual(src.places.find((p) => p.id === "60").names, [{ t: "azotea" }]);
   assert.deepEqual(src.places.find((p) => p.id === "X13").names, [{ t: "quince", exact: true }]);
   assert.equal(src.collections[0].places.length, 8);
@@ -45,7 +47,8 @@ test("the pack builds within its budget, and dist/ is exactly what the source bu
 test("the build report names the data that needs a person", () => {
   const { warnings, notes } = validate(src, DATE);
   assert.equal(notes.hoursToSettle.length, 20);
-  assert.deepEqual(notes.missingHours, ["23", "24", "25", "27", "31", "38", "X18"]);
+  assert.deepEqual(notes.missingHours, ["23", "24", "25", "27", "31", "38", "X18", "X19", "X20"]);
+  assert.deepEqual(notes.music.empty, ["X22", "X17", "43", "69", "X9"].sort((a, b) => Object.keys(src.music.venues).indexOf(a) - Object.keys(src.music.venues).indexOf(b)));
   assert.ok(warnings.some((w) => /X17's hours have no entry for Saturday/.test(w)));
   assert.deepEqual(notes.needsReading, ["xalisco", "mixiotes"]);
 });

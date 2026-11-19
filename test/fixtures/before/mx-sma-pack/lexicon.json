@@ -1,0 +1,39 @@
+{
+ "note": "Words in this city's names that stay English for the voice, and readings written by hand (tiny-voca phones, from spanish.js).",
+ "english": [
+  "the",
+  "restaurant",
+  "inside",
+  "geek",
+  "coffee",
+  "and",
+  "fish",
+  "cart",
+  "rooftop",
+  "market",
+  "andy",
+  "andys",
+  "maple",
+  "sushi",
+  "taco",
+  "tacos",
+  "tequila",
+  "baja",
+  "torrart",
+  "tamales"
+ ],
+ "readings": {
+  "jacques": {
+   "phones": "ʒ ˈɑː k",
+   "phoneset": "dizione-en-1"
+  },
+  "giovanni": {
+   "phones": "dʒ oʊ v ˈɑː n i",
+   "phoneset": "dizione-en-1"
+  },
+  "chope": {
+   "phones": "ʃ ˈɑː p",
+   "phoneset": "dizione-en-1"
+  }
+ }
+}

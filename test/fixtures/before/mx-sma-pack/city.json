@@ -1,9 +1,6 @@
 {
  "schema": 1,
  "id": "mx-sma",
- "version": "2026-11-19.77a310",
- "built": "2026-11-19",
- "core": ">=0.2 <1",
  "names": {
   "en": "San Miguel de Allende",
   "es": "San Miguel de Allende"
@@ -130,27 +127,6 @@
    "inCentre": " en el Centro",
    "localClaim": "Todos los lugares de este sitio los eligió gente que vive en San Miguel"
   }
- },
- "files": {
-  "base": {
-   "path": "base.json",
-   "bytes": 56829,
-   "sha256": "fa3e851658f9fb1e062491c116a0c042439aa6a02e5a5eccc23db6e6c9bc06b1"
-  },
-  "live": {
-   "path": "../live.6687cdce.json",
-   "bytes": 11755,
-   "sha256": "6687cdce81a59464730f0c9228dafddfd6efbaf31231d32c90fb3669014b2534"
-  }
- },
- "counts": {
-  "places": 96,
-  "picks": 62,
-  "extras": 18,
-  "sights": 16,
-  "names": 174,
-  "areas": 5,
-  "collections": 1
  },
  "credits": [
   "Places, positions and facts: MapSMA (mapsma.com), researched 17–18 Nov 2026",

@@ -47,18 +47,28 @@ export async function loadSite(dir) {
  * each checked against the manifest's SHA-256. MapSMA's request and answer have a field "susan" where the core has "collection"
  * (any city's curated list): the core's is renamed back, in place, so the two can be compared word for word.
  */
-export async function loadCore(root = new URL("../../", import.meta.url), cityId = "mx-sma") {
+// `src`: build the pack in memory from a source folder (the frozen import, for parity with the original) instead of packs/dist/.
+export async function loadCore(root = new URL("../../", import.meta.url), cityId = "mx-sma", { src = null } = {}) {
   const { createHash } = await import("node:crypto");
   const ask = await import(new URL("domains/places/ask.js", root).href);
   const { assemble, checked } = await import(new URL("core/pack/assemble.js", root).href);
-  const dist = new URL("packs/dist/", root);
-  const index = JSON.parse(readFileSync(new URL("index.json", dist), "utf8"));
-  const entry = index.cities.find((c) => c.id === cityId);
-  const manifestUrl = new URL(entry.manifest, dist);
-  const manifest = JSON.parse(readFileSync(manifestUrl, "utf8"));
-  const sha = (t) => createHash("sha256").update(t).digest("hex");
-  const file = (f) => checked(readFileSync(new URL(f.path, manifestUrl), "utf8"), f, sha);
-  const pack = assemble(manifest, await file(manifest.files.base), await file(manifest.files.live));
+  let pack;
+  if (src) {
+    const { readSource, build } = await import(new URL("tools/build-pack.mjs", root).href);
+    const b = build(readSource(src), { date: "2026-11-19" });
+    if (!b.ok) throw new Error(b.errors.join("\n"));
+    const text = (re) => Object.entries(b.files).find(([k]) => re.test(k))[1];
+    pack = assemble(b.manifest, JSON.parse(text(/base\.json$/)), JSON.parse(text(/live\.[0-9a-f]{8}\.json$/)));
+  } else {
+    const dist = new URL("packs/dist/", root);
+    const index = JSON.parse(readFileSync(new URL("index.json", dist), "utf8"));
+    const entry = index.cities.find((c) => c.id === cityId);
+    const manifestUrl = new URL(entry.manifest, dist);
+    const manifest = JSON.parse(readFileSync(manifestUrl, "utf8"));
+    const sha = (t) => createHash("sha256").update(t).digest("hex");
+    const file = (f) => checked(readFileSync(new URL(f.path, manifestUrl), "utf8"), f, sha);
+    pack = assemble(manifest, await file(manifest.files.base), await file(manifest.files.live));
+  }
   let rng = seeded(1);
   const makeAsker = (lang) => ask.createAsker({ pack, random: () => rng(), lang });
   const askers = { en: makeAsker("en"), es: makeAsker("es") };

@@ -16,6 +16,7 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const index = JSON.parse(readFileSync(ROOT + "packs/dist/index.json", "utf8"));
 const sma = index.cities.find((c) => c.id === "mx-sma");
 const manifest = JSON.parse(readFileSync(ROOT + "packs/dist/" + sma.manifest, "utf8"));
+const smaPlaces = manifest.counts.places;  // 100 since the music venues (19 Nov 2026)
 const TUE_1410 = "2026-11-17T20:10:00Z";
 
 let web, browser;
@@ -46,7 +47,7 @@ test("a city is downloaded, checked, kept, and then read from the device", { ski
   const p = await page(context);
   const before = hits(baseFile);
   const first = await p.evaluate(() => window.loadCity("mx-sma"));
-  assert.deepEqual([first.from, first.version, first.places, first.tz], ["network", sma.version, 96, "America/Mexico_City"]);
+  assert.deepEqual([first.from, first.version, first.places, first.tz], ["network", sma.version, smaPlaces, "America/Mexico_City"]);
   const second = await p.evaluate(() => window.loadCity("mx-sma"));
   assert.equal(second.from, "device");
   assert.equal(hits(baseFile) - before, 1, "base.json was downloaded once");
@@ -61,7 +62,7 @@ test("offline, the last good version answers", { skip }, async () => {
   await p.evaluate(() => window.loadCity("mx-sma"));
   await context.route("**/packs/**", (r) => r.abort("internetdisconnected"));
   const off = await p.evaluate(() => window.loadCity("mx-sma"));
-  assert.deepEqual([off.from, off.version, off.places, off.offline], ["device", sma.version, 96, true]);
+  assert.deepEqual([off.from, off.version, off.places, off.offline], ["device", sma.version, smaPlaces, true]);
   await context.close();
 });
 
