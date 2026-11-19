@@ -36,6 +36,10 @@ const NAME_STOP = new Set(['la', 'el', 'los', 'las', 'the', 'de', 'del', 'y', 'a
 const maskNumberTimes = (s) => s.replace(/\b(las |a las )?quince (minutos|mins?|horas)\b/g, (m) => m.replace(/\S+/g, '§'));
 const maskAreaNames = (pack, s) => compiled(pack).masks.reduce((t, re) => t.replace(re, (m) => m.replace(/\S+/g, '§')), s);
 
+// Letters counted (a–z, 0–9), and the "bag" distance between two counts: a lower bound of the edit distance (lev).
+const letterCounts = (s) => { const c = new Int16Array(36); for (let i = 0; i < s.length; i++) { const x = s.charCodeAt(i); c[x >= 97 ? x - 97 : x - 22]++; } return c; };
+const bagDistance = (a, b) => { let more = 0, less = 0; for (let i = 0; i < 36; i++) { const d = a[i] - b[i]; if (d > 0) more += d; else less -= d; } return Math.max(more, less); };
+
 // The pack's words as patterns, made once per pack: the centre, the areas (in order), the collections ("Susan York's picks").
 const COMPILED = new WeakMap();
 const wordsRe = (list) => new RegExp(`\\b(${list.map((w) => fold(w).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`);
@@ -290,10 +294,21 @@ export function createReader({ places, MEALS, pack }) {
     const short = fold(p.name).replace(/&/g, ' and ').split(/[^a-z0-9]+/).filter((w) => w && !NAME_STOP.has(w)).join(' ');
     if (!p.noShort && short && short !== fold(p.name)) list.push([short, false]);
     for (const a of p.names || []) list.push([a.t, !!a.exact]);  // the pack lists other names first, then exact-only ones
-    return { p, keys: list.map(([k, exact]) => ({ words: fold(k).split(/[^a-z0-9]+/).filter(Boolean), snd: sound(k), skel: skeleton(sound(k)), exact })) };
+    return { p, keys: list.map(([k, exact]) => {
+      const snd = sound(k), skel = skeleton(snd);
+      return { words: fold(k).split(/[^a-z0-9]+/).filter(Boolean), snd, skel, exact, sc: letterCounts(snd), kc: letterCounts(skel) };
+    }) };
   });
   function matchPlace(q) {
     const tok = maskNumberTimes(maskAreaNames(pack, q.s)).split(' ').filter(Boolean);
+    // The sound of each run of the question's words, made once per question, not once per name (19 Nov 2026: 5,000 places).
+    const runs = new Map();
+    const run = (i, len) => {
+      const at = i * 64 + len;
+      let r = runs.get(at);
+      if (!r) { const w = sound(tok.slice(i, i + len).join('')), ws = skeleton(w); r = { w, ws, wc: letterCounts(w), wsc: letterCounts(ws) }; runs.set(at, r); }
+      return r;
+    };
     let best = null;
     near.clear();
     for (const { p, keys: ks } of keys) {
@@ -307,13 +322,17 @@ export function createReader({ places, MEALS, pack }) {
             let score, skel = false;
             if (k.exact) score = win.join(' ') === k.words.join(' ') ? 1 : 0;
             else {
-              const w = sound(win.join(''));
+              const r = run(i, len), w = r.w;
               if (Math.abs(w.length - k.snd.length) > 3) continue;
+              // No hope: even the letters alone differ too much for 0.5, the lowest score anything here uses (the names, "Did you
+              // mean", the consonant match). Letter counts bound the edit distance from below, so skipping changes no answer.
+              if (1 - bagDistance(r.wc, k.sc) / Math.max(w.length, k.snd.length) < 0.5
+                && (k.skel.length < 3 || isSight(p) || 0.9 * (1 - bagDistance(r.wsc, k.kc) / Math.max(r.ws.length, k.skel.length)) < 0.5)) continue;
               score = 1 - lev(w, k.snd) / Math.max(w.length, k.snd.length);
               if (score < need(k.snd.length) && k.skel.length >= 3 && skeleton(w) === k.skel && score >= (k.skel.length >= 4 ? 0.5 : 0.6)) { score = SKELETON; skel = true; }
             }
             if (!k.exact && !isSight(p)) {  // for "Did you mean …?": the letters, or the consonants, closest to the words heard
-              const ws = skeleton(sound(win.join(''))), sk = k.skel.length >= 3 ? 0.9 * (1 - lev(ws, k.skel) / Math.max(ws.length, k.skel.length)) : 0;
+              const ws = run(i, len).ws, sk = k.skel.length >= 3 ? 0.9 * (1 - lev(ws, k.skel) / Math.max(ws.length, k.skel.length)) : 0;
               const close = Math.max(score, sk);
               if (close > (near.get(p.id) || 0)) near.set(p.id, close);
             }

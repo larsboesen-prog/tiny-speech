@@ -1,0 +1,285 @@
+[
+ {
+  "id": "T-S1",
+  "name": "Plaza Mayor de Villa Ejemplo",
+  "kind": "sights",
+  "lat": 0.5,
+  "lng": -80.5,
+  "area": "Casco antiguo",
+  "photo": true,
+  "names": [
+   {
+    "t": "plaza mayor"
+   },
+   {
+    "t": "la plaza"
+   }
+  ],
+  "sentence": {
+   "en": "the Plaza Mayor",
+   "es": "la Plaza Mayor"
+  }
+ },
+ {
+  "id": "T-S2",
+  "name": "Catedral de Santa Prueba",
+  "kind": "sights",
+  "lat": 0.5012,
+  "lng": -80.4992,
+  "area": "Casco antiguo",
+  "photo": true,
+  "names": [
+   {
+    "t": "catedral"
+   }
+  ],
+  "sentence": {
+   "en": "the cathedral",
+   "es": "la catedral"
+  }
+ },
+ {
+  "id": "T1",
+  "name": "Café Brújula",
+  "kind": "bfast",
+  "lat": 0.501,
+  "lng": -80.501,
+  "area": "Casco antiguo",
+  "photo": true,
+  "facts": {
+   "c": [
+    "coffee",
+    "bakery"
+   ],
+   "f": [
+    "wifi"
+   ],
+   "w": "coffee and pastries",
+   "w_es": "café y panes"
+  }
+ },
+ {
+  "id": "T2",
+  "name": "Arepas Doña Lucero",
+  "kind": "street",
+  "lat": 0.4985,
+  "lng": -80.498,
+  "area": "Casco antiguo",
+  "photo": true,
+  "facts": {
+   "c": [
+    "street_food"
+   ],
+   "d": [
+    "arepas"
+   ],
+   "p": 1,
+   "w": "arepas stall",
+   "w_es": "puesto de arepas"
+  }
+ },
+ {
+  "id": "T3",
+  "name": "Fonda del Puerto",
+  "kind": "mex",
+  "lat": 0.503,
+  "lng": -80.496,
+  "area": "Casco antiguo",
+  "photo": true,
+  "facts": {
+   "c": [
+    "seafood",
+    "traditional"
+   ],
+   "d": [
+    "ceviche"
+   ],
+   "p": 2,
+   "w": "seafood kitchen",
+   "w_es": "cocina de mariscos"
+  }
+ },
+ {
+  "id": "T4",
+  "name": "Terraza Volcán",
+  "kind": "roof",
+  "lat": 0.5005,
+  "lng": -80.4985,
+  "area": "Casco antiguo",
+  "photo": true,
+  "facts": {
+   "c": [
+    "cocktails"
+   ],
+   "f": [
+    "rooftop",
+    "view",
+    "sunset",
+    "late_night"
+   ],
+   "p": 3,
+   "w": "rooftop bar",
+   "w_es": "bar en una terraza"
+  }
+ },
+ {
+  "id": "T5",
+  "name": "Pizzería Nápoles Chica",
+  "kind": "world",
+  "lat": 0.512,
+  "lng": -80.49,
+  "area": "Barrio Alto",
+  "photo": true,
+  "facts": {
+   "c": [
+    "italian",
+    "pizza"
+   ],
+   "p": 2,
+   "w": "wood-fired pizza",
+   "w_es": "pizza de horno de leña"
+  }
+ },
+ {
+  "id": "T6",
+  "name": "La Ribera Jazz",
+  "kind": "share",
+  "lat": 0.48,
+  "lng": -80.49,
+  "area": "La Ribera",
+  "photo": true,
+  "facts": {
+   "c": [
+    "cocktails"
+   ],
+   "f": [
+    "live_music",
+    "full_bar"
+   ],
+   "p": 2,
+   "w": "jazz bar",
+   "w_es": "bar de jazz"
+  }
+ },
+ {
+  "id": "T7",
+  "name": "The Garden",
+  "kind": "world",
+  "lat": 0.502,
+  "lng": -80.503,
+  "area": "Casco antiguo",
+  "photo": true,
+  "exactName": true,
+  "noShort": true,
+  "facts": {
+   "c": [
+    "vegetarian"
+   ],
+   "f": [
+    "garden"
+   ],
+   "p": 2,
+   "w": "vegetarian garden restaurant",
+   "w_es": "restaurante vegetariano con jardín"
+  }
+ },
+ {
+  "id": "T8",
+  "name": "Panadería Trigal",
+  "kind": "bfast",
+  "lat": 0.499,
+  "lng": -80.502,
+  "area": "Casco antiguo",
+  "photo": true,
+  "facts": {
+   "c": [
+    "bakery"
+   ],
+   "d": [
+    "bread"
+   ],
+   "p": 1,
+   "w": "bakery",
+   "w_es": "panadería"
+  }
+ },
+ {
+  "id": "T9",
+  "name": "Sushi Marea",
+  "kind": "world",
+  "lat": 0.5102,
+  "lng": -80.4878,
+  "area": "Barrio Alto",
+  "photo": true,
+  "facts": {
+   "c": [
+    "sushi",
+    "japanese"
+   ],
+   "p": 3,
+   "w": "sushi bar",
+   "w_es": "barra de sushi"
+  }
+ },
+ {
+  "id": "T10",
+  "name": "Viñedo Las Nubes",
+  "kind": "wine",
+  "lat": 0.54,
+  "lng": -80.55,
+  "area": "Out of town",
+  "photo": true,
+  "facts": {
+   "c": [
+    "wine"
+   ],
+   "f": [
+    "view"
+   ],
+   "p": 3,
+   "w": "winery",
+   "w_es": "viñedo"
+  }
+ },
+ {
+  "id": "T11",
+  "name": "Tacos El Faro",
+  "kind": "street",
+  "lat": 0.4975,
+  "lng": -80.4995,
+  "area": "Casco antiguo",
+  "photo": true,
+  "facts": {
+   "c": [
+    "street_food",
+    "tacos"
+   ],
+   "d": [
+    "tacos"
+   ],
+   "p": 1,
+   "w": "late-night tacos",
+   "w_es": "tacos de noche"
+  }
+ },
+ {
+  "id": "T12",
+  "name": "Café de la Ribera",
+  "kind": "bfast",
+  "lat": 0.481,
+  "lng": -80.488,
+  "area": "La Ribera",
+  "photo": true,
+  "facts": {
+   "c": [
+    "coffee"
+   ],
+   "f": [
+    "outdoor"
+   ],
+   "p": 1,
+   "w": "café by the river",
+   "w_es": "café junto al río"
+  }
+ }
+]

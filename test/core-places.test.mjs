@@ -40,9 +40,10 @@ function properNouns() {
   }
   return [...out].map((n) => fold(n).replace(/^(the|el|la|los|las) /, "").trim()).filter((n) => n.length > 3 && !ORDINARY_NAMES.has(n));
 }
-// Names that are also ordinary words the code needs: "The Restaurant", "the Jardín" (a garden), "La Azotea" (a rooftop), and stalls
-// named after their dish. Add to this list only a word that is ordinary in English or Spanish, with the place it comes from.
-const ORDINARY_NAMES = new Set(["restaurant", "jardin", "azotea", "quesadillas", "esquites"]);
+// Names that are also ordinary words the code needs: "The Restaurant", "the Jardín" (a garden), "La Azotea" (a rooftop) and stalls
+// named after their dish (San Miguel); "The Garden" (Villa Ejemplo, the test town). Add to this list only a word that is ordinary in
+// English or Spanish, with the place it comes from.
+const ORDINARY_NAMES = new Set(["restaurant", "jardin", "azotea", "quesadillas", "esquites", "garden"]);
 
 test("no city's proper noun appears in the core's code", () => {
   const nouns = properNouns();

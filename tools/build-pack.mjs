@@ -2,7 +2,7 @@
 // packs/src/<city>/*.json  →  validate  →  packs/dist/<city>/<version>/{manifest.json, base.json, report.md},
 // packs/dist/<city>/live.<hash>.json (hours, which change often), and packs/dist/index.json (the cities and their versions).
 // The version is the build date and the first six hex digits of the content's SHA-256, so a version's files never change.
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, rmSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
@@ -85,5 +85,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const indexPath = join(out, "index.json");
   const index = existsSync(indexPath) ? JSON.parse(readFileSync(indexPath, "utf8")) : null;
   writeFileSync(indexPath, JSON.stringify(indexWith(index, result.manifest), null, 1) + "\n");
+  // This repository keeps only the current build of a city (a site that serves older ones for phones mid-update copies dist/ as is).
+  const keep = new Set([result.version, result.manifest.files.live.path.slice(3)]);
+  for (const f of readdirSync(join(out, cityId))) if (!keep.has(f)) rmSync(join(out, cityId, f), { recursive: true });
   console.log(`${cityId} ${result.version}: ${result.total} gzipped bytes (budget ${result.budget}), ${result.warnings.length} warnings → ${out.slice(ROOT.length)}`);
 }

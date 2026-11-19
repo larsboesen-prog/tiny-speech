@@ -1,0 +1,117 @@
+{
+ "schema": 1,
+ "id": "xx-test",
+ "names": {
+  "en": "Villa Ejemplo",
+  "es": "Villa Ejemplo"
+ },
+ "say": [
+  "villa ejemplo",
+  "ejemplo"
+ ],
+ "tz": "America/Bogota",
+ "country": "CO",
+ "currency": "COP",
+ "langs": [
+  "en",
+  "es"
+ ],
+ "variety": {
+  "es": "co",
+  "en": "us"
+ },
+ "centre": {
+  "place": "T-S1",
+  "lat": 0.5,
+  "lng": -80.5,
+  "radiusM": 500
+ },
+ "bbox": [
+  0.45,
+  -80.56,
+  0.56,
+  -80.44
+ ],
+ "farM": 15000,
+ "walkMPerMin": 80,
+ "meals": {
+  "bfast": {
+   "win": [
+    420,
+    600
+   ],
+   "min": 60
+  },
+  "brunch": {
+   "win": [
+    600,
+    840
+   ],
+   "min": 90
+  },
+  "lunch": {
+   "win": [
+    720,
+    900
+   ],
+   "min": 90
+  },
+  "dinner": {
+   "win": [
+    1140,
+    1290
+   ],
+   "min": 60
+  },
+  "late": {
+   "win": [
+    1380,
+    1500
+   ],
+   "min": 30
+  }
+ },
+ "kinds": {
+  "bfast": {
+   "label": "Coffee & bakery"
+  },
+  "mex": {
+   "label": "Local food"
+  },
+  "world": {
+   "label": "World food"
+  },
+  "street": {
+   "label": "Street food"
+  },
+  "share": {
+   "label": "Bars & small plates"
+  },
+  "roof": {
+   "label": "Rooftops"
+  },
+  "wine": {
+   "label": "Wine"
+  },
+  "sights": {
+   "label": "Sights"
+  }
+ },
+ "text": {
+  "en": {
+   "city": "Villa Ejemplo",
+   "centre": "the Plaza Mayor",
+   "inCentre": " in the old town",
+   "localClaim": "Every place in this test town was made up for the tests"
+  },
+  "es": {
+   "city": "Villa Ejemplo",
+   "centre": "la Plaza Mayor",
+   "inCentre": " en el casco antiguo",
+   "localClaim": "Todos los lugares de este pueblo de prueba son inventados"
+  }
+ },
+ "credits": [
+  "A made-up town for tests: no place here exists."
+ ]
+}

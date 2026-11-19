@@ -1,0 +1,61 @@
+[
+ {
+  "id": "casco",
+  "role": "centre",
+  "words": [
+   "centro",
+   "old town",
+   "casco antiguo",
+   "plaza mayor",
+   "downtown"
+  ]
+ },
+ {
+  "id": "barrio alto",
+  "words": [
+   "barrio alto",
+   "the upper town"
+  ],
+  "match": [
+   "barrio alto"
+  ],
+  "maskInNames": "\\bbarrio alto\\b",
+  "in": {
+   "en": " in Barrio Alto",
+   "es": " en Barrio Alto"
+  }
+ },
+ {
+  "id": "la ribera",
+  "words": [
+   "the river",
+   "riverside",
+   "junto al rio"
+  ],
+  "match": [
+   "ribera"
+  ],
+  "notCentre": true,
+  "in": {
+   "en": " by the river",
+   "es": " en La Ribera"
+  },
+  "maskInNames": "\\b(the river|riverside)\\b"
+ },
+ {
+  "id": "out of town",
+  "role": "outOfTown",
+  "words": [
+   "out of town",
+   "countryside",
+   "fuera del pueblo"
+  ],
+  "match": [
+   "out of town"
+  ],
+  "in": {
+   "en": " out of town",
+   "es": " fuera del pueblo"
+  }
+ }
+]

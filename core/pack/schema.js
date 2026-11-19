@@ -134,6 +134,23 @@ export function validate(src, today) {
   for (const [x, y, a, b, sim] of collisions) warn(`names that sound alike: ${x} "${a}" and ${y} "${b}" (${sim})`);
   notes.ordinary = keys.filter((k) => !k.exact && fold(k.t).split(/[^a-z0-9]+/).filter(Boolean).every((wd) => ORDINARY.has(wd))).map((k) => `${k.id} "${k.t}"`);
   for (const o of notes.ordinary) warn(`a name made only of ordinary words is not marked exact: ${o}`);
+  // Area words that sound like a place's name ("the river" ~ Café de la Ribera): a question about the area would name the place,
+  // unless the area masks its words in name matching (maskInNames). Names are compared without their small words, as the reader does.
+  const SMALL = new Set(["la", "el", "los", "las", "the", "de", "del", "y", "and", "cafe", "coffee", "tacos", "panaderia", "casa"]);
+  const bare = (t) => fold(t).split(/[^a-z0-9]+/).filter((wd) => wd && !SMALL.has(wd)).join(" ");
+  notes.areaClashes = [];
+  for (const a of areas) {
+    const mask = a.maskInNames ? new RegExp(a.maskInNames) : null;
+    for (const wd of a.words || []) {
+      if (mask && mask.test(fold(wd))) continue;
+      for (const k of keys) {
+        const name = bare(k.t);
+        if (!name || k.exact || name.includes(fold(wd))) continue;
+        if (alike(wd.replace(/^(the|la|el) /, ""), name) >= 0.75) notes.areaClashes.push(`area "${a.id}" word "${wd}" sounds like place ${k.id} "${k.t}"`);
+      }
+    }
+  }
+  for (const c of notes.areaClashes) warn(`${c}: mask it (maskInNames) or the place may be named instead`);
   const readings = lexicon.readings || {};
   notes.needsReading = [...new Set(places.flatMap((p) => fold(p.name).split(/[^a-z0-9]+/))
     .filter((wd) => wd && NEEDS_READING.test(wd) && !readings[wd]))];

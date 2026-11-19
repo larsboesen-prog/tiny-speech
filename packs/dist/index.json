@@ -18,6 +18,23 @@
    },
    "version": "2026-11-19.77a310",
    "manifest": "mx-sma/2026-11-19.77a310/manifest.json"
+  },
+  {
+   "id": "xx-test",
+   "names": {
+    "en": "Villa Ejemplo",
+    "es": "Villa Ejemplo"
+   },
+   "say": [
+    "villa ejemplo",
+    "ejemplo"
+   ],
+   "centre": {
+    "lat": 0.5,
+    "lng": -80.5
+   },
+   "version": "2026-11-19.9677eb",
+   "manifest": "xx-test/2026-11-19.9677eb/manifest.json"
   }
  ]
 }
