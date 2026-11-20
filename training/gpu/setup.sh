@@ -2,6 +2,7 @@
 # One-time setup on a rented GPU machine (training/gpu/README.md): Ubuntu with an NVIDIA GPU (24 GB, e.g. an RTX 4090), CUDA 12,
 # Python 3.10–3.12, about 60 GB of disk. Run from anywhere; everything goes in $WORK (default ~/tsw).
 #   bash tiny-speech/training/gpu/setup.sh
+# On Kaggle (gpu/kaggle/voice.ipynb): PY=<the notebook's python> uses that python and its torch, no venv.
 set -euo pipefail
 TS="$(cd "$(dirname "$0")/../.." && pwd)"
 WORK="${WORK:-$HOME/tsw}"
@@ -13,15 +14,20 @@ mkdir -p "$WORK/zips"
 cd "$WORK"
 
 if ! command -v ffmpeg >/dev/null; then (apt-get update -qq && apt-get install -y -qq ffmpeg libsndfile1) || echo "note: could not apt-get ffmpeg (not needed for FLAC/WAV)"; fi
-[ -d venv ] || python3 -m venv venv
-PIP="$WORK/venv/bin/pip"
-PY="$WORK/venv/bin/python"
-"$PIP" install -q -U pip wheel
+if [ -n "${PY:-}" ]; then PIP="$PY -m pip"; else
+  [ -d venv ] || python3 -m venv venv
+  PIP="$WORK/venv/bin/pip"
+  PY="$WORK/venv/bin/python"
+fi
+$PIP install -q -U pip wheel
 
 if [ ! -d tiny-voca ]; then git clone -q https://github.com/n4ze3m/tiny-voca.git; fi
 git -C tiny-voca checkout -q "$UPSTREAM_COMMIT"
 # the versions upstream generated its data with (dataset generation/batch1/requirements.txt), plus screening and the parquet reader
-"$PIP" install -q -e "tiny-voca[prepare,annotate,evaluate]" "qwen-tts==0.1.1" "transformers==4.57.3" faster-whisper jiwer num2words pyarrow
+# qwen-tts without its demo's dependencies (gradio) and without moving this machine's torch
+$PIP install -q -e "tiny-voca[prepare,annotate,evaluate]" "transformers==4.57.3" "accelerate==1.12.0" faster-whisper jiwer num2words pyarrow \
+  librosa soundfile sox onnxruntime einops
+$PIP install -q --no-deps "qwen-tts==0.1.1"
 grep -q "tiny-speech bilingual" tiny-voca/src/tiny_voca/text.py || "$PY" "$TS/training/gpu/patch_upstream.py" tiny-voca "$TS/training/data/symbols.json"
 
 "$PY" - <<EOF

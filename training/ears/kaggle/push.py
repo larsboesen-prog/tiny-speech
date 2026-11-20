@@ -23,7 +23,8 @@ KITS = {
     "ears": {"notebook": HERE.parent / "ears.ipynb", "prefix": "tiny-ears", "timeout": TIMEOUT, "gpu": {"train", "all"},
              "sources": {"train": "tiny-ears-data"}},
     "voice": {"notebook": HERE.parent.parent / "gpu" / "kaggle" / "voice.ipynb", "prefix": "tiny-voice",
-              "timeout": {"design": 1.5, "teacher": 11.6, "train": 11.6}, "gpu": {"design", "teacher", "train"}, "sources": {}},
+              "timeout": {"design": 1.5, "teach": 11.6, "learn": 11.6}, "gpu": {"design", "teach", "learn"},
+              "sources": {"teach": "tiny-voice-design", "learn": "tiny-voice-teach"}},
 }
 
 
@@ -32,11 +33,14 @@ def client():
     return KaggleClient(env=KaggleEnv.PROD, api_token="proxy-injected")
 
 
-def notebook(mode, kit="ears"):
+def notebook(mode, kit="ears", settings=()):
     nb = json.loads(KITS[kit]["notebook"].read_text(encoding="utf-8"))
     src = "".join(nb["cells"][1]["source"])
     src, n = re.subn(r'^MODE = "[a-z]+"', f'MODE = "{mode}"', src, count=1, flags=re.M)
     assert n == 1, "the notebook's MODE line moved"
+    for name, value in settings:  # --set PICK=F1: another NAME = "…" line of the first code cell
+        src, n = re.subn(rf'^{name} = "[^"]*"', f'{name} = {json.dumps(value)}', src, count=1, flags=re.M)
+        assert n == 1, f"the notebook has no {name} line"
     nb["cells"][1]["source"] = src.splitlines(keepends=True)
     return json.dumps(nb)
 
@@ -50,7 +54,7 @@ def push(args):
     r = ApiSaveKernelRequest()
     r.slug = f"{args.user}/{kit['prefix']}-{args.mode}"
     r.new_title = f"{kit['prefix']}-{args.mode}"
-    r.text = notebook(args.mode, args.kit)
+    r.text = notebook(args.mode, args.kit, [s.split("=", 1) for s in args.set])
     r.language = "python"
     r.kernel_type = "notebook"
     r.is_private = True
@@ -134,6 +138,7 @@ def main():
     a.add_argument("mode", choices=sorted({m for k in KITS.values() for m in k["timeout"]}))
     a.add_argument("--user", required=True)
     a.add_argument("--kit", choices=list(KITS), default="ears")
+    a.add_argument("--set", action="append", default=[], metavar="NAME=value", help='a NAME = "…" line of the notebook (voice: PICK=F1)')
     a.add_argument("--timeout-hours", type=float)
     a = sub.add_parser("status")
     a.add_argument("slug")

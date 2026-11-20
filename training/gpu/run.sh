@@ -3,6 +3,9 @@
 #   bash run.sh sample   recordings → reference clips → the teacher reads 20 sentences a language → listen, then decide
 #   bash run.sh all      everything (resumes where it stopped: each finished stage leaves done.<stage> in $WORK)
 #   bash run.sh gates    only the gates, again
+#   bash run.sh teach    the first half (teacher … annotate), and  bash run.sh learn  the second (train … bundle): two Kaggle sessions
+# A designed voice (RECIPE.md section 4, option 2): REFS=<its references folder> (design.py's references/<id>), no recordings.
+# GPUS=2 (Kaggle's two T4s): the teacher reads half the sentences on each.
 # Settings (environment): WORK (~/tsw), LIKE (M2 or F2: which released voice the new speaker starts from; the closer to the
 # speaker, the better), STEPS (30000), LR (1.5e-4), HOURS (10: the whole run stops cleanly by then, whatever it has done).
 set -euo pipefail
@@ -13,7 +16,9 @@ LIKE="${LIKE:-M2}"
 STEPS="${STEPS:-30000}"
 LR="${LR:-1.5e-4}"
 HOURS="${HOURS:-10}"
-PY="$WORK/venv/bin/python"
+PY="${PY:-$WORK/venv/bin/python}"
+REFS="${REFS:-}"
+GPUS="${GPUS:-1}"
 export TINY_VOCA_FRONTEND=table TINY_VOCA_PHONEME_TABLE="$TS/training/data/phonemes.jsonl"
 cd "$WORK"
 [ -f deadline.json ] || echo "{\"deadline\": $(( $(date +%s) + HOURS * 3600 ))}" > deadline.json
@@ -27,8 +32,26 @@ stage() {  # stage <name> <command…>: run once; its output in log.<name>
 }
 
 recordings() { "$PY" "$GPU/recordings.py" --zips zips --sentences "$TS/training/record/sentences.json" --out recorded; }
-sample() { (cd "$GPU" && "$PY" teacher.py --data "$TS/training/data" --references "$WORK/recorded/references" --out "$WORK/teacher-sample" --sample 20); }
-teacher() { (cd "$GPU" && "$PY" teacher.py --data "$TS/training/data" --references "$WORK/recorded/references" --out "$WORK/teacher" --deadline-file "$WORK/deadline.json"); }
+REFERENCES="${REFS:-$WORK/recorded/references}"
+sample() { (cd "$GPU" && "$PY" teacher.py --data "$TS/training/data" --references "$REFERENCES" --out "$WORK/teacher-sample" --sample 20); }
+teacher() {
+  if [ "$GPUS" -le 1 ]; then
+    (cd "$GPU" && "$PY" teacher.py --data "$TS/training/data" --references "$REFERENCES" --out "$WORK/teacher" --deadline-file "$WORK/deadline.json")
+    return
+  fi
+  local i pids=()
+  for ((i = 0; i < GPUS; i++)); do
+    (cd "$GPU" && CUDA_VISIBLE_DEVICES=$i "$PY" teacher.py --data "$TS/training/data" --references "$REFERENCES" --out "$WORK/teacher.$i" \
+      --deadline-file "$WORK/deadline.json" --part "$i/$GPUS" > "$WORK/log.teacher.$i" 2>&1) &
+    pids+=($!)
+  done
+  for p in "${pids[@]}"; do wait "$p"; done
+  mkdir -p "$WORK/teacher"
+  cat "$WORK"/teacher.*/manifest.jsonl > "$WORK/teacher/manifest.jsonl"
+  cat "$WORK"/teacher.*/review.jsonl > "$WORK/teacher/review.jsonl"
+  tail -n 2 "$WORK"/log.teacher.* || true
+  echo "teacher: $(wc -l < "$WORK/teacher/manifest.jsonl") clips accepted, $(wc -l < "$WORK/teacher/review.jsonl") for review"
+}
 originals() { "$PY" "$GPU/originals.py" --data "$TS/training/data" --out originals; }
 manifest() { "$PY" "$GPU/manifest.py" --inputs recorded/manifest.jsonl teacher/manifest.jsonl originals/manifest.jsonl --out inputs; }
 init() { "$PY" "$GPU/init_checkpoint.py" --released tiny-voca.pt --symbols "$TS/training/data/symbols.json" --like "$LIKE" --out init.pt --config config.json; }
@@ -55,13 +78,28 @@ bundle() {
 
 case "${1:-}" in
   sample)
-    stage recordings recordings
+    [ -n "$REFS" ] || stage recordings recordings
     stage sample sample
     echo "Listen to $WORK/teacher-sample/listen/ (and read teacher-sample/summary.json). If the voice sounds like the speaker,"
     echo "Mexican in Spanish: bash $0 all.  If not, stop here: about a dollar spent."
     ;;
+  teach)
+    [ -n "$REFS" ] || stage recordings recordings
+    stage teacher teacher
+    stage originals originals
+    stage manifest manifest
+    stage init init
+    stage prepare prepare
+    stage annotate annotate
+    ;;
+  learn)
+    stage train train
+    stage dump dump
+    stage gates gates
+    bundle
+    ;;
   all)
-    stage recordings recordings
+    [ -n "$REFS" ] || stage recordings recordings
     stage teacher teacher
     stage originals originals
     stage manifest manifest
@@ -77,5 +115,5 @@ case "${1:-}" in
     rm -f done.gates
     stage gates gates
     ;;
-  *) echo "usage: bash $0 sample | all | gates"; exit 1 ;;
+  *) echo "usage: bash $0 sample | all | teach | learn | gates"; exit 1 ;;
 esac

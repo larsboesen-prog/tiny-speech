@@ -1,6 +1,7 @@
 """The teacher voice reads training/data/teacher.jsonl in the speaker's voice, in Spanish and English. Cloud only (a GPU).
 
 python teacher.py --data training/data --references work/recorded/references --out work/teacher [--sample 20] [--deadline-file f]
+                  [--part i/n]   (one GPU per part: CUDA_VISIBLE_DEVICES; each part its own --out, joined by run.sh)
 
 Upstream tiny-voca's recipe (scripts/generate_audio.py), for one speaker and two languages: Qwen3-TTS 1.7B Base copies the
 voice from the speaker's own reference clips (one per language), batches of eight, Whisper small (multilingual) screening
@@ -47,6 +48,7 @@ def main():
     parser.add_argument("--deadline-file", type=Path)
     parser.add_argument("--deadline-margin", type=float, default=600)
     parser.add_argument("--seed", type=int, default=20261120)
+    parser.add_argument("--part", default="0/1", help="i/n: this process reads every n-th sentence from the i-th")
     args = parser.parse_args()
     from faster_whisper import WhisperModel
     from jiwer import wer
@@ -61,6 +63,8 @@ def main():
     rows.sort(key=lambda r: (r["lang"], len(r["text"]), r["id"]))
     if args.sample:
         rows = [r for lang in ("es", "en") for r in [x for x in rows if x["lang"] == lang][:args.sample]]
+    part, parts = map(int, args.part.split("/"))
+    rows = rows[part::parts]
 
     def out_of_time():
         if (args.out / "STOP").exists():
@@ -72,7 +76,9 @@ def main():
         except (OSError, ValueError, KeyError):
             return False
 
-    model = Qwen3TTSModel.from_pretrained(MODEL, device_map="cuda:0", dtype=torch.bfloat16, attn_implementation="sdpa")
+    # bfloat16 where the GPU has it (an RTX 4090); half precision on a T4 (Kaggle), which has none (the voice design ran so, 20 Nov)
+    dtype = torch.bfloat16 if torch.cuda.get_device_capability()[0] >= 8 else torch.float16
+    model = Qwen3TTSModel.from_pretrained(MODEL, device_map="cuda:0", dtype=dtype, attn_implementation="sdpa")
     prompts = {lang: model.create_voice_clone_prompt(ref_audio=str(args.references / f"{lang}.wav"),
                                                      ref_text=(args.references / f"{lang}.txt").read_text(encoding="utf-8").strip(),
                                                      x_vector_only_mode=False)[0] for lang in ("es", "en")}
