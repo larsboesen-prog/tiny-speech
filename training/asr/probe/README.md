@@ -81,7 +81,11 @@ Same discipline: chosen on the first 72 clips, reported on the other 72 (held-ou
   from people who consent on the recording page); a tiny verification model per word pair and two passes with different
   audio cleaning (no evidence yet that they pay; each costs time on the phone).
 
-**Next, if the ears come off hold:** (1) train a tiny sound recognizer to imitate this one (its outputs on Common Voice
+**The tiny ears (20 Nov 2026, `../../ears/README.md`):** the 8.9 MB student, with this matcher unchanged (`--onnx`),
+understood **80.6%** of the 72 held-out clips (thing asked for 46 of 52, words wrong 8.8%) and **85.4%** of the 144 sentences read
+by two voices it never heard (teacher 65.3%, Whisper tiny 52.1%): it beats its teacher because it also learned from transcripts.
+
+**Next, if the ears come off hold (done: step 1):** (1) train a tiny sound recognizer to imitate this one (its outputs on Common Voice
 Spanish and English and our synthetic clips are free labels) and rerun this probe with it; (2) record 5–10 real Mexican
 speakers and rerun both. Ship only if the tiny one still beats Whisper tiny on real speakers.
 

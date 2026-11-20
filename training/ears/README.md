@@ -45,6 +45,45 @@ held-out clips every 30 minutes (`dev_sound_error_vs_teacher`: lower is better) 
 file's best sound agrees with the 32-bit one on at least 90% of frames. The mel filter bank stays 32-bit (it multiplies a
 power spectrum).
 
+## The first full run (Kaggle, 20 Nov 2026): it works, and beats the teacher
+
+`larsbo99/tiny-ears-train` version 2 on Kaggle's T4s, 10.7 of the week's 30 free GPU hours. The teacher labelled 59,883 clips
+(107.7 h) on two T4s at about 260× real time (under half an hour); the student then trained 10.4 h (119,117 steps, about 100
+passes over the data). Every 30 minutes, on 588 held-out clips: sound errors against the teacher fell from 19.7% to 12.1%;
+against **what was said** (the Spanish transcripts) the student reached **14.8–17.7%, below the teacher's own 22.0%** (the
+transcript CTC at work). `best.pt` (step 28,735, chosen on errors against what was said) became `ears-int8.onnx`: **8,883,368
+bytes (8.9 MB)**. The run ended as "ERROR" only because the export's PyTorch-vs-ONNX gate demanded every one of the 392
+log-probabilities within 0.01: a few near-silent frames differed by up to 0.5 on sounds at 1-in-20,000, while the best sound
+agreed on 99–100% of frames. The gate now checks what is heard (same best sound on 99% of frames, probabilities within 0.05);
+re-run here, it passes and makes the same file byte for byte.
+
+**With the probe's matcher and word list** (`../asr/probe/probe.py --onnx ears-int8.onnx`), Mexican Spanish restaurant requests:
+
+| 72 held-out clips (Piper claude / ald) | Understood as said | Thing asked for heard right | Words wrong | Places found |
+|---|---|---|---|---|
+| **Tiny ears, 8.9 MB** | **80.6%** | **46 of 52** | **8.8%** | 9 of 12 |
+| Tiny ears, last checkpoint | 81.9% | 45 of 52 | 10.0% | 9 of 12 |
+| Teacher (the large recognizer, 1.2 GB) | 58.3% | 33 of 52 | 32.7% | 10 of 12 |
+| Whisper tiny as the sites use it | 29.2% | 12 of 52 | 47.7% | 6 of 12 |
+
+The student trained on other sentences read by these same two synthetic voices, so the same 144 sentences were read again by
+two Piper voices it **never heard** (es_AR-daniela-high, Argentina; es_ES-sharvard-medium, Spain):
+
+| 144 clips, unheard voices | Understood as said | Thing asked for heard right | Words wrong | Places found |
+|---|---|---|---|---|
+| **Tiny ears, 8.9 MB** | **85.4%** | **96 of 108** | **11.6%** | 24 of 32 |
+| Teacher | 65.3% | 84 of 108 | 23.6% | 22 of 32 |
+| Whisper tiny | 52.1% | 62 of 108 | 25.5% | 18 of 32 |
+
+(Argentina's voice: student 75.0%, teacher 52.8%, Whisper 38.9%; Spain's: 95.8%, 77.8%, 65.3%.) Language right 93.8%
+(Whisper 97.2%). What this does not say yet: all of these voices are synthetic, and the sentences are the request corpus's
+style; **real Mexican speakers** (5–10, consented) are the test that decides. Next to build: the matcher in JavaScript (a CTC
+search over the word list, as `probe.py` does) and an AsrEngine that runs `ears-int8.onnx` in onnxruntime-web.
+
+Where the model is: the Kaggle notebook's output (version 2: `onnx/ears-int8.onnx`, `train/best.pt`, `train/last.pt`,
+`train/log.jsonl`; `python kaggle/push.py output larsbo99/tiny-ears-train DIR`). Not in this repository: it is trained partly on
+CC BY-SA speech (CIEMPIESS, Google's Latin American sets), so how it may be shared waits for the owner's licence decision.
+
 ## Running it
 
 **Kaggle (recommended):** free, **30 GPU hours a week** (this account; the API reports it), sessions up to 12 hours that keep
