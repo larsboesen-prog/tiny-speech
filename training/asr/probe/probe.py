@@ -5,7 +5,7 @@ gives each 20 ms frame's sound probabilities; a matcher keeps only paths that sp
 the training-split requests and San Miguel's pack, Spanish and English sounds), scored by a small model of which word follows
 which. This is an upper bound for an 8-10 MB recognizer of the same design: the sound model here is 300M parameters.
 
-python probe.py --manifest clips.jsonl --split dev --lexicon lexicon.json --out heard.jsonl [--lm 1.0 --bonus 0 --beam 48]
+python probe.py --manifest clips.jsonl --split dev --lexicon lexicon.json --out heard.jsonl [--lm 0.5 --bonus 0 --beam 256 --prune 10]
 """
 import argparse
 import json
@@ -132,6 +132,11 @@ def decode(lp, lex, blank, lm=1.0, bonus=0.0, beam=48, prune=8.0):
         score = lse(pb, pnb) + lms + lm * lex.logp(ws[-1], "</s>")
         if score > best:
             best, words = score, ws
+    if not words:  # no path ended on a whole word: keep the words the best path had finished (an empty answer helps no one)
+        for (ws, node, last), (pb, pnb, lms) in beams.items():
+            score = lse(pb, pnb) + lms
+            if ws and score > best:
+                best, words = score, ws
     return " ".join(words)
 
 
@@ -142,9 +147,10 @@ def main():
     parser.add_argument("--lexicon", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--cache", type=Path, default=Path("probe-emissions"))
-    parser.add_argument("--lm", type=float, nargs="+", default=[1.0])
+    parser.add_argument("--lm", type=float, nargs="+", default=[0.5])
     parser.add_argument("--bonus", type=float, nargs="+", default=[0.0])
-    parser.add_argument("--beam", type=int, default=48)
+    parser.add_argument("--beam", type=int, default=256, help="paths kept per frame (48 at first; 256 understood more, 512 no more)")
+    parser.add_argument("--prune", type=float, default=10.0, help="sounds tried per frame: within this many log points of the best")
     parser.add_argument("--first", type=int, help="Only the first N clips (to choose settings on, apart from the rest)")
     args = parser.parse_args()
     from huggingface_hub import hf_hub_download
@@ -156,7 +162,7 @@ def main():
     print(json.dumps({"clips": len(rows), "trie_nodes": len(lex.children), "sounds_not_in_recognizer": dict(lex.missing)}), flush=True)
     for lm in args.lm:
         for bonus in args.bonus:
-            out = [{"id": r["id"], "lang": r["lang"], "text": r["text"], "heard": decode(em[r["id"]], lex, vocab["<pad>"], lm, bonus, args.beam)} for r in rows]
+            out = [{"id": r["id"], "lang": r["lang"], "text": r["text"], "heard": decode(em[r["id"]], lex, vocab["<pad>"], lm, bonus, args.beam, args.prune)} for r in rows]
             path = args.out.with_name(f"{args.out.stem}-lm{lm}-b{bonus}{args.out.suffix}")
             path.write_text("".join(json.dumps(x, ensure_ascii=False) + "\n" for x in out), encoding="utf-8")
             print(json.dumps({"lm": lm, "bonus": bonus, "out": str(path)}), flush=True)

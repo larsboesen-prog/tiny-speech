@@ -29,6 +29,35 @@ the language is decided worse (English words in the list get picked: give the la
 be a small model (5–8M) trained to imitate it, and how much it keeps is the open question. The word list comes from text
 written in the same style as the test sentences (real people will use words outside it), and the voices are synthetic.
 
+## What moves the success rate (20 Nov 2026)
+
+Each change below was tried on the cached sound outputs, chosen on the first 72 clips and measured on the other 72 (one clip
+is 1.4 points, so ±1–2 clips is noise).
+
+| Matcher | Understood, held-out 72 | Tuning 72 |
+|---|---|---|
+| As first run: 48 paths kept | 34 (47.2%) | 39 |
+| + when no path ends on a whole word, keep the finished words (no more empty answers) | 35 | 40 |
+| + 128 paths kept | 40 | 42 |
+| **+ 256 paths, sounds within 10 log points tried (now `probe.py`'s defaults)** | **42 (58.3%)** | 44 |
+| 512 paths | 43 | 44 (no better: not worth twice the time) |
+
+At 256 paths, held-out: words wrong 32.7%, places 10 of 12, language right 93.1% (Whisper tiny: 43–48%, 6 of 12, 94–97%,
+understood 29–31%). Matching takes about 0.4 s per request in Python on this CPU.
+
+**Not drivers here** (each within noise): the test sentences' words added to the list (+1); the language known before
+matching (Spanish-only list, +1); matching once in Spanish and once in English and keeping the better (picked Spanish on all
+144 clips, so the language can come from the sounds, but understanding did not change; English clips not tested); a
+three-word model (+1 at weight 0.5, worse at 1.0); a bonus for the 487 words the reader acts on (no gain, worse when strong);
+a quarter, half or all of the training sentences for the word-pair model (37, 39, 40: more of the same text flattens out);
+the top 5 guesses instead of the best (+1 held-out, +3 tuning): they hold 1.4 different requests on average, so a "did you
+mean" list from the matcher would rarely offer the right one.
+
+**What is left is the sounds.** Of the 30 held-out failures at 256 paths, 28 have every word in the list: the sounds
+pointed to other words (frío → fino, perro → pero, dulce → doce). The thing asked for is lost in 17 of 30; 13 of 30 differ
+in one part only. The voice alone moves it 8 points (Piper claude-high 46 of 72, ald-medium 40 of 72). So the 8–10 MB
+result will be decided by how well the small sound model hears, and by real speakers, not by the matcher or the text.
+
 **Next, if the ears come off hold:** (1) train a tiny sound recognizer to imitate this one (its outputs on Common Voice
 Spanish and English and our synthetic clips are free labels) and rerun this probe with it; (2) record 5–10 real Mexican
 speakers and rerun both. Ship only if the tiny one still beats Whisper tiny on real speakers.
