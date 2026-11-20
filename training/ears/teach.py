@@ -32,6 +32,8 @@ def main():
     parser.add_argument("--batch-seconds", type=float, default=240.0, help="audio per batch, padded (GPU memory)")
     parser.add_argument("--deadline-file", type=Path, help="stop cleanly (shards are whole) after this time")
     parser.add_argument("--limit", type=int, help="only the first N clips (a quick try)")
+    parser.add_argument("--part", default="0/1", help="i/n: this process labels every n-th shard from the i-th (one per GPU)")
+    parser.add_argument("--shard-size", type=int, default=SHARD)
     args = parser.parse_args()
     from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForCTC
 
@@ -45,42 +47,44 @@ def main():
         model = model.half()
     deadline = json.loads(args.deadline_file.read_text())["deadline"] if args.deadline_file and args.deadline_file.exists() else None
     t0, done_seconds = time.time(), 0.0
-    for s in range(0, len(rows), SHARD):
-        name = args.out / f"shard-{s // SHARD:05d}"
-        if Path(f"{name}.json").exists():
+    part, parts = map(int, args.part.split("/"))
+    size = args.shard_size
+    for s in range(0, len(rows), size):
+        name = args.out / f"shard-{s // size:05d}"
+        if (s // size) % parts != part or Path(f"{name}.json").exists():
             continue
         if deadline and time.time() > deadline:
-            print(json.dumps({"stopped": "deadline", "at_shard": s // SHARD}), flush=True)
+            print(json.dumps({"stopped": "deadline", "at_shard": s // size}), flush=True)
             break
-        part = sorted(rows[s: s + SHARD], key=lambda r: r["seconds"])
+        clips = sorted(rows[s: s + size], key=lambda r: r["seconds"])
         out = {}
         i = 0
-        while i < len(part):
+        while i < len(clips):
             j = i
-            while j < len(part) and (j - i + 1) * part[j]["seconds"] <= args.batch_seconds:
+            while j < len(clips) and (j - i + 1) * clips[j]["seconds"] <= args.batch_seconds:
                 j += 1
             j = max(j, i + 1)
-            waves = [sf.read(r["audio"], dtype="float32")[0] for r in part[i:j]]
+            waves = [sf.read(r["audio"], dtype="float32")[0] for r in clips[i:j]]
             inputs = fe(waves, sampling_rate=16000, return_tensors="pt", padding=True, return_attention_mask=True)
             with torch.no_grad():
                 values = inputs.input_values.to(device)
                 logits = model(values.half() if device == "cuda" else values, attention_mask=inputs.attention_mask.to(device)).logits.float()
                 logp = torch.log_softmax(logits, -1)
                 top, idx = logp.topk(args.k, dim=-1)
-            for r, w, tp, ix in zip(part[i:j], waves, top.cpu().numpy(), idx.cpu().numpy()):
+            for r, w, tp, ix in zip(clips[i:j], waves, top.cpu().numpy(), idx.cpu().numpy()):
                 n = frames(len(w))
                 out[r["id"]] = (ix[:n].astype(np.uint16), tp[:n].astype(np.float16))
                 done_seconds += r["seconds"]
             i = j
-        ids = [r["id"] for r in rows[s: s + SHARD] if r["id"] in out]
+        ids = [r["id"] for r in rows[s: s + size] if r["id"] in out]
         lengths = [len(out[k][0]) for k in ids]
         np.save(f"{name}.idx.npy", np.concatenate([out[k][0] for k in ids]) if ids else np.zeros((0, args.k), np.uint16))
         np.save(f"{name}.logp.npy", np.concatenate([out[k][1] for k in ids]) if ids else np.zeros((0, args.k), np.float16))
         Path(f"{name}.json").write_text(json.dumps({"ids": ids, "offsets": np.cumsum([0] + lengths).tolist(), "k": args.k,
                                                      "teacher": f"{TEACHER}@{REVISION}"}))
         speed = done_seconds / max(1e-6, time.time() - t0)
-        print(json.dumps({"shard": s // SHARD, "clips": len(ids), "x_realtime": round(speed, 1)}), flush=True)
-    if all(Path(f"{args.out / f'shard-{s // SHARD:05d}'}.json").exists() for s in range(0, len(rows), SHARD)):
+        print(json.dumps({"shard": s // size, "part": args.part, "clips": len(ids), "x_realtime": round(speed, 1)}), flush=True)
+    if all(Path(f"{args.out / f'shard-{s // size:05d}'}.json").exists() for s in range(0, len(rows), size)):
         (args.out / "complete").write_text("all shards labelled\n")
 
 

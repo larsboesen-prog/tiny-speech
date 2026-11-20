@@ -46,6 +46,8 @@ def main():
     parser.add_argument("--manifest", type=Path, help="to check on dev clips")
     parser.add_argument("--labels", type=Path, help="the teacher's labels of those clips")
     parser.add_argument("--clips", type=int, default=100)
+    parser.add_argument("--gates", choices=["all", "build"], default="all",
+                        help="build: only that the file is small enough and equals PyTorch (for an untrained check model)")
     args = parser.parse_args()
     import onnx
     import onnxruntime as ort
@@ -106,7 +108,8 @@ def main():
                        "int8_close_to_fp32": report["frames_int8_agree_with_fp32"] >= 0.9}
     (args.out / "report.json").write_text(json.dumps(report, indent=1))
     print(json.dumps(report))
-    if not all(report["gates"].values()):
+    enforced = report["gates"] if args.gates == "all" else {k: v for k, v in report["gates"].items() if k != "int8_close_to_fp32"}
+    if not all(enforced.values()):
         raise SystemExit("a gate failed: see report.json")
 
 

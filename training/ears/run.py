@@ -131,16 +131,30 @@ def gpucheck(args):
     sh(PY, HERE / "teach.py", "--manifest", chk / "manifest.jsonl", "--out", chk / "labels")
     sh(PY, HERE / "train.py", "--manifest", chk / "manifest.jsonl", "--labels", chk / "labels", "--out", chk / "train", "--phones", args.work / "phones.jsonl",
        "--vocab", vocab_file(), "--hours", "0.05", "--max-steps", "8", "--batch-seconds", "60", "--workers", "2")
-    sh(PY, HERE / "export.py", "--checkpoint", chk / "train/last.pt", "--out", chk / "onnx", "--manifest", chk / "manifest.jsonl", "--labels", chk / "labels", "--clips", "4")
+    sh(PY, HERE / "export.py", "--checkpoint", chk / "train/last.pt", "--out", chk / "onnx", "--manifest", chk / "manifest.jsonl", "--labels", chk / "labels",
+       "--clips", "4", "--gates", "build")
     print(json.dumps({"gpucheck": "passed", "gpu": torch.cuda.get_device_name(0)}), flush=True)
 
 
 def teach(args):
     # leave time to train: at least 2 h of a long session, 30% of a short one
     (args.out / "teach-deadline.json").write_text(json.dumps({"deadline": deadline(args) - min(2 * 3600, 0.3 * args.hours * 3600)}))
-    sh(PY, HERE / "teach.py", "--manifest", args.work / "manifest.jsonl", "--out", args.work / "labels",
-       "--batch-seconds", args.teach_batch_seconds, "--deadline-file", args.out / "teach-deadline.json",
-       *(["--limit", 150] if args.mode == "smoke" else []))
+    cmd = [PY, HERE / "teach.py", "--manifest", args.work / "manifest.jsonl", "--out", args.work / "labels",
+           "--batch-seconds", args.teach_batch_seconds, "--deadline-file", args.out / "teach-deadline.json",
+           *(["--limit", 150] if args.mode == "smoke" else [])]
+    import torch
+    gpus = torch.cuda.device_count()
+    if gpus < 2:
+        sh(*cmd)
+    else:  # one teacher per GPU, each on every other shard (Kaggle's T4 sessions have two)
+        procs = []
+        for g in range(gpus):
+            print("$", " ".join(map(str, cmd)), "--part", f"{g}/{gpus}", f"(GPU {g})", flush=True)
+            procs.append(subprocess.Popen([str(c) for c in cmd] + ["--part", f"{g}/{gpus}"], cwd=HERE,
+                                          env={**os.environ, "CUDA_VISIBLE_DEVICES": str(g)}))
+        codes = [p.wait() for p in procs]
+        if any(codes):
+            raise RuntimeError(f"teach failed on a GPU: {codes}")
     return "partial" if not (args.work / "labels/complete").exists() else True  # stopped by its deadline: train on what is labelled
 
 
