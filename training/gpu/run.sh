@@ -46,11 +46,13 @@ teacher() {
       --deadline-file "$WORK/deadline.json" --part "$i/$GPUS" > "$WORK/log.teacher.$i" 2>&1) &
     pids+=($!)
   done
-  for p in "${pids[@]}"; do wait "$p"; done
+  local failed=0
+  for p in "${pids[@]}"; do wait "$p" || failed=1; done
+  tail -n 40 "$WORK"/log.teacher.* || true  # each part's own log (its output went there)
+  [ "$failed" = 0 ] || { echo "a teacher part failed: see above"; return 1; }
   mkdir -p "$WORK/teacher"
   cat "$WORK"/teacher.*/manifest.jsonl > "$WORK/teacher/manifest.jsonl"
   cat "$WORK"/teacher.*/review.jsonl > "$WORK/teacher/review.jsonl"
-  tail -n 2 "$WORK"/log.teacher.* || true
   echo "teacher: $(wc -l < "$WORK/teacher/manifest.jsonl") clips accepted, $(wc -l < "$WORK/teacher/review.jsonl") for review"
 }
 originals() { "$PY" "$GPU/originals.py" --data "$TS/training/data" --out originals; }
