@@ -87,7 +87,6 @@ def main():
     args = parser.parse_args()
     from qwen_tts import Qwen3TTSModel
     from faster_whisper import WhisperModel
-    from jiwer import wer
 
     started = time.time()
     cands = [c for c in CANDIDATES if not args.only or c["id"] in args.only.split(",")]
@@ -165,9 +164,22 @@ def main():
 
     # 3. what Whisper small hears in each sample: the words, and the language
     asr = WhisperModel("small", device="cuda", compute_type="float16")
+    check(asr, args.out, cands)
+    info["minutes"] = round((time.time() - started) / 60, 1)
+    (args.out / "summary.json").write_text(json.dumps({**info, "candidates": cands}, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(json.dumps({"minutes": info["minutes"], "design_dtype": info["design_dtype"], "base_dtype": info["base_dtype"]}), flush=True)
+
+
+def check(asr, out, cands):
+    """What Whisper small hears in each sample (the words and the language). The audio goes in as numbers, not a file name:
+    faster-whisper reads files with PyAV, whose version on Kaggle (Nov 2026) refuses faster-whisper's arguments."""
+    import torchaudio.functional as F
+    from jiwer import wer
     for c in cands:
         for s in c["samples"]:
-            segments, got = asr.transcribe(str(args.out / "candidates" / c["id"] / "samples" / f"{s['lang']}-{s['n']}.wav"), beam_size=3)
+            w, rate = sf.read(out / "candidates" / c["id"] / "samples" / f"{s['lang']}-{s['n']}.wav", dtype="float32")
+            w16 = F.resample(torch.from_numpy(w), rate, 16000).numpy()
+            segments, got = asr.transcribe(w16, beam_size=3)
             heard = " ".join(x.text.strip() for x in segments)
             s.update({"heard": heard, "heard_language": got.language,
                       "wer": round(float(wer(normal(s["text"], s["lang"]), normal(heard, s["lang"]) or "<empty>")), 3)})
@@ -176,9 +188,6 @@ def main():
             c[f"wer_{lang}"] = round(sum(s["wer"] for s in mine) / len(mine), 3)
             c[f"language_right_{lang}"] = sum(s["heard_language"] == lang for s in mine)
         print(json.dumps({"candidate": c["id"], "wer_es": c["wer_es"], "wer_en": c["wer_en"]}), flush=True)
-    info["minutes"] = round((time.time() - started) / 60, 1)
-    (args.out / "summary.json").write_text(json.dumps({**info, "candidates": cands}, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(json.dumps({"minutes": info["minutes"], "design_dtype": info["design_dtype"], "base_dtype": info["base_dtype"]}), flush=True)
 
 
 if __name__ == "__main__":
