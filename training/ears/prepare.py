@@ -4,7 +4,8 @@ No transcripts are needed: the teacher (teach.py) labels every clip with the sou
 the same. So any clean speech counts; what matters is many speakers, Mexican accents and phone-like conditions.
 
 python prepare.py --out WORK [--sets ciempiess_light,latam_co,... | all] [--hours SET=H ...] [--local manifest.jsonl ...]
-  → WORK/audio/<set>/<id>.flac (16 kHz mono) and WORK/manifest.jsonl ({id, set, lang, seconds, audio, split, text})
+  → WORK/audio/<set>/<id>.flac (16 kHz mono) and WORK/manifest.jsonl ({id, set, lang, seconds, audio, split, text}; audio paths
+    relative to WORK, so WORK can be packed in one session and unpacked in another)
 Resumes: a shard already converted is skipped. --local adds clips already on disk (e.g. the Piper requests: synth_piper.py).
 """
 import argparse
@@ -31,6 +32,25 @@ DEFAULT = ["ciempiess_light", "ciempiess_balance", "ciempiess_fem", "latam_co", 
 MAX_SECONDS = 30.0
 
 
+def relative(path, base):
+    """inside WORK: relative to it (the folder can move); elsewhere: as given"""
+    p = Path(path).resolve()
+    try:
+        return str(p.relative_to(base))
+    except ValueError:
+        return str(p)
+
+
+def load_manifest(path):
+    """rows with absolute audio paths, wherever the manifest's folder now is"""
+    path = Path(path)
+    rows = [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
+    for r in rows:
+        if not Path(r["audio"]).is_absolute():
+            r["audio"] = str((path.parent / r["audio"]).resolve())
+    return rows
+
+
 def split_of(uid):
     """about 1 clip in 100 is kept apart to check the student against the teacher on clips it never learned from"""
     return "dev" if int(hashlib.sha256(("ears1" + uid).encode()).hexdigest()[:8], 16) % 100 == 0 else "train"
@@ -51,7 +71,7 @@ def shards(repo, revision, prefix):
     return sorted(f for f in list_repo_files(repo, repo_type="dataset", revision=revision) if f.startswith(prefix) and f.endswith(".parquet"))
 
 
-def convert(name, out, hours, limit_shards=None):
+def convert(name, out, hours, limit_shards=None, max_clips=None):
     import pyarrow.parquet as pq
     from huggingface_hub import hf_hub_download
     repo, revision, prefix, lang, _, _ = SETS[name]
@@ -73,6 +93,8 @@ def convert(name, out, hours, limit_shards=None):
             part = []
             table = pq.ParquetFile(path)
             for g in range(table.num_row_groups):
+                if max_clips and len(part) >= max_clips:
+                    break
                 batch = table.read_row_group(g).to_pylist()
                 for i, row in enumerate(batch):
                     audio = row.get("audio") or {}
@@ -90,7 +112,7 @@ def convert(name, out, hours, limit_shards=None):
                     uid = f"{name}_{hashlib.sha256((f + str(base) + str(g) + str(i)).encode()).hexdigest()[:12]}"
                     sf.write(folder / f"{uid}.flac", wave, 16000, subtype="PCM_16")
                     text = row.get("normalized_text") or row.get("text") or ""
-                    part.append({"id": uid, "set": name, "lang": lang, "seconds": round(seconds, 2), "audio": str((folder / f"{uid}.flac").resolve()),
+                    part.append({"id": uid, "set": name, "lang": lang, "seconds": round(seconds, 2), "audio": f"audio/{name}/{uid}.flac",
                                  "speaker": str(row.get("speaker_id", "")), "split": split_of(uid), "text": text})
             done.write_text("".join(json.dumps(r) + "\n" for r in part), encoding="utf-8")
             blob = Path(path).resolve()  # the parquet is not needed once converted (disk is short on free machines):
@@ -102,8 +124,9 @@ def convert(name, out, hours, limit_shards=None):
     return rows
 
 
-def local(path):
+def local(path, out):
     rows = []
+    out = Path(out).resolve()
     for l in Path(path).read_text(encoding="utf-8").splitlines():
         if not l.strip():
             continue
@@ -111,7 +134,7 @@ def local(path):
         if r.get("split", "train") != "train":
             continue  # never learn from a dev or test clip: the probe measures on the requests' dev split, the speakers' test on test
         rows.append({"id": r["id"], "set": r.get("engine") or Path(path).parent.name, "lang": r.get("lang", "es"), "seconds": r.get("seconds"),
-                     "audio": r["audio"], "speaker": r.get("voice") or r.get("speaker", ""), "split": split_of(r["id"]), "text": r.get("text", "")})
+                     "audio": relative(r["audio"], out), "speaker": r.get("voice") or r.get("speaker", ""), "split": split_of(r["id"]), "text": r.get("text", "")})
     return rows
 
 
@@ -121,15 +144,16 @@ def main():
     parser.add_argument("--sets", default=",".join(DEFAULT), help="comma list, or 'all', or 'none'")
     parser.add_argument("--hours", nargs="*", default=[], help="SET=HOURS caps, e.g. librispeech=10")
     parser.add_argument("--limit-shards", type=int, help="only the first N shards of each set (a quick try)")
+    parser.add_argument("--max-clips", type=int, help="at most about N clips from each shard (a quick try)")
     parser.add_argument("--local", nargs="*", default=[], type=Path, help="manifests of clips already on disk")
     args = parser.parse_args()
     caps = {k: float(v) for k, v in (h.split("=") for h in args.hours)}
     names = list(SETS) if args.sets == "all" else [] if args.sets == "none" else [s for s in args.sets.split(",") if s]
     rows = []
     for name in names:
-        rows += convert(name, args.out, caps.get(name, SETS[name][4]), args.limit_shards)
+        rows += convert(name, args.out, caps.get(name, SETS[name][4]), args.limit_shards, args.max_clips)
     for path in args.local:
-        rows += local(path)
+        rows += local(path, args.out)
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "manifest.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
     by = {}

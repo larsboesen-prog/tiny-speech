@@ -6,7 +6,9 @@ Loss: frame by frame, the teacher's top-K sounds as a soft target (cross-entropy
 on the teacher's best sound sequence, plus (--phones) CTC on the sounds actually said, from the Spanish transcripts
 (phones.mjs): the teacher mishears some Mexican sounds (perro → pero, frío → fio), and this keeps the student from copying it. The learning-rate schedule runs on the clock (warm-up, then cosine to the end of
 --hours), so the same command fits a free GPU session whatever its speed. The audio is made harder as it is drawn (speed,
-noise, other voices, a phone's narrow band, a room), while the targets stay the teacher's labels of the clean clip.
+noise, another voice or a restaurant's chatter, a room, a microphone's colour, a phone line or codec, clipping, hidden mel
+bands and moments), while the targets stay the clean clip's. The checks report, for the sounds that decide restaurant words
+(r, ɾ, l, s, n, d, tʃ: perro/pero, frío, dulce, plurals), how often the student and the teacher hear each as said.
 Saves OUT/last.pt every few minutes and at the end; OUT/best.pt by the fewest sound errors on the dev clips (against what was
 said where there is a transcript, else against the teacher); resumes from
 OUT/last.pt. Log: OUT/log.jsonl.
@@ -106,13 +108,17 @@ class Clips(torch.utils.data.Dataset):
             ir[0] = 1.0
             ir /= np.abs(ir).sum() ** 0.5
             wave = fftconvolve(wave, ir)[:n].astype("float32")
-        if random.random() < 0.15:  # another voice behind, quieter
-            other = self.load(random.choice(self.noise_rows))
-            if len(other) < n:
-                other = np.pad(other, (0, n - len(other)))
-            o = random.randrange(0, len(other) - n + 1)
-            other = other[o:o + n]
-            snr = random.uniform(8, 20)
+        voices = 1 if random.random() < 0.15 else random.randint(3, 6) if random.random() < 0.12 else 0
+        if voices:  # another voice behind, or a restaurant's chatter (several voices at once), quieter
+            other = np.zeros(n, dtype="float32")
+            for _ in range(voices):
+                o = self.load(random.choice(self.noise_rows))
+                if len(o) < n:
+                    o = np.pad(o, (0, n - len(o)))
+                k = random.randrange(0, len(o) - n + 1)
+                o = o[k:k + n]
+                other += o / (float(np.sqrt((o ** 2).mean())) + 1e-6)
+            snr = random.uniform(8, 20) if voices == 1 else random.uniform(4, 15)
             p_s, p_o = float((wave ** 2).mean()) + 1e-9, float((other ** 2).mean()) + 1e-9
             wave = wave + other * math.sqrt(p_s / (p_o * 10 ** (snr / 10)))
         if random.random() < 0.3:  # noise: white or brown-ish
@@ -123,9 +129,25 @@ class Clips(torch.utils.data.Dataset):
             snr = random.uniform(5, 30)
             p_s, p_n = float((wave ** 2).mean()) + 1e-9, float((noise ** 2).mean()) + 1e-9
             wave = wave + noise * math.sqrt(p_s / (p_n * 10 ** (snr / 10)))
-        if random.random() < 0.25:  # a phone: 300–3400 Hz
-            sos = butter(4, [300, 3400], btype="bandpass", fs=16000, output="sos")
-            wave = sosfilt(sos, wave)
+        if random.random() < 0.3:  # a microphone's own colour: more or less bass and treble
+            lo = sosfilt(butter(1, random.uniform(300, 1200), btype="lowpass", fs=16000, output="sos"), wave)
+            wave = wave + random.uniform(-0.6, 0.6) * lo + random.uniform(-0.5, 0.8) * (wave - lo)
+        r = random.random()
+        if r < 0.15:  # a phone line: 300–3400 Hz
+            wave = sosfilt(butter(4, [300, 3400], btype="bandpass", fs=16000, output="sos"), wave)
+        elif r < 0.27:  # a phone codec: 8 kHz, 8-bit mu-law, back to 16 kHz
+            x = resample_poly(wave, 1, 2)
+            x = x / (float(np.abs(x).max()) + 1e-9)
+            mu = 255.0
+            y = np.sign(x) * np.log1p(mu * np.abs(x)) / np.log1p(mu)
+            y = np.round((y + 1) * 127.5) / 127.5 - 1
+            x = np.sign(y) * ((1 + mu) ** np.abs(y) - 1) / mu
+            wave = resample_poly(x, 2, 1)[:n]
+            if len(wave) < n:
+                wave = np.pad(wave, (0, n - len(wave)))
+        if random.random() < 0.05:  # too loud for the microphone: clipped
+            g = random.uniform(2, 6) / (float(np.abs(wave).max()) + 1e-9)
+            wave = np.clip(wave * g, -1, 1)
         return wave.astype("float32")
 
 
@@ -182,6 +204,33 @@ def collapse(seq, blank=0):
     return out
 
 
+CRITICAL = ["r", "ɾ", "l", "s", "n", "d", "tʃ"]  # perro/pero, frío, dulce, plural s, ... (training/asr/probe/README.md)
+
+
+def kept(said, heard):
+    """for each sound said, was it heard as itself? (an alignment by edit distance)"""
+    n, m = len(said), len(heard)
+    d = [[0] * (m + 1) for _ in range(n + 1)]
+    for i in range(n + 1):
+        d[i][0] = i
+    for j in range(m + 1):
+        d[0][j] = j
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (said[i - 1] != heard[j - 1]))
+    out, i, j = [], n, m
+    while i > 0:
+        if j > 0 and d[i][j] == d[i - 1][j - 1] + (said[i - 1] != heard[j - 1]):
+            out.append((said[i - 1], said[i - 1] == heard[j - 1]))
+            i, j = i - 1, j - 1
+        elif d[i][j] == d[i - 1][j] + 1:
+            out.append((said[i - 1], False))
+            i -= 1
+        else:
+            j -= 1
+    return out
+
+
 def edit(a, b):
     d = list(range(len(b) + 1))
     for i in range(1, len(a) + 1):
@@ -225,12 +274,14 @@ def losses(out, idx, logp, blank_weight, ctc_weight):
 
 
 @torch.no_grad()
-def agreement(model, rows, labels, device, limit=300, said=None):
+def agreement(model, rows, labels, device, limit=300, said=None, vocab=None):
     """sound error rate against the teacher's best sequence, on dev clips the student never learned from (lower is better);
     with transcripts, also against what was said, for the student and for the teacher (the bar to beat)"""
     model.eval()
     errors = total = 0
     vs_said = [0, 0, 0]  # student errors, teacher errors, sounds said
+    crit = {}  # sound id → [heard right by the student, by the teacher, times said]
+    ids = {v: k for k, v in (vocab or {}).items()}
     for r in rows[:limit]:
         wave = sf.read(r["audio"], dtype="float32")[0]
         idx, _ = labels.get(r["id"])
@@ -246,8 +297,15 @@ def agreement(model, rows, labels, device, limit=300, said=None):
             vs_said[0] += edit(truth, hyp)
             vs_said[1] += edit(truth, ref)
             vs_said[2] += len(truth)
+            for (ph, ok_s), (_, ok_t) in zip(kept(truth, hyp), kept(truth, ref)):
+                if ids.get(ph) in CRITICAL:
+                    c = crit.setdefault(ids[ph], [0, 0, 0])
+                    c[0] += ok_s
+                    c[1] += ok_t
+                    c[2] += 1
     model.train()
-    extra = {"dev_sound_error_vs_said": round(vs_said[0] / vs_said[2], 4), "teacher_sound_error_vs_said": round(vs_said[1] / vs_said[2], 4)} if vs_said[2] else {}
+    extra = {"dev_sound_error_vs_said": round(vs_said[0] / vs_said[2], 4), "teacher_sound_error_vs_said": round(vs_said[1] / vs_said[2], 4),
+             "critical_heard_right_student_teacher": {k: [round(a / n, 3), round(b / n, 3), n] for k, (a, b, n) in crit.items()}} if vs_said[2] else {}
     return errors / max(1, total), extra
 
 
@@ -266,6 +324,7 @@ def main():
     parser.add_argument("--ctc-weight", type=float, default=0.3, help="CTC on the teacher's best sounds")
     parser.add_argument("--phones", type=Path, help="what was said, as sounds (phones.mjs): adds CTC on it")
     parser.add_argument("--said-weight", type=float, default=0.5, help="weight of the CTC on what was said")
+    parser.add_argument("--vocab", type=Path, help="the teacher's vocab.json: names the critical sounds in the checks")
     parser.add_argument("--save-minutes", type=float, default=10.0)
     parser.add_argument("--check-minutes", type=float, default=30.0)
     parser.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 2))
@@ -276,9 +335,11 @@ def main():
     args.out.mkdir(parents=True, exist_ok=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     labels = Labels(args.labels)
-    rows = [json.loads(l) for l in args.manifest.read_text(encoding="utf-8").splitlines() if l.strip()]
-    rows = [r for r in rows if r["id"] in labels.where]
-    said = {}
+    from prepare import load_manifest
+    rows = [r for r in load_manifest(args.manifest) if r["id"] in labels.where]
+    said, vocab = {}, {}
+    if args.vocab and args.vocab.exists():
+        vocab = json.loads(args.vocab.read_text(encoding="utf-8"))
     if args.phones and args.phones.exists():
         for l in args.phones.read_text(encoding="utf-8").splitlines():
             if l.strip():
@@ -351,7 +412,7 @@ def main():
                 log.flush()
             finished = progress >= 1.0 or (args.max_steps and state["step"] >= args.max_steps)
             if time.time() - t_check > args.check_minutes * 60 or finished:
-                ser, extra = agreement(model, dev, labels, device, said=said)
+                ser, extra = agreement(model, dev, labels, device, said=said, vocab=vocab)
                 rec = {"step": state["step"], "dev_sound_error_vs_teacher": round(ser, 4), **extra}
                 print(json.dumps(rec), flush=True)
                 log.write(json.dumps(rec) + "\n")

@@ -35,8 +35,9 @@ are silence count half); CTC on the teacher's best sequence; and **CTC on what w
 (CIEMPIESS, the Google sets, the Piper requests) read by our Mexican rules (`phones.mjs`, `lang/es/ipa.js`). The teacher
 mishears some Mexican sounds (it heard "perro" as `p e ɾ o`, "frío" as `f i l o`: `../asr/probe/README.md`); the
 transcripts keep the student from copying that, so it can do better than the teacher on Mexican Spanish. The best
-checkpoint is the one with the fewest sound errors against what was said on held-out clips. The audio is made harder as it is drawn: speed ±10%, noise, another
-voice behind, a phone's 300–3400 Hz band, a room's echo, hidden mel bands and moments. The learning rate runs on the clock
+checkpoint is the one with the fewest sound errors against what was said on held-out clips. The audio is made harder as it is drawn: speed ±10%, noise, another voice
+behind or a restaurant's chatter (3–6 voices), a room's echo, a microphone's colour, a phone line or an 8 kHz phone codec,
+clipping, hidden mel bands and moments. The learning rate runs on the clock
 (warm-up, then cosine to the end of the time given), so the run fits any session length. It checks against the teacher on
 held-out clips every 30 minutes (`dev_sound_error_vs_teacher`: lower is better) and keeps the best (`best.pt`).
 
@@ -46,23 +47,34 @@ power spectrum).
 
 ## Running it
 
-**Kaggle (recommended):** free, about 30 GPU hours a week, sessions up to 12 hours that keep running with the browser
-closed. Needs a phone-verified account (for the GPU and the internet). New notebook → File → Import notebook →
-`ears.ipynb`; Settings: Accelerator **GPU T4**, Internet **on**; **Save Version → Save & Run All**. The result is in the
-notebook's Output: `tiny-ears/onnx/ears-int8.onnx`, `report.json`, `train/log.jsonl`.
-From this repository's cloud session, with a Kaggle API token saved as a network secret for `api.kaggle.com` (never in a
-file or the chat): fill `kaggle/kernel-metadata.json`'s id with the username, copy `ears.ipynb` next to it, then
-`kaggle kernels push -p <folder>`, `kaggle kernels status`, `kaggle kernels output`.
+**Kaggle (recommended):** free, **30 GPU hours a week** (this account; the API reports it), sessions up to 12 hours that keep
+running with the browser closed. Three notebooks, the same `ears.ipynb` with a different `MODE`:
 
-**Colab:** Runtime → Change runtime type → **T4 GPU**; Run all. Free sessions are shorter and can stop when idle; the
-results and checkpoints go to Google Drive (`MyDrive/tiny-ears`) and running again resumes.
+| Notebook | Runs on | What | Time |
+|---|---|---|---|
+| `tiny-ears-smoke` | CPU (no GPU hours) | every stage on ~350 clips: installs, downloads, transcripts, teacher, training, export | ~20 min |
+| `tiny-ears-data` | CPU (no GPU hours) | the ~100 hours of speech, the Piper requests, the transcripts as sounds, packed into its output (~7 GB) | ~2–3 h |
+| `tiny-ears-train` | T4 GPU | tiny-ears-data's output as input; a 3-minute GPU check, the teacher's labels, training, export | ~11 h |
 
-**Any GPU machine:** `python run.py all --work ~/ears-work --out ~/tiny-ears --hours 11`.
+So the GPU hours go only to labelling and training, the speech is downloaded once, and a second training round (after the
+first one's errors are known) needs no new download. From this repository's cloud session (the Kaggle token saved as a
+network secret for `api.kaggle.com`, never in a file or the chat): `python kaggle/push.py push smoke --user NAME`, then
+`status NAME/tiny-ears-smoke`, `output NAME/tiny-ears-smoke DIR`; `quota` shows the hours left. By hand: import
+`ears.ipynb`, set `MODE`, Accelerator (None, or GPU T4 for train), Internet on, and for train Add Input → Your Work →
+tiny-ears-data; then Save Version → Save & Run All.
+
+**Colab:** Runtime → Change runtime type → **T4 GPU**; `MODE = "all"`; Run all. Free sessions are shorter and can stop when
+idle; results and checkpoints go to Google Drive (`MyDrive/tiny-ears`) and running again resumes.
+
+**Any GPU machine:** `python run.py --mode all --work ~/ears-work --out ~/tiny-ears --hours 11`.
 
 **Then, here:** the probe with the student, on the same 144 Piper clips (choose nothing on the held-out half):
 `python ../asr/probe/probe.py --onnx tiny-ears/onnx/ears-int8.onnx --cache probe-emissions-ears --manifest <clips.jsonl>
---split dev --lexicon lexicon.json --out heard/ears.jsonl`, then `node tools/asr-eval.mjs`. The bar: it should keep most of
-the large recognizer's 58.3%, and beat Whisper tiny (29–31%) clearly; then the real speakers' test decides.
+--split dev --lexicon lexicon.json --out heard/ears.jsonl`, then `node tools/asr-eval.mjs` (words, places, **the thing asked
+for**, understood, language). The bar: keep most of the large recognizer's 58.3% understood and 63.5% of things asked for,
+and beat Whisper tiny (29–31%, 23.1%) clearly; then the real speakers' test decides. The run's own log gives, per critical
+sound, how often the student and the teacher hear it as said: where the student is still weak decides the next round's data
+(targeted Piper sentences, real recordings).
 
 ## Checked here, on a CPU (20 Nov 2026)
 

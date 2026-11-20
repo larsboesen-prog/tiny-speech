@@ -74,7 +74,8 @@ def main():
     s8 = ort.InferenceSession(str(int8), providers=["CPUExecutionProvider"])
     waves = []
     if args.manifest:
-        rows = [json.loads(l) for l in args.manifest.read_text(encoding="utf-8").splitlines() if l.strip()]
+        from prepare import load_manifest
+        rows = load_manifest(args.manifest)
         waves = [(r, sf.read(r["audio"], dtype="float32")[0]) for r in rows if r.get("split") == "dev"][: args.clips]
     if not waves:
         waves = [({"id": "noise"}, (np.random.RandomState(0).randn(16000 * 4) * 0.05).astype("float32"))]

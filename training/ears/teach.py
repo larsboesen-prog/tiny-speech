@@ -35,7 +35,8 @@ def main():
     args = parser.parse_args()
     from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForCTC
 
-    rows = [json.loads(l) for l in args.manifest.read_text(encoding="utf-8").splitlines() if l.strip()][: args.limit]
+    from prepare import load_manifest
+    rows = load_manifest(args.manifest)[: args.limit]
     args.out.mkdir(parents=True, exist_ok=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     fe = Wav2Vec2FeatureExtractor.from_pretrained(TEACHER, revision=REVISION)
@@ -79,6 +80,8 @@ def main():
                                                      "teacher": f"{TEACHER}@{REVISION}"}))
         speed = done_seconds / max(1e-6, time.time() - t0)
         print(json.dumps({"shard": s // SHARD, "clips": len(ids), "x_realtime": round(speed, 1)}), flush=True)
+    if all(Path(f"{args.out / f'shard-{s // SHARD:05d}'}.json").exists() for s in range(0, len(rows), SHARD)):
+        (args.out / "complete").write_text("all shards labelled\n")
 
 
 if __name__ == "__main__":
