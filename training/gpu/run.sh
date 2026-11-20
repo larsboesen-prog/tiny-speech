@@ -21,6 +21,23 @@ REFS="${REFS:-}"
 GPUS="${GPUS:-1}"
 export TINY_VOCA_FRONTEND=table TINY_VOCA_PHONEME_TABLE="$TS/training/data/phonemes.jsonl"
 export PYTHONPATH="$WORK/tiny-voca/src${PYTHONPATH:+:$PYTHONPATH}"  # upstream's code, where it is not installed (Kaggle)
+# Whisper's engine (CTranslate2, CUDA 12) looks for libcublas.so.12 and cuDNN 9 on the library path; on Kaggle (20 Nov 2026) they
+# are not there: the pip packages nvidia-cublas-cu12 / nvidia-cudnn-cu12 bring them, and this puts their folders on the path.
+nvlibs() { "$PY" - <<'PYLIB'
+import importlib.util, os
+dirs = []
+for name in ("nvidia.cublas", "nvidia.cudnn", "nvidia.cuda_runtime"):
+    try:
+        spec = importlib.util.find_spec(name)
+    except Exception:
+        spec = None
+    for p in (spec.submodule_search_locations or []) if spec else []:
+        if os.path.isdir(os.path.join(p, "lib")):
+            dirs.append(os.path.join(p, "lib"))
+print(":".join(dirs))
+PYLIB
+}
+export LD_LIBRARY_PATH="$(nvlibs)${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 cd "$WORK"
 [ -f deadline.json ] || echo "{\"deadline\": $(( $(date +%s) + HOURS * 3600 ))}" > deadline.json
 

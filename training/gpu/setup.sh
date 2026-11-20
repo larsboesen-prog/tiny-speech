@@ -31,6 +31,24 @@ git -C tiny-voca checkout -q "$UPSTREAM_COMMIT"
 DEPS=("transformers==4.57.3" "accelerate==1.12.0" faster-whisper jiwer num2words pyarrow librosa soundfile sox onnxruntime einops scipy "huggingface-hub>=0.34,<2")
 if [ -n "$KAGGLE" ]; then $PIP install -q "${DEPS[@]}"; else $PIP install -q -e "tiny-voca[prepare,annotate,evaluate]" "${DEPS[@]}"; fi
 $PIP install -q --no-deps "qwen-tts==0.1.1"
+[ -z "$KAGGLE" ] || $PIP install -q nvidia-cublas-cu12 "nvidia-cudnn-cu12>=9,<10" nvidia-cuda-runtime-cu12
+# Whisper's engine (CTranslate2, CUDA 12) looks for libcublas.so.12 and cuDNN 9 on the library path; on Kaggle (20 Nov 2026) they
+# are not there: the pip packages nvidia-cublas-cu12 / nvidia-cudnn-cu12 bring them, and this puts their folders on the path.
+nvlibs() { "$PY" - <<'PYLIB'
+import importlib.util, os
+dirs = []
+for name in ("nvidia.cublas", "nvidia.cudnn", "nvidia.cuda_runtime"):
+    try:
+        spec = importlib.util.find_spec(name)
+    except Exception:
+        spec = None
+    for p in (spec.submodule_search_locations or []) if spec else []:
+        if os.path.isdir(os.path.join(p, "lib")):
+            dirs.append(os.path.join(p, "lib"))
+print(":".join(dirs))
+PYLIB
+}
+export LD_LIBRARY_PATH="$(nvlibs)${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 grep -q "tiny-speech bilingual" tiny-voca/src/tiny_voca/text.py || "$PY" "$TS/training/gpu/patch_upstream.py" tiny-voca "$TS/training/data/symbols.json"
 
 "$PY" - <<EOF
@@ -51,4 +69,6 @@ snapshot_download("Systran/faster-whisper-small")
 print("models ready")
 EOF
 nvidia-smi --query-gpu=name,memory.total --format=csv
+# Whisper on the GPU, once, now: a missing CUDA library shows here, not after an hour of the teacher
+"$PY" -c "import numpy as np; from faster_whisper import WhisperModel; m = WhisperModel('small', device='cuda', compute_type='float16'); s, i = m.transcribe(np.zeros(32000, dtype='float32')); list(s); print('whisper on the GPU: ok', i.language)"
 echo "Ready. Put the recording session zips in $WORK/zips, then: bash $TS/training/gpu/run.sh sample"
