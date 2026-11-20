@@ -44,7 +44,8 @@
    "bytes": 10595041,
    "sha256": "f533b5f21790563d7556c611c3835ac65848ee326da2689aac54ed7d9cc8c6a4",
    "for": [
-    "voice"
+    "voice",
+    "asr-ears"
    ],
    "gzip": 2816839,
    "brotli": 2059200
@@ -59,6 +60,17 @@
    ],
    "gzip": 47308,
    "brotli": 30986
+  },
+  {
+   "url": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/esm/ort.wasm.min.js",
+   "path": "cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/esm/ort.wasm.min.js",
+   "bytes": 142864,
+   "sha256": "d02079ae1c4143f3a555a1dff86ba523b92022d8fe519263a34cf88675738753",
+   "for": [
+    "asr-ears"
+   ],
+   "gzip": 47288,
+   "brotli": 31034
   },
   {
    "url": "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/numpy-1.26.4-cp312-cp312-pyodide_2024_0_wasm32.whl",

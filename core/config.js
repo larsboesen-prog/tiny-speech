@@ -8,7 +8,9 @@ export const DEFAULTS = Object.freeze({
   engines: "",
   caches: { libs: "tiny-speech-libs-1", voice: "tiny-speech-tinyvoca-", voiceJs: "tiny-speech-tinyvoca-js-", packs: "tiny-speech" },
   voice: { dizione: "", es: "device" },
-  asr: { models: { en: "onnx-community/whisper-tiny.en" }, hintBudget: 220 },
+  // engine: "whisper" (Whisper tiny, the models below) or "ears" (the tiny ears, plan step B16: one 8.9 MB model for both languages and
+  // the city's word list; ears.model = the model file on the site, ears.lexicon = packs/<city>/ears-lexicon.json). Whisper stays a choice.
+  asr: { engine: "whisper", models: { en: "onnx-community/whisper-tiny.en" }, hintBudget: 220, ears: { model: "", lexicon: "" } },
   limits: { recMaxMs: 5000, endSilenceMs: 700, minSpeechMs: 250, leadMs: 250, tailMs: 300 },
   domains: [], langs: ["en"],
 });
@@ -28,6 +30,8 @@ export function appConfig(raw = {}) {
   for (const [k, v] of Object.entries(c.limits)) if (!(Number.isFinite(v) && v >= 0 && v <= 60000)) problems.push(`limits.${k} ${v}`);
   if (!(Number.isInteger(c.asr.hintBudget) && c.asr.hintBudget >= 0 && c.asr.hintBudget <= HINT_MAX)) problems.push(`asr.hintBudget ${c.asr.hintBudget} (0–${HINT_MAX})`);
   if (c.engines && !/^\/[^?#]*\/$/.test(c.engines)) problems.push(`engines "${c.engines}" (a folder on the site, like "/tiny-speech/engines/")`);
+  if (!["whisper", "ears"].includes(c.asr.engine)) problems.push(`asr.engine "${c.asr.engine}" (whisper or ears)`);
+  if (c.asr.engine === "ears" && !c.asr.ears.lexicon) problems.push("asr.ears.lexicon (the tiny ears need the city's word list)");
   if (problems.length) throw new Error(`app config ${c.app || "(none)"}: ${problems.join(", ")}`);
   return c;
 }
@@ -48,6 +52,8 @@ export function workerUrl(config, which, { base = "", v = "", dizione = null, mo
   if (which === "asr") {
     q.set("libs", c.caches.libs);
     if (c.engines) q.set("engines", c.engines);
+    if (c.asr.ears.model) q.set("ears", c.asr.ears.model);
+    if (c.asr.ears.lexicon) q.set("lexicon", c.asr.ears.lexicon);
     return `${base}asr-worker.js?${q}`;
   }
   if (which === "voice") {
@@ -67,6 +73,16 @@ export function workerUrl(config, which, { base = "", v = "", dizione = null, mo
     return `${base}tinyvoca-js-worker.js?${q}`;
   }
   throw new Error(`no worker called ${which}`);
+}
+
+/**
+ * The speech-to-text model for a question in `lang`: "tiny-ears" when the site uses the tiny ears (both languages), else its Whisper
+ * model for that language. engine: the reader's own choice in Settings ("whisper" | "ears"), over the site's.
+ */
+export function asrModel(config, lang = "en", engine = null) {
+  const c = appConfig(config), use = engine || c.asr.engine;
+  if (use === "ears" && c.asr.ears.lexicon) return "tiny-ears";
+  return c.asr.models[lang] || c.asr.models.en;
 }
 
 /** listen.js's limits for this site: {REC_MAX_MS, END_SILENCE_MS, MIN_SPEECH_MS, LEAD_MS, TAIL_MS}. */

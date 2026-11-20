@@ -78,7 +78,8 @@ two Piper voices it **never heard** (es_AR-daniela-high, Argentina; es_ES-sharva
 (Argentina's voice: student 75.0%, teacher 52.8%, Whisper 38.9%; Spain's: 95.8%, 77.8%, 65.3%.) Language right 93.8%
 (Whisper 97.2%). What this does not say yet: all of these voices are synthetic, and the sentences are the request corpus's
 style; **real Mexican speakers** (5–10, consented) are the test that decides. Next to build: the matcher in JavaScript (a CTC
-search over the word list, as `probe.py` does) and an AsrEngine that runs `ears-int8.onnx` in onnxruntime-web.
+search over the word list, as `probe.py` does) and an AsrEngine that runs `ears-int8.onnx` in onnxruntime-web: **done the same day**
+(plan step B16, `../../browser/README.md`: the worker's model `tiny-ears`, word for word what the probe heard; Whisper tiny stays a choice).
 
 Where the model is: the Kaggle notebook's output (version 2: `onnx/ears-int8.onnx`, `train/best.pt`, `train/last.pt`,
 `train/log.jsonl`; `python kaggle/push.py output larsbo99/tiny-ears-train DIR`). Not in this repository: it is trained partly on

@@ -19,7 +19,11 @@ async function siteConfig() {
   return appConfig({});
 }
 // ?engines=/folder/: try the site's own copies of the engine files (plan step B13) before the site's config says so.
-const CONFIG = params.has("engines") ? appConfig({ ...(await siteConfig()), engines: params.get("engines") }) : await siteConfig();
+// ?ears=<model file>&lexicon=<word list>: try the tiny ears (plan step B16) with files other than the site's.
+const SITE_CONFIG = await siteConfig();
+const EARS_OVER = { ...(params.has("ears") ? { model: params.get("ears") } : {}), ...(params.has("lexicon") ? { lexicon: params.get("lexicon") } : {}) };
+const CONFIG = appConfig({ ...SITE_CONFIG, ...(params.has("engines") ? { engines: params.get("engines") } : {}),
+  asr: { ...SITE_CONFIG.asr, ears: { ...SITE_CONFIG.asr.ears, ...EARS_OVER } } });
 const SITE = CONFIG.app;
 const LIMITS = limitsOf(CONFIG);
 const DIZIONE = params.get("dizione") ?? CONFIG.voice.dizione;
@@ -157,7 +161,7 @@ async function stopRec(why) {
   try {
     const out = await transcribeAudio(audio);
     const text = spoken(out.text);
-    show("heard", `${text ? `<b>${esc(text)}</b>` : '<span class="bad">Nothing heard.</span>'}\n<span class="small">${seconds.toFixed(1)} s of speech · waited ${out.waitMs} ms for the model · ${out.runMs} ms to turn it into text · ended by ${why}</span>`);
+    show("heard", `${text ? `<b>${esc(text)}</b>` : '<span class="bad">Nothing heard.</span>'}\n<span class="small">${seconds.toFixed(1)} s of speech · waited ${out.waitMs} ms for the model · ${out.runMs} ms to turn it into text${out.matchMs != null ? ` (${out.matchMs} ms of it matching the word list)` : ""} · ended by ${why}</span>`);
   } catch (err) {
     show("heard", `<span class="bad">${esc(err.message || err)}</span>`);
   }
@@ -352,6 +356,9 @@ $("cacheList").onclick = listCaches;
 $("loadPack").onclick = loadPack;
 $("memoryBtn").onclick = () => timing("(now)");
 $("model").onchange = () => { if (asrLoaded) loadAsr(); };
+
+// The tiny ears first when the site uses them (Whisper stays in the list); ?engine=whisper|ears chooses, as a reader can in Settings.
+if ((params.get("engine") || CONFIG.asr.engine) === "ears" && CONFIG.asr.ears.lexicon) $("model").value = "tiny-ears|";
 
 // The longest question: the site's own limit (config), unless chosen above.
 if ([...$("maxRec").options].some((o) => Number(o.value) === LIMITS.REC_MAX_MS)) $("maxRec").value = String(LIMITS.REC_MAX_MS);

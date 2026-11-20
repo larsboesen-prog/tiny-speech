@@ -43,7 +43,7 @@ before(async () => {
   errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
-  await page.goto(`http://localhost:${web.port}/tiny-speech/check.html?site=mapsma&dizione=/page5/tinyvoca/dizione.zip&packs=/packs/`);
+  await page.goto(`http://localhost:${web.port}/tiny-speech/check.html?site=mapsma&engine=whisper&dizione=/page5/tinyvoca/dizione.zip&packs=/packs/`);
 });
 after(async () => { await browser?.close(); web?.server.close(); });
 

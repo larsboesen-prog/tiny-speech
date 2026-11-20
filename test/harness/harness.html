@@ -4,7 +4,8 @@
 <script>
 // Runs one worker through a list of steps and returns everything it posted, plus this origin's Cache Storage (names and keys).
 // Steps: {send: message} | {wait: type, n = 1} (n more messages of that type since the last send) | {sleep: ms}.
-// In a message, audio: {samples: n} becomes a Float32Array of n samples (a quiet 220 Hz tone), sent as a transfer like the pages do.
+// In a message, audio: {samples: n} becomes a Float32Array of n samples (a quiet 220 Hz tone), sent as a transfer like the pages do;
+// audio: {wav: url} becomes the samples of that 16 kHz, 16-bit mono WAV file (a recorded question).
 window.run = async (url, { module = false, steps = [], timeoutMs = 8000 } = {}) => {
   const worker = new Worker(url, module ? { type: "module" } : undefined);
   const posted = [];
@@ -25,7 +26,15 @@ window.run = async (url, { module = false, steps = [], timeoutMs = 8000 } = {}) 
     if (step.send) {
       const message = { ...step.send };
       const transfer = [];
-      if (message.audio && message.audio.samples) {
+      if (message.audio && message.audio.wav) {
+        const view = new DataView(await (await fetch(message.audio.wav)).arrayBuffer());
+        let at = 12;
+        while (at < view.byteLength && view.getUint32(at, false) !== 0x64617461) at += 8 + view.getUint32(at + 4, true);  // "data"
+        const n = view.getUint32(at + 4, true) / 2, audio = new Float32Array(n);
+        for (let i = 0; i < n; i++) audio[i] = view.getInt16(at + 8 + 2 * i, true) / 32768;
+        message.audio = audio;
+        transfer.push(audio.buffer);
+      } else if (message.audio && message.audio.samples) {
         const audio = new Float32Array(message.audio.samples);
         for (let i = 0; i < audio.length; i++) audio[i] = 0.1 * Math.sin((2 * Math.PI * 220 * i) / 16000);
         message.audio = audio;

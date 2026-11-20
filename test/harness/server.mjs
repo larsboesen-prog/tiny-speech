@@ -13,6 +13,7 @@ const MOUNTS = [
   ["/page5/", join(ROOT, "test/fixtures/before/mapsma-page5")],
   ["/tiny-speech/", join(ROOT, "browser")],
   ["/harness/", join(ROOT, "test/harness")],
+  ["/fixtures/", join(ROOT, "test/fixtures")],
   ["/packs/", join(ROOT, "packs/dist")],
   ["/core/", join(ROOT, "core")],
   ["/domains/", join(ROOT, "domains")],

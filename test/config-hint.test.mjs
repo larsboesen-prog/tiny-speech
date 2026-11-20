@@ -19,7 +19,9 @@ const app = (a) => JSON.parse(readFileSync(ROOT + `apps/${a}.json`, "utf8"));
 const index = JSON.parse(readFileSync(ROOT + "apps/index.json", "utf8"));
 
 test("each site's config gives the cache names its page used before the shared core", () => {
-  assert.equal(workerUrl(app("mapsma"), "asr"), "asr-worker.js?libs=mapsma-voice-libs-1");
+  assert.equal(workerUrl(app("mapsma"), "asr"), "asr-worker.js?libs=mapsma-voice-libs-1&ears=%2Ftiny-speech%2Fengines%2Fears%2Fears-int8-2026-11-20.onnx&lexicon=%2Ftiny-speech%2Fpacks%2Fmx-sma%2Fears-lexicon.json",
+    "MapSMA's cache name as before, and where the tiny ears' files are (plan step B16)");
+  assert.equal(workerUrl(app("credbrief"), "asr"), "asr-worker.js?libs=credbrief-page40-libs-1", "CredBrief stays on Whisper");
   assert.equal(workerUrl(app("credbrief"), "voice", { v: "3" }), "tinyvoca-worker.js?v=3&libs=credbrief-page40-libs-1&voice=credbrief-tinyvoca-&dizione=%2Fpage40%2Ftinyvoca%2Fdizione.zip");
   assert.equal(workerUrl({}, "asr"), "asr-worker.js?libs=tiny-speech-libs-1", "no config: names of its own");
   assert.equal(workerUrl(app("mapsma"), "voiceJs"), "tinyvoca-js-worker.js?cache=mapsma-tinyvoca-js-");

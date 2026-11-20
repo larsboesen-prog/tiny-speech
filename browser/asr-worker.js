@@ -12,6 +12,13 @@
 // Messages in: {type: "load", model} and {type: "transcribe", reqId, model, audio (16 kHz Float32Array), language ("es": multilingual
 // Whisper only), hint (names, as text) or hintNames (names in order of need) with hintBudget (tokens)}.
 // Messages out: progress {id, frac}, ready {id, core}, warm {id, ms}, error {id, message}, text {reqId, text | error, waitMs, runMs}.
+//
+// The tiny ears (plan step B16, 20 Nov 2026): model "tiny-ears" is the 8.9 MB sound recognizer and the city's word list
+// (engines/asr-ears.js) instead of Whisper, through the same messages; Whisper tiny stays a choice (any other model id). Its files:
+// ?ears=<the model file> (default ../engines/ears/ears-int8.onnx; its vocab.json beside it) and ?lexicon=<the city's word list>
+// (packs/<city>/ears-lexicon.json), made by core/config.js workerUrl from the site's asr.ears. It needs no hint and no language
+// (one model, both languages); its text comes back in lower case, words only. onnxruntime-web 1.18 (one thread, the same engine
+// file the voice worker keeps) is loaded only when the ears are asked for, and transformers.js only when Whisper is.
 
 const CORE = "tiny-speech 0.3.0";
 const TRANSFORMERS = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
@@ -23,11 +30,19 @@ const SITE = { libs: HERE.searchParams.get("libs") || "tiny-speech-libs-1" };
 // folder as on its own host (https://cdn.jsdelivr.net/npm/… → <folder>cdn.jsdelivr.net/npm/…, models under <folder>huggingface.co/),
 // pinned by SHA-256 in browser/manifest.json: no third party sees the visitor. Without it, the files come from their hosts as before.
 const ENGINES = HERE.searchParams.get("engines");
+const EARS = {
+  model: new URL(HERE.searchParams.get("ears") || "../engines/ears/ears-int8.onnx", HERE).href,
+  lexicon: HERE.searchParams.get("lexicon") ? new URL(HERE.searchParams.get("lexicon"), HERE).href : "",
+};
+EARS.vocab = new URL("vocab.json", EARS.model).href;
+const ORT = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/";  // 1.18 as the voice worker: from 1.19 every build reserves 4 GB
 // A package's own address (…/transformers@3.8.1) is also a folder there (…@3.8.1/dist/…): on the site its file is …@3.8.1/index.js.
 const mirror = (url) => (ENGINES ? new URL(ENGINES + url.replace(/^https:\/\//, "").replace(/(@\d[\w.-]*)$/, "$1/index.js"), HERE).href : url);
 
-// The library, loaded once (from its host, or the site's copy); the settings below are made before anything uses it.
-const libs = import(mirror(TRANSFORMERS)).then(({ env, pipeline }) => {
+// The library, loaded once, when Whisper is first asked for (from its host, or the site's copy); the settings below are made before
+// anything uses it.
+let libsLoading = null;
+const libs = () => libsLoading || (libsLoading = import(mirror(TRANSFORMERS)).then(({ env, pipeline }) => {
   // One core: a 3-second question takes about 0.3 s on one thread (measured 16 Nov), and the rest of the machine stays free.
   env.backends.onnx.wasm.numThreads = 1;
   if (ENGINES) {
@@ -36,7 +51,19 @@ const libs = import(mirror(TRANSFORMERS)).then(({ env, pipeline }) => {
     if (typeof wasm === "string") env.backends.onnx.wasm.wasmPaths = mirror(wasm);
   }
   return { env, pipeline };
-});
+}));
+
+// The tiny ears' runtime and engine, loaded once, when the ears are first asked for.
+let earsLoading = null;
+const earsLibs = () => earsLoading || (earsLoading = Promise.all([
+  import(mirror(ORT) + "esm/ort.wasm.min.js").then((m) => {
+    const ort = m.InferenceSession ? m : m.default;
+    ort.env.wasm.numThreads = 1;
+    ort.env.wasm.wasmPaths = mirror(ORT);
+    return ort;
+  }),
+  import(new URL("../engines/asr-ears.js", import.meta.url).href),
+]).then(([ort, engine]) => ({ ort, engine })));
 
 // transformers.js keeps the model files in cache storage itself, but fetches onnxruntime's engine (a .wasm of 10-20 MB) through the
 // browser's ordinary cache, which iPhone Safari may empty. That file is kept in cache storage here (17 Nov 2026); its URL carries its
@@ -59,6 +86,44 @@ self.fetch = async (input, init) => {
   if (store && response.ok) store.put(url, response.clone()).catch(() => {});
   return response;
 };
+
+const isEars = (id) => String(id || "").startsWith("tiny-ears");
+
+// The model file, kept in cache storage like the engine files (its address carries its version: a new model is a new file name).
+async function keptBytes(url, id) {
+  let store = null;
+  try {
+    store = await caches.open(LIBS);
+    const hit = await store.match(url);
+    if (hit) { seen.kept += 1; return new Uint8Array(await hit.arrayBuffer()); }
+  } catch (error) { store = null; }
+  const response = await netFetch(url);
+  if (!response.ok) throw new Error(`${url}: ${response.status}`);
+  const total = Number(response.headers.get("content-length")) || 0, parts = [];
+  let got = 0;
+  for (const reader = response.body.getReader(); ;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    parts.push(value); got += value.length;
+    if (total) postMessage({ type: "progress", id, frac: got / total });
+  }
+  const bytes = new Uint8Array(got);
+  let at = 0;
+  for (const part of parts) { bytes.set(part, at); at += part.length; }
+  seen.fetched += 1;
+  if (store) store.put(url, new Response(bytes, { headers: { "content-type": "application/octet-stream" } })).catch(() => {});
+  return bytes;
+}
+
+async function loadEars() {
+  if (!EARS.lexicon) throw new Error("the tiny ears need the city's word list: ?lexicon= in the worker's address (asr.ears.lexicon in the site's config)");
+  const json = (url) => netFetch(url).then((r) => { if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); });
+  const [{ ort, engine }, model, vocab, lexicon] = await Promise.all([earsLibs(), keptBytes(EARS.model, "tiny-ears"), json(EARS.vocab), json(EARS.lexicon)]);
+  return engine.createEars({ ort, model, vocab, lexicon });
+}
+
+// One call for both kinds of model: Whisper's pipeline, or the ears' hear().
+const runModel = (model, id, audio) => (model.hear ? model.hear(audio) : model(audio, genOpts(id, audio.length)));
 
 let asr = null;
 let asrId = "";
@@ -84,7 +149,7 @@ function genOpts(id, samples) {
 // second of silence, right after loading, so the reader's first question does not pay for it.
 function warm(model, id) {
   const t = performance.now();
-  serial(() => model(new Float32Array(16000), genOpts(id, 16000)))
+  serial(() => runModel(model, id, new Float32Array(16000)))
     .then(() => postMessage({ type: "warm", id, ms: Math.round(performance.now() - t) }), () => {});
 }
 
@@ -99,7 +164,7 @@ function load(id) {
   if (asr && asrId === id) return Promise.resolve(asr);
   if (loading && loading.id === id) return loading.promise;
   const files = {}, started = performance.now();
-  const promise = libs.then(({ pipeline }) => pipeline("automatic-speech-recognition", id, {
+  const promise = (isEars(id) ? loadEars() : libs().then(({ pipeline }) => pipeline("automatic-speech-recognition", id, {
     device: "wasm",
     dtype: "q8",  // the small quantized files (about 40 MB for Whisper tiny.en, 30 MB for Moonshine Tiny, 63 MB for Moonshine Base)
     progress_callback: (p) => {
@@ -109,7 +174,7 @@ function load(id) {
         postMessage({ type: "progress", id, frac: v.reduce((a, x) => a + x[0], 0) / v.reduce((a, x) => a + x[1], 0) });
       }
     },
-  })).then((model) => {
+  }))).then((model) => {
     const old = asr;
     asr = model;
     asrId = id;
@@ -202,6 +267,11 @@ onmessage = async ({ data }) => {
       const asked = performance.now();
       const model = await load(data.model);
       let began = 0;  // for the page's timing window: waiting for the model (and its warm-up) vs turning speech into text
+      if (model.hear) {  // the tiny ears: no hint, no language, nothing to retry
+        const out = await serial(() => { began = performance.now(); return model.hear(data.audio); });
+        postMessage({ type: "text", reqId: data.reqId, text: out.text, engine: "tiny-ears", waitMs: Math.round(began - asked), runMs: Math.round(performance.now() - began), matchMs: out.matchMs });
+        return;
+      }
       let h = null;
       try {
         const text = data.hint || fitNames(model, data.model, data.hintNames, data.hintBudget);

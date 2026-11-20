@@ -6,6 +6,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { gzipSync, brotliCompressSync, constants } from "node:zlib";
 import { join } from "node:path";
+import { readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { coreFiles } from "./manifest.mjs";
 
@@ -41,14 +42,20 @@ export function parts({ enginesDir = null } = {}) {
     const manifestPath = "packs/dist/" + c.manifest, m = JSON.parse(readFileSync(ROOT + manifestPath, "utf8"));
     const dir = manifestPath.replace(/manifest\.json$/, "");
     const list = [manifestPath, dir + m.files.base.path, join(dir, m.files.live.path)].map((p) => ({ path: p, ...measure(readFileSync(ROOT + p)) }));
-    return { id: c.id, places: m.counts.places, list, total: sum(list) };
+    const ears = dir.replace(/[^/]+\/$/, "") + "ears-lexicon.json";  // the tiny ears' word list, beside the city's versions
+    return { id: c.id, places: m.counts.places, list, total: sum(list), ears: existsSync(ROOT + ears) ? [{ path: ears, ...measure(readFileSync(ROOT + ears)) }] : [] };
   });
+  // the tiny ears' model is the site's own file (engines/ears/, not in git: training/ears/README.md); measured when it is here
+  const earsModel = existsSync(ROOT + "engines/ears") ? readdirSync(ROOT + "engines/ears").filter((f) => /\.onnx$/.test(f)).map((f) => ({ path: "engines/ears/" + f, ...measure(readFileSync(ROOT + "engines/ears/" + f)) })) : [];
   return {
     engines,
     rows: [
       { part: "Ears: transformers.js + its onnxruntime (both languages)", list: runtime },
       { part: "Ears, English: Whisper tiny.en, 8-bit", list: role("asr-en", true) },
       { part: "Ears, Spanish: Whisper tiny (multilingual), 8-bit", list: role("asr-es", true) },
+      { part: "Tiny ears: onnxruntime-web 1.18, one thread (its engine file is also today's voice's)", list: role("asr-ears") },
+      ...(earsModel.length ? [{ part: "Tiny ears: the model, 8-bit (both languages)", list: earsModel }] : []),
+      ...packs.filter((p) => p.ears.length).map((p) => ({ part: `Tiny ears: ${p.id}'s word list`, list: p.ears })),
       { part: "Voice today: tiny-voca ONNX + onnxruntime 1.18 + Pyodide (dizione)", list: role("voice") },
       { part: "Voice, plain JS: tiny-voca GGUF", list: role("voiceJs") },
       { part: "Core code: browser/, core/, lang/, domains/, engines/ (JavaScript)", list: local((p) => isCode(p) && !p.startsWith("vendor/")) },
@@ -69,6 +76,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     ["MapSMA English today (ears + ONNX voice + core + pack)", ["Ears: transformers", "Ears, English", "Voice today", "Core code", "Site configs", "City pack mx-sma"]],
     ["MapSMA English, plain-JS voice", ["Ears: transformers", "Ears, English", "Voice, plain JS", "Core code", "tiny-voca's plain-JS", "Site configs", "City pack mx-sma"]],
     ["… and Spanish questions (second Whisper)", ["Ears: transformers", "Ears, English", "Ears, Spanish", "Voice, plain JS", "Core code", "tiny-voca's plain-JS", "Site configs", "City pack mx-sma"]],
+    ["MapSMA with the tiny ears (both languages), plain-JS voice", ["Tiny ears: onnxruntime", "Tiny ears: the model", "Tiny ears: mx-sma", "Voice, plain JS", "Core code", "tiny-voca's plain-JS", "Site configs", "City pack mx-sma"]],
     ["CredBrief (ears English + ONNX voice + core)", ["Ears: transformers", "Ears, English", "Voice today", "Core code", "Site configs"]],
   ];
   const lines = ["# Sizes, measured", "",

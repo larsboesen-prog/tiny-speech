@@ -51,7 +51,7 @@ async function checkPage(query) {
 test("with the site's own engine files, the voice and speech to text work and nothing leaves the origin", { skip }, async () => {
   web.leaks.length = 0;
   web.requests.length = 0;
-  const { context, page, errors } = await checkPage("app=mapsma&engines=/mirror/");
+  const { context, page, errors } = await checkPage("app=mapsma&engine=whisper&engines=/mirror/");
   assert.match(await page.textContent("#about"), /engine files from this site: \/mirror\//);
   await page.click("#loadAsr");
   await page.waitForSelector("#heard .ok", { timeout: 20000 });
@@ -73,7 +73,7 @@ test("with the site's own engine files, the voice and speech to text work and no
 
 test("without them, the same page asks the libraries' own hosts (so the check above would see a leak)", { skip }, async () => {
   web.leaks.length = 0;
-  const { context, page } = await checkPage("app=mapsma");
+  const { context, page } = await checkPage("app=mapsma&engine=whisper");
   await page.click("#loadAsr");
   await page.waitForSelector("#heard .ok, #heard .bad", { timeout: 20000 });
   await context.close();

@@ -2,3 +2,4 @@ vendor/tiny-voca/*.gguf
 node_modules/
 training/data/.cache/
 browser/manifest.json
+engines/ears/*.onnx

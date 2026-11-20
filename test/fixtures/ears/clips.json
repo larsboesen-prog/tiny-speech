@@ -1,0 +1,33 @@
+{
+ "about": "Held-out synthetic Mexican Spanish requests (Piper es_MX voices: claude-high, dataset Apache-2.0; ald-medium, CC0), and what training/asr/probe/probe.py heard with the tiny ears (20 Nov 2026). The browser must hear the same.",
+ "clips": [
+  {
+   "wav": "asr-es-requests-e45e5c36ac-p0.wav",
+   "said": "¿Dónde hay un café con internet y buen ambiente para pasar la tarde?",
+   "probe_heard": "dónde hay un café con internet y buen ambiente para pasar la tarde",
+   "voice": "es_MX-ald-medium",
+   "seconds": 4.17
+  },
+  {
+   "wav": "asr-es-requests-e45e5c36ac-p1.wav",
+   "said": "¿Dónde hay un café con internet y buen ambiente para pasar la tarde?",
+   "probe_heard": "dónde hay un café con internet y buen ambiente para pasar la tarde",
+   "voice": "es_MX-ald-medium",
+   "seconds": 4.31
+  },
+  {
+   "wav": "asr-es-requests-05a7a1571f-p0.wav",
+   "said": "¿Hay pizza abierta hasta las tres de la mañana?",
+   "probe_heard": "hay pizza abierta hasta las tres de la mañana",
+   "voice": "es_MX-claude-high",
+   "seconds": 3.04
+  },
+  {
+   "wav": "asr-es-followups-eecf5b5188-p1.wav",
+   "said": "¿Hay música en vivo en Raindog Cantina?",
+   "probe_heard": "hay música en vivo en raindog cantina",
+   "voice": "es_MX-claude-high",
+   "seconds": 2.73
+  }
+ ]
+}

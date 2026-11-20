@@ -50,6 +50,38 @@ files (`test/fixtures/before/`).
 5. **Going back** is the four lines again: /page5's own copies stay in place until the shared files have
    run for a while; then they can go.
 
+## The tiny ears on MapSMA (plan step B16, 20 Nov 2026), Whisper tiny kept as the other choice
+
+The same worker (`asr-worker.js`) and the same messages: the model id **`tiny-ears`** is the 8.9 MB sound recognizer and San
+Miguel's word list instead of Whisper (`engines/asr-ears.js`, `engines/ears-match.js`); any Whisper id works as before. One model
+for both languages, no name hint (the names are in the word list), about 0.15 s for the model and 0.1–0.2 s for the word list per
+question here (Whisper tiny: about 2 s). Its text comes back in lower case, words only ("hay música en vivo en raindog cantina").
+
+| | Tiny ears | Whisper tiny |
+|---|---|---|
+| Spanish restaurant requests, synthetic Mexican voices, held out: understood as said | 80.6% | 29–31% |
+| … read by two voices it never heard (Argentina, Spain) | 85.4% | 52.1% |
+| English, tiny-voca's voice (4 questions): words right | 80–100% | 100% |
+| First visit, MapSMA with the plain-JS voice | 28.6 MB (17.0 MB brotli) | 74.6 MB English only, 118.2 MB both |
+
+1. **The model.** `ears-int8.onnx` from the training run's output (`python training/ears/kaggle/push.py output larsbo99/tiny-ears-train DIR`),
+   copied to the site as `/tiny-speech/engines/ears/ears-int8-2026-11-20.onnx` (`apps/mapsma.json` `asr.ears.model`; a new model is a new
+   file name, so phones never keep an old one). Not in this repository: it learned partly from CC BY-SA speech (training/ears/README.md),
+   so the owner decides how it may be shared before it goes on the site. `engines/ears/vocab.json` (its 392 sounds) is in git.
+2. **The word list**: `packs/dist/mx-sma/ears-lexicon.json` (382 KB, 75 KB brotli), copied with the packs to `/tiny-speech/packs/`.
+   Rebuilt with `node tools/ears-lexicon.mjs mx-sma` when the places change (a new city: the same command, no training).
+3. **The page.** The worker's address from `workerUrl(config, "asr")` (now with `&ears=…&lexicon=…`), and the model of each question from
+   `asrModel(config, lang, engine)` (`core/config.js`): `"tiny-ears"` for MapSMA, whatever the language, unless the reader chose Whisper in
+   Settings (`engine = "whisper"`: whisper-tiny.en / whisper-tiny as today). If the worker answers `{type: "error", id: "tiny-ears"}` (the
+   model file is missing), the page asks Whisper instead. The `language` and `hint` the page sends are ignored by the ears.
+4. **Try it first**: `check.html` on the iPhone: MapSMA's config preselects "Tiny ears"; *Load*, *Record*, ask; the line under the words
+   gives the model's and the word list's milliseconds. `check.html?engine=whisper` starts on Whisper. On the computer:
+   `check.html?app=mapsma&ears=/engines/ears/<file>&lexicon=/packs/mx-sma/ears-lexicon.json` with the test server.
+
+onnxruntime-web 1.18 (one thread) loads only when the ears are asked for, transformers.js only when Whisper is: a page on the ears
+never downloads Whisper. The engine file `ort-wasm-simd.wasm` is the one the ONNX voice worker already keeps in the site's cache.
+`test/ears.test.mjs` runs the worker in Chromium on four recorded questions and gets exactly what `training/asr/probe/probe.py` heard.
+
 ## CredBrief /page40 (later, the same way)
 
 | Line (18 Nov copy) | After |
