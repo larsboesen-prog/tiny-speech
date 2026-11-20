@@ -21,12 +21,21 @@ MODEL, REVISION = "facebook/wav2vec2-lv-60-espeak-cv-ft", "ae45363bf3413b374fecd
 HARD = {"β": "b", "ð": "d", "ɣ": "ɡ", "ʝ": "j"}  # the recognizer may hear a soft b/d/g/y as a hard one
 
 
-def emissions(rows, cache):
-    from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForCTC
+def emissions(rows, cache, onnx=None):
     import librosa
     cache.mkdir(parents=True, exist_ok=True)
     todo = [r for r in rows if not (cache / f"{r['id']}.npy").exists()]
-    if todo:
+    if todo and onnx:  # the tiny ears (training/ears/): same frames, same sounds as the teacher
+        import onnxruntime as ort
+        session = ort.InferenceSession(str(onnx), providers=["CPUExecutionProvider"])
+        for r in todo:
+            wave, rate = sf.read(r["audio"], dtype="float32")
+            if rate != 16000:
+                wave = librosa.resample(wave, orig_sr=rate, target_sr=16000)
+            wave = (wave / (float(np.abs(wave).max()) or 1.0) * 0.9).astype("float32")[None]
+            np.save(cache / f"{r['id']}.npy", session.run(None, {"audio": wave})[0][0].astype("float32"))
+    elif todo:
+        from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForCTC
         fe = Wav2Vec2FeatureExtractor.from_pretrained(MODEL, revision=REVISION)
         model = Wav2Vec2ForCTC.from_pretrained(MODEL, revision=REVISION).eval()
         for r in todo:
@@ -152,13 +161,14 @@ def main():
     parser.add_argument("--beam", type=int, default=256, help="paths kept per frame (48 at first; 256 understood more, 512 no more)")
     parser.add_argument("--prune", type=float, default=10.0, help="sounds tried per frame: within this many log points of the best")
     parser.add_argument("--first", type=int, help="Only the first N clips (to choose settings on, apart from the rest)")
+    parser.add_argument("--onnx", type=Path, help="hear with this model instead (the tiny ears' ears-int8.onnx); use its own --cache")
     args = parser.parse_args()
     from huggingface_hub import hf_hub_download
     vocab = json.loads(Path(hf_hub_download(MODEL, "vocab.json", revision=REVISION)).read_text(encoding="utf-8"))
     rows = [json.loads(l) for l in args.manifest.read_text(encoding="utf-8").splitlines() if l.strip()]
     rows = [r for r in rows if r.get("split") == args.split][: args.first]
     lex = Lexicon(json.loads(args.lexicon.read_text(encoding="utf-8")), vocab)
-    em = emissions(rows, args.cache)
+    em = emissions(rows, args.cache, args.onnx)
     print(json.dumps({"clips": len(rows), "trie_nodes": len(lex.children), "sounds_not_in_recognizer": dict(lex.missing)}), flush=True)
     for lm in args.lm:
         for bonus in args.bonus:
