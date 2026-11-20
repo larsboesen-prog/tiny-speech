@@ -24,7 +24,7 @@ KITS = {
              "sources": {"train": "tiny-ears-data"}},
     "voice": {"notebook": HERE.parent.parent / "gpu" / "kaggle" / "voice.ipynb", "prefix": "tiny-voice",
               "timeout": {"design": 1.5, "teach": 11.6, "learn": 11.6}, "gpu": {"design", "teach", "learn"},
-              "sources": {"teach": "tiny-voice-design", "learn": "tiny-voice-teach"}},
+              "sources": {"learn": "tiny-voice-teach"}},  # teach reads the picked reference from the repository (training/voice/)
 }
 
 
