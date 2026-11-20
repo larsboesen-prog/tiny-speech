@@ -20,6 +20,7 @@ PY="${PY:-$WORK/venv/bin/python}"
 REFS="${REFS:-}"
 GPUS="${GPUS:-1}"
 export TINY_VOCA_FRONTEND=table TINY_VOCA_PHONEME_TABLE="$TS/training/data/phonemes.jsonl"
+export PYTHONPATH="$WORK/tiny-voca/src${PYTHONPATH:+:$PYTHONPATH}"  # upstream's code, where it is not installed (Kaggle)
 cd "$WORK"
 [ -f deadline.json ] || echo "{\"deadline\": $(( $(date +%s) + HOURS * 3600 ))}" > deadline.json
 

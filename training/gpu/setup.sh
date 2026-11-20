@@ -14,19 +14,22 @@ mkdir -p "$WORK/zips"
 cd "$WORK"
 
 if ! command -v ffmpeg >/dev/null; then (apt-get update -qq && apt-get install -y -qq ffmpeg libsndfile1) || echo "note: could not apt-get ffmpeg (not needed for FLAC/WAV)"; fi
-if [ -n "${PY:-}" ]; then PIP="$PY -m pip"; else
+KAGGLE=""
+if [ -n "${PY:-}" ]; then PIP="$PY -m pip"; KAGGLE=1; else
   [ -d venv ] || python3 -m venv venv
   PIP="$WORK/venv/bin/pip"
   PY="$WORK/venv/bin/python"
+  $PIP install -q -U pip wheel
 fi
-$PIP install -q -U pip wheel
 
 if [ ! -d tiny-voca ]; then git clone -q https://github.com/n4ze3m/tiny-voca.git; fi
 git -C tiny-voca checkout -q "$UPSTREAM_COMMIT"
 # the versions upstream generated its data with (dataset generation/batch1/requirements.txt), plus screening and the parquet reader
-# qwen-tts without its demo's dependencies (gradio) and without moving this machine's torch
-$PIP install -q -e "tiny-voca[prepare,annotate,evaluate]" "transformers==4.57.3" "accelerate==1.12.0" faster-whisper jiwer num2words pyarrow \
-  librosa soundfile sox onnxruntime einops
+# qwen-tts without its demo's dependencies (gradio) and without moving this machine's torch. Upstream tiny-voca: installed
+# (editable) in the venv; on Kaggle its dependencies only, and run.sh puts tiny-voca/src on PYTHONPATH (Kaggle's pip refuses
+# the editable build: "Blocked import of importlib.metadata._adapters after pip install started", 20 Nov 2026)
+DEPS=("transformers==4.57.3" "accelerate==1.12.0" faster-whisper jiwer num2words pyarrow librosa soundfile sox onnxruntime einops scipy "huggingface-hub>=0.34,<2")
+if [ -n "$KAGGLE" ]; then $PIP install -q "${DEPS[@]}"; else $PIP install -q -e "tiny-voca[prepare,annotate,evaluate]" "${DEPS[@]}"; fi
 $PIP install -q --no-deps "qwen-tts==0.1.1"
 grep -q "tiny-speech bilingual" tiny-voca/src/tiny_voca/text.py || "$PY" "$TS/training/gpu/patch_upstream.py" tiny-voca "$TS/training/data/symbols.json"
 
