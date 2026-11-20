@@ -15,7 +15,8 @@ the file and onnxruntime-web.
 |---|---|---|
 | Packages, the teacher, Piper's two Mexican voices | `run.py setup` | 5 min |
 | Piper reads the 3,342 training requests (in-domain speech) | `run.py synth` (`../asr/synth_piper.py`) | 15–20 min (CPU) |
-| ~100 hours of speech, converted to 16 kHz FLAC | `prepare.py` | 45–75 min |
+| ~100 hours of speech, converted to 16 kHz FLAC, with transcripts | `prepare.py` | 45–75 min |
+| The Spanish transcripts as sounds | `phones.mjs` (Node from pip if missing) | 1 min |
 | The teacher labels it (top 8 sounds per frame) | `teach.py` | 30–60 min |
 | The student learns, until the session's time is nearly up | `train.py` | the rest, about 7–8 h |
 | 8-bit ONNX, checked | `export.py` | 5 min |
@@ -29,8 +30,12 @@ the file and onnxruntime-web.
 | LibriSpeech clean-100 | US English read speech | 25 | CC BY 4.0 |
 | Piper es_MX (claude, ald) | the restaurant requests' **training** sentences (never dev or test: the probe measures on dev) | ~3 | Apache-2.0, Unlicense |
 
-**Training** (`train.py`): the teacher's top 8 sounds per frame as a soft target (frames the teacher is sure are silence
-count half), plus CTC on the teacher's best sequence. The audio is made harder as it is drawn: speed ±10%, noise, another
+**Training** (`train.py`): three signals. The teacher's top 8 sounds per frame as a soft target (frames the teacher is sure
+are silence count half); CTC on the teacher's best sequence; and **CTC on what was actually said**: the Spanish transcripts
+(CIEMPIESS, the Google sets, the Piper requests) read by our Mexican rules (`phones.mjs`, `lang/es/ipa.js`). The teacher
+mishears some Mexican sounds (it heard "perro" as `p e ɾ o`, "frío" as `f i l o`: `../asr/probe/README.md`); the
+transcripts keep the student from copying that, so it can do better than the teacher on Mexican Spanish. The best
+checkpoint is the one with the fewest sound errors against what was said on held-out clips. The audio is made harder as it is drawn: speed ±10%, noise, another
 voice behind, a phone's 300–3400 Hz band, a room's echo, hidden mel bands and moments. The learning rate runs on the clock
 (warm-up, then cosine to the end of the time given), so the run fits any session length. It checks against the teacher on
 held-out clips every 30 minutes (`dev_sound_error_vs_teacher`: lower is better) and keeps the best (`best.pt`).
@@ -67,6 +72,8 @@ the large recognizer's 58.3%, and beat Whisper tiny (29–31%) clearly; then the
 - `train.py`: runs, saves, resumes. It learns: on 40 clean clips the student left the silence-only phase after about 120
   steps and fitted the teacher's labels (loss 13.7 → 0.36). On 260 clips with every hardening on, 350 CPU steps were
   still in that phase: expected this early; a GPU run takes tens of thousands of steps.
+- The CTC on what was said: 113 of 300 sample clips read into sounds; it trains, and the check reports the student's and
+  the teacher's errors against what was said (the teacher: 23.7% on Piper's held-out requests: the bar to beat).
 - `export.py`: 8.88 MB at 8 bits, ONNX equal to PyTorch (4e-6), gates pass.
 - `probe.py --onnx`: the matcher reads the student's output.
 - Not run here: a real training run (a GPU's work), the notebook on Kaggle or Colab.

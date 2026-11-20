@@ -3,10 +3,12 @@
 python train.py --manifest WORK/manifest.jsonl --labels WORK/labels --out OUT [--hours 8 --batch-seconds 320 --lr 2e-3]
 
 Loss: frame by frame, the teacher's top-K sounds as a soft target (cross-entropy; mostly-blank frames weigh less), plus CTC
-on the teacher's best sound sequence. The learning-rate schedule runs on the clock (warm-up, then cosine to the end of
+on the teacher's best sound sequence, plus (--phones) CTC on the sounds actually said, from the Spanish transcripts
+(phones.mjs): the teacher mishears some Mexican sounds (perro → pero, frío → fio), and this keeps the student from copying it. The learning-rate schedule runs on the clock (warm-up, then cosine to the end of
 --hours), so the same command fits a free GPU session whatever its speed. The audio is made harder as it is drawn (speed,
 noise, other voices, a phone's narrow band, a room), while the targets stay the teacher's labels of the clean clip.
-Saves OUT/last.pt every few minutes and at the end; OUT/best.pt by agreement with the teacher on the dev clips; resumes from
+Saves OUT/last.pt every few minutes and at the end; OUT/best.pt by the fewest sound errors on the dev clips (against what was
+said where there is a transcript, else against the teacher); resumes from
 OUT/last.pt. Log: OUT/log.jsonl.
 """
 import argparse
@@ -51,9 +53,10 @@ class Labels:
 
 
 class Clips(torch.utils.data.Dataset):
-    def __init__(self, rows, labels, max_seconds, augment, noise_rows=None):
+    def __init__(self, rows, labels, max_seconds, augment, noise_rows=None, said=None):
         self.rows, self.labels, self.max_seconds, self.augment = rows, labels, max_seconds, augment
         self.noise_rows = noise_rows or rows
+        self.said = said or {}
 
     def __len__(self):
         return len(self.rows)
@@ -81,6 +84,7 @@ class Clips(torch.utils.data.Dataset):
         # a window of the common length, starting on a frame
         want = min(length, len(wave))
         start = random.randrange(0, (len(wave) - want) // FRAME + 1) * FRAME if self.augment else 0
+        full = len(wave)  # what was said covers the whole clip: usable only if (nearly) all of it is heard
         wave = wave[start:start + want]
         f0 = start // FRAME
         nf = frames(len(wave))
@@ -89,7 +93,9 @@ class Clips(torch.utils.data.Dataset):
             wave = self.harder(wave)
         peak = float(np.abs(wave).max()) or 1.0
         wave = wave / peak * random.uniform(0.3, 0.95) if self.augment else wave / peak * 0.9
-        return torch.from_numpy(wave.astype("float32")), torch.from_numpy(idx.astype(np.int64)), torch.from_numpy(logp)
+        said = self.said.get(r["id"]) if start == 0 else None
+        return (torch.from_numpy(wave.astype("float32")), torch.from_numpy(idx.astype(np.int64)), torch.from_numpy(logp),
+                torch.tensor(said or [], dtype=torch.long), full)
 
     def harder(self, wave):
         n = len(wave)
@@ -132,7 +138,7 @@ class Buckets(torch.utils.data.Sampler):
 
     def batches(self):
         rng = random.Random(self.seed + self.epoch)
-        order = sorted(range(len(self.rows)), key=lambda i: self.rows[i]["seconds"] + (rng.random() * 0.5 if self.shuffle else 0))
+        order = sorted(range(len(self.rows)), key=lambda i: self.rows[i]["seconds"] + (rng.random() * 0.08 if self.shuffle else 0))
         out, cur = [], []
         for i in order:
             cur.append(i)
@@ -158,12 +164,13 @@ class Buckets(torch.utils.data.Sampler):
 
 
 def collate(items):
-    n = min(len(w) for w, _, _ in items)
+    n = min(len(it[0]) for it in items)
     nf = frames(n)
-    waves = torch.stack([w[:n] for w, _, _ in items])
-    idx = torch.stack([i[:nf] for _, i, _ in items])
-    logp = torch.stack([p[:nf] for _, _, p in items])
-    return waves, idx, logp
+    waves = torch.stack([it[0][:n] for it in items])
+    idx = torch.stack([it[1][:nf] for it in items])
+    logp = torch.stack([it[2][:nf] for it in items])
+    said = [it[3] if len(it[3]) and it[4] - n <= 1600 else torch.zeros(0, dtype=torch.long) for it in items]
+    return waves, idx, logp, said
 
 
 def collapse(seq, blank=0):
@@ -183,6 +190,17 @@ def edit(a, b):
             cur = min(d[j] + 1, d[j - 1] + 1, prev + (a[i - 1] != b[j - 1]))
             prev, d[j] = d[j], cur
     return d[len(b)]
+
+
+def said_ctc(out, said):
+    """CTC on the sounds actually said, for the clips that have them (whole clips with a Spanish transcript)"""
+    keep = [k for k, s in enumerate(said) if len(s) and len(s) < out.shape[1]]
+    if not keep:
+        return out.sum() * 0
+    lp = out[keep].float().transpose(0, 1)
+    targets = torch.cat([said[k] for k in keep]).to(out.device)
+    return F.ctc_loss(lp, targets, torch.full((len(keep),), out.shape[1], dtype=torch.long), torch.tensor([len(said[k]) for k in keep]),
+                      blank=0, reduction="mean", zero_infinity=True)
 
 
 def losses(out, idx, logp, blank_weight, ctc_weight):
@@ -207,10 +225,12 @@ def losses(out, idx, logp, blank_weight, ctc_weight):
 
 
 @torch.no_grad()
-def agreement(model, rows, labels, device, limit=300):
-    """sound error rate against the teacher's best sequence, on dev clips the student never learned from (lower is better)"""
+def agreement(model, rows, labels, device, limit=300, said=None):
+    """sound error rate against the teacher's best sequence, on dev clips the student never learned from (lower is better);
+    with transcripts, also against what was said, for the student and for the teacher (the bar to beat)"""
     model.eval()
     errors = total = 0
+    vs_said = [0, 0, 0]  # student errors, teacher errors, sounds said
     for r in rows[:limit]:
         wave = sf.read(r["audio"], dtype="float32")[0]
         idx, _ = labels.get(r["id"])
@@ -221,8 +241,14 @@ def agreement(model, rows, labels, device, limit=300):
         ref = collapse(idx[:, 0].tolist())
         errors += edit(ref, hyp)
         total += max(1, len(ref))
+        truth = (said or {}).get(r["id"])
+        if truth:
+            vs_said[0] += edit(truth, hyp)
+            vs_said[1] += edit(truth, ref)
+            vs_said[2] += len(truth)
     model.train()
-    return errors / max(1, total)
+    extra = {"dev_sound_error_vs_said": round(vs_said[0] / vs_said[2], 4), "teacher_sound_error_vs_said": round(vs_said[1] / vs_said[2], 4)} if vs_said[2] else {}
+    return errors / max(1, total), extra
 
 
 def main():
@@ -237,7 +263,9 @@ def main():
     parser.add_argument("--lr", type=float, default=2e-3)
     parser.add_argument("--warmup-minutes", type=float, default=15.0)
     parser.add_argument("--blank-weight", type=float, default=0.5)
-    parser.add_argument("--ctc-weight", type=float, default=0.3)
+    parser.add_argument("--ctc-weight", type=float, default=0.3, help="CTC on the teacher's best sounds")
+    parser.add_argument("--phones", type=Path, help="what was said, as sounds (phones.mjs): adds CTC on it")
+    parser.add_argument("--said-weight", type=float, default=0.5, help="weight of the CTC on what was said")
     parser.add_argument("--save-minutes", type=float, default=10.0)
     parser.add_argument("--check-minutes", type=float, default=30.0)
     parser.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 2))
@@ -250,9 +278,16 @@ def main():
     labels = Labels(args.labels)
     rows = [json.loads(l) for l in args.manifest.read_text(encoding="utf-8").splitlines() if l.strip()]
     rows = [r for r in rows if r["id"] in labels.where]
+    said = {}
+    if args.phones and args.phones.exists():
+        for l in args.phones.read_text(encoding="utf-8").splitlines():
+            if l.strip():
+                x = json.loads(l)
+                said[x["id"]] = x["phones"]
     train = [r for r in rows if r["split"] == "train"]
     dev = [r for r in rows if r["split"] == "dev"]
-    print(json.dumps({"train_clips": len(train), "train_hours": round(sum(r["seconds"] for r in train) / 3600, 1), "dev_clips": len(dev), "device": device}), flush=True)
+    print(json.dumps({"train_clips": len(train), "train_hours": round(sum(r["seconds"] for r in train) / 3600, 1), "dev_clips": len(dev), "device": device,
+                      "with_transcript_sounds": sum(r["id"] in said for r in train)}), flush=True)
 
     model = Student(d=args.d, layers=args.layers).to(device)
     model.specaug = not args.no_augment
@@ -270,7 +305,7 @@ def main():
         print(json.dumps({"resumed": state}), flush=True)
 
     sampler = Buckets(train, args.batch_seconds, args.max_seconds)
-    data = Clips(train, labels, args.max_seconds, augment=not args.no_augment)
+    data = Clips(train, labels, args.max_seconds, augment=not args.no_augment, said=said)
     budget = args.hours * 3600
 
     def save(path):
@@ -286,7 +321,7 @@ def main():
         sampler.epoch = state["epoch"]
         loader = torch.utils.data.DataLoader(data, batch_sampler=sampler, collate_fn=collate, num_workers=args.workers,
                                              pin_memory=device == "cuda", persistent_workers=False, prefetch_factor=4 if args.workers else None)
-        for waves, idx, logp in loader:
+        for waves, idx, logp, said_batch in loader:
             elapsed = time.time() - t_start
             progress = min(1.0, elapsed / budget)
             warm = min(1.0, elapsed / (args.warmup_minutes * 60 + 1e-9))
@@ -297,6 +332,8 @@ def main():
             with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=device == "cuda"):
                 out = model(waves)
             loss, ctc = losses(out, idx, logp, args.blank_weight, args.ctc_weight)
+            said_loss = said_ctc(out, said_batch) if said else out.sum() * 0
+            loss = loss + args.said_weight * said_loss
             opt.zero_grad(set_to_none=True)
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
@@ -306,7 +343,7 @@ def main():
             state["step"] += 1
             state["seconds_trained"] = time.time() - t_start
             if state["step"] % 50 == 0 or state["step"] <= 3:
-                rec = {"step": state["step"], "epoch": state["epoch"], "loss": round(loss.item(), 4), "ctc": round(ctc.item(), 4),
+                rec = {"step": state["step"], "epoch": state["epoch"], "loss": round(loss.item(), 4), "ctc": round(ctc.item(), 4), "said": round(said_loss.item(), 4), "with_said": sum(1 for x in said_batch if len(x)),
                        "lr": round(lr, 6), "hours": round(state["seconds_trained"] / 3600, 3), "batch": int(waves.shape[0]),
                        "seconds": round(waves.shape[0] * waves.shape[1] / 16000, 1)}
                 print(json.dumps(rec), flush=True)
@@ -314,14 +351,15 @@ def main():
                 log.flush()
             finished = progress >= 1.0 or (args.max_steps and state["step"] >= args.max_steps)
             if time.time() - t_check > args.check_minutes * 60 or finished:
-                ser = agreement(model, dev, labels, device)
-                rec = {"step": state["step"], "dev_sound_error_vs_teacher": round(ser, 4)}
+                ser, extra = agreement(model, dev, labels, device, said=said)
+                rec = {"step": state["step"], "dev_sound_error_vs_teacher": round(ser, 4), **extra}
                 print(json.dumps(rec), flush=True)
                 log.write(json.dumps(rec) + "\n")
                 log.flush()
-                if state["best"] is None or ser < state["best"]:
-                    state["best"] = ser
-                    torch.save({"model": model.state_dict(), "config": model.config, "step": state["step"], "dev_ser": ser}, args.out / "best.pt")
+                score = extra.get("dev_sound_error_vs_said", ser)
+                if state["best"] is None or score < state["best"]:
+                    state["best"] = score
+                    torch.save({"model": model.state_dict(), "config": model.config, "step": state["step"], "dev_ser": ser, **extra}, args.out / "best.pt")
                 t_check = time.time()
             if time.time() - t_save > args.save_minutes * 60 or finished:
                 save(last)

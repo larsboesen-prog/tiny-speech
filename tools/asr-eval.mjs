@@ -15,7 +15,9 @@ function edits(a, b) {
   return d[a.length][b.length];
 }
 
-/** {sentences, wer, names: {sentences, found}, understood, language} for rows of one language. */
+/** {sentences, wer, names: {sentences, found}, understood, language, what: {sentences, right}} for rows of one language.
+ * what: of the requests that ask for a thing (a dish, a drink, a kind of place: the reader's `what`), how many heard it right,
+ * whatever else went wrong: the part a search most needs. */
 export async function evaluate(rows) {
   const { loadCore } = await import("../test/golden/mapsma.mjs");
   const { createAsker, requestOf } = await import("../domains/places/ask.js");
@@ -23,7 +25,7 @@ export async function evaluate(rows) {
   const { pack } = await loadCore();
   const asker = createAsker({ pack, random: () => 0.5 });
   const names = namesOf(pack);
-  let errors = 0, total = 0, namedN = 0, found = 0, same = 0, langRight = 0;
+  let errors = 0, total = 0, namedN = 0, found = 0, same = 0, langRight = 0, whatN = 0, whatRight = 0;
   const misses = [];
   for (const r of rows) {
     const ref = norm(r.text).split(" ").filter(Boolean), hyp = norm(r.heard).split(" ").filter(Boolean);
@@ -35,18 +37,20 @@ export async function evaluate(rows) {
       if (hit?.p.id === want[0].id) found++;
       else misses.push(`${want[0].name} ← "${r.heard}"`);
     }
-    if (JSON.stringify(requestOf(asker.parse(r.text))) === JSON.stringify(requestOf(asker.parse(r.heard)))) same++;
+    const said = requestOf(asker.parse(r.text)), got = requestOf(asker.parse(r.heard));
+    if (JSON.stringify(said) === JSON.stringify(got)) same++;
+    if (said.what) { whatN++; if (JSON.stringify(said.what) === JSON.stringify(got.what)) whatRight++; }
     if (r.lang === "mixed" || decideLanguage({ text: r.heard, names }).lang === r.lang) langRight++;
   }
   return { sentences: rows.length, wer: total ? errors / total : 0, names: { sentences: namedN, found }, understood: rows.length ? same / rows.length : 0,
-    language: rows.length ? langRight / rows.length : 0, misses };
+    language: rows.length ? langRight / rows.length : 0, what: { sentences: whatN, right: whatRight }, misses };
 }
 
 export const pct = (x) => `${(100 * x).toFixed(1)}%`;
 export function line(label, e) {
-  return `| ${label} | ${e.sentences} | ${pct(e.wer)} | ${e.names.sentences ? `${e.names.found}/${e.names.sentences} (${pct(e.names.found / e.names.sentences)})` : "—"} | ${pct(e.understood)} | ${pct(e.language)} |`;
+  return `| ${label} | ${e.sentences} | ${pct(e.wer)} | ${e.names.sentences ? `${e.names.found}/${e.names.sentences} (${pct(e.names.found / e.names.sentences)})` : "—"} | ${e.what.sentences ? `${e.what.right}/${e.what.sentences} (${pct(e.what.right / e.what.sentences)})` : "—"} | ${pct(e.understood)} | ${pct(e.language)} |`;
 }
-export const HEADER = "| Set | Sentences | Word errors | Places found from what was heard | Understood as said | Language right |\n|---|---|---|---|---|---|";
+export const HEADER = "| Set | Sentences | Word errors | Places found from what was heard | Thing asked for heard right | Understood as said | Language right |\n|---|---|---|---|---|---|---|";
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   console.log(HEADER);

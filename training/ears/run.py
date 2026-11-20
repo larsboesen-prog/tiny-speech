@@ -1,12 +1,13 @@
 """The whole tiny-ears run on one free GPU session (Kaggle or Colab) or any GPU machine (README.md here).
 
 python run.py all --work WORK --out OUT [--hours 11] [--sets ...] [--hours-per-set librispeech=10 ...] [--no-synth]
-python run.py <stage> ...    one stage: setup, synth, prepare, teach, train, export
+python run.py <stage> ...    one stage: setup, synth, prepare, phones, teach, train, export
 
 Stages, each run once (a finished stage leaves OUT/done.<stage>; run again to resume after a stop):
   setup    Python packages the platform lacks, the teacher (1.2 GB) and Piper's two Mexican voices
   synth    Piper reads the restaurant requests' training sentences (in-domain speech; CPU, about 15 minutes)
   prepare  downloads and converts the speech sets (prepare.py)
+  phones   the Spanish transcripts as sounds (phones.mjs), so the student also learns what was really said
   teach    the teacher labels every clip (teach.py)
   train    the student learns, until the time left minus 40 minutes for the rest (train.py)
   export   the 8-bit ONNX file and its gates (export.py) → OUT/onnx/ears-int8.onnx
@@ -42,7 +43,7 @@ def deadline(args):
 
 def setup(args):
     sh(PY, "-m", "pip", "install", "-q", "transformers==4.57.3", "soundfile", "scipy", "librosa", "onnx", "onnxruntime",
-       "onnxscript", "huggingface_hub", "pyarrow", "piper-tts")
+       "onnxscript", "huggingface_hub", "pyarrow", "piper-tts", "nodejs-wheel-binaries")
     code = f"""
 from huggingface_hub import hf_hub_download, snapshot_download
 import shutil, os
@@ -68,6 +69,15 @@ def prepare(args):
        *(["--local", *local] if local else []), *(["--limit-shards", args.limit_shards] if args.limit_shards else []))
 
 
+def phones(args):
+    """the Spanish transcripts as the teacher's sounds (phones.mjs), for the CTC on what was said"""
+    import shutil
+    from huggingface_hub import hf_hub_download
+    vocab = hf_hub_download("facebook/wav2vec2-lv-60-espeak-cv-ft", "vocab.json", revision="ae45363bf3413b374fecd9dc8bc1df0e24c3b7f4")
+    node = [shutil.which("node")] if shutil.which("node") else [PY, "-m", "nodejs_wheel"]  # pip's nodejs-wheel-binaries
+    sh(*node, HERE / "phones.mjs", args.work / "manifest.jsonl", vocab, args.work / "phones.jsonl")
+
+
 def teach(args):
     (args.out / "teach-deadline.json").write_text(json.dumps({"deadline": deadline(args) - 3 * 3600}))  # leave time to train
     sh(PY, HERE / "teach.py", "--manifest", args.work / "manifest.jsonl", "--out", args.work / "labels",
@@ -81,6 +91,7 @@ def train(args):
         print(json.dumps({"train": "no time left in this session; run again in a new session to resume"}))
         return False
     sh(PY, HERE / "train.py", "--manifest", args.work / "manifest.jsonl", "--labels", args.work / "labels", "--out", args.out / "train",
+       "--phones", args.work / "phones.jsonl",
        "--hours", f"{hours:.3f}", "--batch-seconds", args.batch_seconds, *(["--max-steps", args.max_steps] if args.max_steps else []),
        *(["--workers", args.workers] if args.workers is not None else []))
     return True
@@ -92,7 +103,7 @@ def export(args):
        "--manifest", args.work / "manifest.jsonl", "--labels", args.work / "labels")
 
 
-STAGES = {"setup": setup, "synth": synth, "prepare": prepare, "teach": teach, "train": train, "export": export}
+STAGES = {"setup": setup, "synth": synth, "prepare": prepare, "phones": phones, "teach": teach, "train": train, "export": export}
 
 
 def main():

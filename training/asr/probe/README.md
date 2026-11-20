@@ -58,6 +58,29 @@ pointed to other words (frío → fino, perro → pero, dulce → doce). The thi
 in one part only. The voice alone moves it 8 points (Piper claude-high 46 of 72, ald-medium 40 of 72). So the 8–10 MB
 result will be decided by how well the small sound model hears, and by real speakers, not by the matcher or the text.
 
+## An outside review's ideas, measured (20 Nov 2026)
+
+Same discipline: chosen on the first 72 clips, reported on the other 72 (held-out at 256 paths: 42 of 72 understood).
+
+- **The three example errors are the teacher's own hearing**, not the matcher's: its sounds for "perro" were `p e ɾ o`
+  (one tap), for "frío" `f i l o`, for "dulce" `d u s e`. A student that only imitates it inherits them, so the tiny ears
+  now also learn from the transcripts of the Spanish speech (`../../ears/`, the CTC on what was said).
+- **Pronunciation variants learned from the teacher's confusions** (`confusions.py`, `probe.py --rules`): on the tuning half
+  the teacher drops ɾ 31% of the time and hears it as r 25%, d as ð, j as i, b as v. Adding the top rules as costed variants:
+  best on tuning +1 clip (noise), and on held-out **37 of 72 instead of 42: worse**. The variants make words sound alike and
+  fill the search with near-duplicates. Not used; worth retrying with the tiny ears' own confusions.
+- **Boosting the reader's words** (487): no gain (above). **Top 5 guesses**: 1.4 different requests on average (above).
+- **Asking again when unsure**: whole-request confidence separates right from wrong only weakly on held-out clips (area
+  under the curve 0.64–0.67; 0.81–0.86 on the tuning half). Asking again for the least sure ~20% raises the share answered
+  right from 58% to 56–63%. Not worth a question yet; retry with per-part confidence and the tiny ears.
+- **The ends of questions**: the sites already keep 250 ms before and 300 ms after the speech. MapSMA's 8 s limit would cut
+  about 1–2% of these requests; CredBrief's 5 s about 40% (the owner's choice, for short news questions).
+- **The measure that matters** is now in `tools/asr-eval.mjs`: **the thing asked for heard right** (the dish, drink or kind
+  of place). Held-out: **probe 33 of 52 (63.5%)**, Whisper tiny 12 of 52 (23.1%), with hint + guard 12 of 52.
+- Not taken up: collecting real failed searches' audio (the sites keep audio on the phone by design; real speech comes only
+  from people who consent on the recording page); a tiny verification model per word pair and two passes with different
+  audio cleaning (no evidence yet that they pay; each costs time on the phone).
+
 **Next, if the ears come off hold:** (1) train a tiny sound recognizer to imitate this one (its outputs on Common Voice
 Spanish and English and our synthetic clips are free labels) and rerun this probe with it; (2) record 5–10 real Mexican
 speakers and rerun both. Ship only if the tiny one still beats Whisper tiny on real speakers.

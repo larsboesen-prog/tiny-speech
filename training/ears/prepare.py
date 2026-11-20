@@ -4,7 +4,7 @@ No transcripts are needed: the teacher (teach.py) labels every clip with the sou
 the same. So any clean speech counts; what matters is many speakers, Mexican accents and phone-like conditions.
 
 python prepare.py --out WORK [--sets ciempiess_light,latam_co,... | all] [--hours SET=H ...] [--local manifest.jsonl ...]
-  → WORK/audio/<set>/<id>.flac (16 kHz mono) and WORK/manifest.jsonl ({id, set, lang, seconds, audio, split})
+  → WORK/audio/<set>/<id>.flac (16 kHz mono) and WORK/manifest.jsonl ({id, set, lang, seconds, audio, split, text})
 Resumes: a shard already converted is skipped. --local adds clips already on disk (e.g. the Piper requests: synth_piper.py).
 """
 import argparse
@@ -89,8 +89,9 @@ def convert(name, out, hours, limit_shards=None):
                     base = row.get("audio_id") or row.get("id") or Path(audio.get("path") or f"{g}_{i}").stem
                     uid = f"{name}_{hashlib.sha256((f + str(base) + str(g) + str(i)).encode()).hexdigest()[:12]}"
                     sf.write(folder / f"{uid}.flac", wave, 16000, subtype="PCM_16")
+                    text = row.get("normalized_text") or row.get("text") or ""
                     part.append({"id": uid, "set": name, "lang": lang, "seconds": round(seconds, 2), "audio": str((folder / f"{uid}.flac").resolve()),
-                                 "speaker": str(row.get("speaker_id", "")), "split": split_of(uid)})
+                                 "speaker": str(row.get("speaker_id", "")), "split": split_of(uid), "text": text})
             done.write_text("".join(json.dumps(r) + "\n" for r in part), encoding="utf-8")
             blob = Path(path).resolve()  # the parquet is not needed once converted (disk is short on free machines):
             Path(path).unlink(missing_ok=True)  # the cache's link and the file it points to
@@ -110,7 +111,7 @@ def local(path):
         if r.get("split", "train") != "train":
             continue  # never learn from a dev or test clip: the probe measures on the requests' dev split, the speakers' test on test
         rows.append({"id": r["id"], "set": r.get("engine") or Path(path).parent.name, "lang": r.get("lang", "es"), "seconds": r.get("seconds"),
-                     "audio": r["audio"], "speaker": r.get("voice") or r.get("speaker", ""), "split": split_of(r["id"])})
+                     "audio": r["audio"], "speaker": r.get("voice") or r.get("speaker", ""), "split": split_of(r["id"]), "text": r.get("text", "")})
     return rows
 
 

@@ -49,7 +49,9 @@ def emissions(rows, cache, onnx=None):
 
 
 class Lexicon:
-    def __init__(self, data, vocab):
+    def __init__(self, data, vocab, rules=None, cost=2.0):
+        """rules: sound confusions [[said, heard or null], ...] (confusions.py); each adds, per word, the pronunciations with
+        one such change, at `cost` (log points) each time the matcher uses one"""
         self.children, self.ends, self.missing = [{}], [[]], defaultdict(int)
         for word, prons in data["words"].items():
             seen = set()
@@ -65,6 +67,15 @@ class Lexicon:
                     if ids and tuple(ids) not in seen:
                         seen.add(tuple(ids))
                         self.add(ids, word)
+            for p in prons if rules else []:
+                for said, heard in rules:
+                    for i, ph in enumerate(p["phones"]):
+                        if ph != said:
+                            continue
+                        changed = p["phones"][:i] + ([heard] if heard else []) + p["phones"][i + 1:]
+                        if changed and all(x in vocab for x in changed) and tuple(vocab[x] for x in changed) not in seen:
+                            seen.add(tuple(vocab[x] for x in changed))
+                            self.add([vocab[x] for x in changed], word, cost)
         # which word follows which: interpolated bigram over the training sentences
         self.uni = data["unigrams"]
         self.total = sum(self.uni.values())
@@ -74,7 +85,7 @@ class Lexicon:
             self.big[a][b] = n
         self.size = len(self.uni) + 1
 
-    def add(self, ids, word):
+    def add(self, ids, word, cost=0.0):
         node = 0
         for t in ids:
             if t not in self.children[node]:
@@ -82,8 +93,11 @@ class Lexicon:
                 self.children.append({})
                 self.ends.append([])
             node = self.children[node][t]
-        if word not in self.ends[node]:
-            self.ends[node].append(word)
+        same = [k for k, (w, c) in enumerate(self.ends[node]) if w == word]
+        if not same:
+            self.ends[node].append((word, cost))
+        elif cost < self.ends[node][same[0]][1]:
+            self.ends[node][same[0]] = (word, cost)
 
     def logp(self, prev, word, alpha=2.0):
         uni = (self.uni.get(word, 0) + 1) / (self.total + self.size)
@@ -127,11 +141,11 @@ def decode(lp, lex, blank, lm=1.0, bonus=0.0, beam=48, prune=8.0):
                 n[1] = lse(n[1], (pb if c == last else total) + row[c])
         # a word may end here: close it (the next sound starts the next word)
         for (words, node, last), (pb, pnb, lms) in list(nxt.items()):
-            for w in lex.ends[node]:
+            for w, cost in lex.ends[node]:
                 prev = words[-1] if words else "<s>"
                 k = (words + (w,), 0, last)
                 c = nxt[k]
-                c[2] = lms + lm * lex.logp(prev, w) + bonus
+                c[2] = lms + lm * lex.logp(prev, w) + bonus - cost
                 c[0], c[1] = lse(c[0], pb), lse(c[1], pnb)
         beams = dict(sorted(nxt.items(), key=lambda kv: -(lse(kv[1][0], kv[1][1]) + kv[1][2]))[:beam])
     best, words = -math.inf, ()
@@ -161,13 +175,16 @@ def main():
     parser.add_argument("--beam", type=int, default=256, help="paths kept per frame (48 at first; 256 understood more, 512 no more)")
     parser.add_argument("--prune", type=float, default=10.0, help="sounds tried per frame: within this many log points of the best")
     parser.add_argument("--first", type=int, help="Only the first N clips (to choose settings on, apart from the rest)")
+    parser.add_argument("--rules", type=Path, help="sound confusions to allow (confusions.py), each use costing --rule-cost")
+    parser.add_argument("--rule-cost", type=float, default=2.0)
     parser.add_argument("--onnx", type=Path, help="hear with this model instead (the tiny ears' ears-int8.onnx); use its own --cache")
     args = parser.parse_args()
     from huggingface_hub import hf_hub_download
     vocab = json.loads(Path(hf_hub_download(MODEL, "vocab.json", revision=REVISION)).read_text(encoding="utf-8"))
     rows = [json.loads(l) for l in args.manifest.read_text(encoding="utf-8").splitlines() if l.strip()]
     rows = [r for r in rows if r.get("split") == args.split][: args.first]
-    lex = Lexicon(json.loads(args.lexicon.read_text(encoding="utf-8")), vocab)
+    rules = json.loads(args.rules.read_text(encoding="utf-8"))["rules"] if args.rules else None
+    lex = Lexicon(json.loads(args.lexicon.read_text(encoding="utf-8")), vocab, rules, args.rule_cost)
     em = emissions(rows, args.cache, args.onnx)
     print(json.dumps({"clips": len(rows), "trie_nodes": len(lex.children), "sounds_not_in_recognizer": dict(lex.missing)}), flush=True)
     for lm in args.lm:
