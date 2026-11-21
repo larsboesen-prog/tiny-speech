@@ -109,3 +109,35 @@ test("the microphone refused (as an app's built-in browser or a remembered 'Don'
     assert.deepEqual(errors, []);
   } finally { await strict.close(); }
 });
+
+test("Stop and Play: Stop silences the answer at once and the voice makes no more; Play repeats it", { skip, timeout: 240000 }, async () => {
+  const { page, errors } = await open();
+  const pb = () => page.evaluate(() => window.tinySpeechDemo.playback());
+  const label = () => page.evaluate(() => document.getElementById("play").innerText.trim());
+  assert.equal(await page.isVisible("#play"), false, "no button before an answer");
+  await page.click(".chip >> text=Live music tonight");
+  await page.waitForFunction(() => window.tinySpeechDemo.playback().playing, null, { timeout: 30000 });
+  assert.equal(await label(), "Stop");
+  await page.click("#play");
+  let p = await pb();
+  assert.equal(p.playing, false, "the player stopped");
+  assert.equal(p.making, 0, "the voice was told to stop");
+  assert.equal(await label(), "Play again");
+  await page.waitForTimeout(1500);
+  assert.equal((await pb()).playing, false, "nothing starts again after Stop");
+  await page.click("#play");  // stopped halfway: read again
+  await page.waitForFunction(() => window.tinySpeechDemo.playback().playing, null, { timeout: 30000 });
+  assert.equal(await label(), "Stop");
+  await page.waitForFunction(() => document.getElementById("play").innerText.trim() === "Play again", null, { timeout: 90000 });
+  p = await pb();
+  assert.ok(p.complete && p.kept >= 2, `the whole answer kept (${p.kept} pieces)`);
+  await page.click("#play");  // complete: played from what was kept, at once
+  assert.equal((await pb()).playing, true, "plays at once, without the voice");
+  assert.equal((await pb()).making, 0);
+  await page.keyboard.press("Escape");
+  assert.equal((await pb()).playing, false, "Escape stops it");
+  await page.click(".chip >> text=¿Dónde hay tacos al pastor?");
+  await page.waitForFunction(() => window.tinySpeechDemo.playback().playing, null, { timeout: 30000 });
+  assert.equal(await label(), "Parar", "Spanish labels for a Spanish answer");
+  assert.deepEqual(errors, []);
+});

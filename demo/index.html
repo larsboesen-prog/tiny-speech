@@ -46,6 +46,11 @@ button { font: inherit; color: var(--ink); background: var(--bg); border: 1px so
 #answer p + p { margin-top: 6px; }
 #answer ul { margin: 6px 0 0; padding-left: 20px; }
 .meta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.playrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.play { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; padding: 7px 14px 7px 10px; border-radius: 99px; }
+.play svg { width: 18px; height: 18px; }
+.play.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.play[hidden] { display: none; }
 .parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
 .part { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
 .part b { display: block; font: 600 17px/1.2 var(--display); }
@@ -80,7 +85,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
     <p class="meta" id="heardMeta"></p>
     <h2>Answer</h2>
     <div id="answer">—</div>
-    <p class="meta" id="answerMeta"></p>
+    <div class="playrow"><button type="button" class="play" id="play" hidden></button><p class="meta" id="answerMeta"></p></div>
   </section>
 
   <section class="card">

@@ -90,10 +90,13 @@ function voice() {
     const job = speaking.get(data.id);
     if (data.type === "sentence" && job) {
       if (job.first == null) { job.first = Math.round(performance.now() - job.asked); job.onFirst?.(job.first); }
+      job.say.chunks.push({ samples: data.audio, rate: data.sampleRate });
       enqueue(data.audio, data.sampleRate);
     } else if (data.type === "done" || data.type === "error") {
       speaking.delete(data.id);
+      if (job && data.type === "done") job.say.complete = true;
       job?.resolve(data);
+      playButton();
     }
   };
   voiceWorker.onerror = (e) => part("voiceState", `The voice worker failed: ${esc(e.message || "")}`);
@@ -101,13 +104,41 @@ function voice() {
   return voiceWorker;
 }
 function speak(sentences, lang, onFirst) {
-  stopSound();
-  voice().postMessage({ type: "stop" });
-  const id = ++speakId;
+  stopSpeaking();
+  const id = ++speakId, say = (lastSay = { sentences, lang, chunks: [], complete: false });
   return new Promise((resolve) => {
-    speaking.set(id, { asked: performance.now(), first: null, onFirst, resolve });
+    speaking.set(id, { asked: performance.now(), first: null, onFirst, resolve, say });
     voice().postMessage({ type: "speak", id, sentences, voice: mx1, speed: 1.0, lang });
+    playButton();
   });
+}
+// Stop and Play: the last answer's sound is kept, so Play repeats it at once (or reads it again if it was stopped halfway);
+// Stop ends it: the voice stops making sentences and the player stops. Asking again, or Escape, stops it too.
+let lastSay = null;  // {sentences, lang, chunks: [{samples, rate}], complete}
+const busySpeaking = () => playing || speaking.size > 0;
+const ICON = { stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>',
+  play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>' };
+function playButton() {
+  const b = $("play"), on = busySpeaking();
+  b.hidden = !lastSay;
+  b.classList.toggle("on", on);
+  const es = lastSay?.lang === "es";
+  b.innerHTML = on ? `${ICON.stop}<span>${es ? "Parar" : "Stop"}</span>` : `${ICON.play}<span>${es ? "Escuchar otra vez" : "Play again"}</span>`;
+  b.setAttribute("aria-label", on ? "Stop the spoken answer" : "Play the answer again");
+}
+function stopSpeaking() {
+  if (voiceWorker) voiceWorker.postMessage({ type: "stop" });
+  for (const job of speaking.values()) job.resolve({ type: "stopped" });
+  speaking.clear();
+  stopSound();
+  playButton();
+}
+function replay() {
+  if (!lastSay) return;
+  if (!lastSay.complete || !lastSay.chunks.length) { speak(lastSay.sentences, lastSay.lang); return; }
+  stopSpeaking();
+  for (const c of lastSay.chunks) enqueue(c.samples, c.rate);
+  playButton();
 }
 function wavBlob(samples, rate) {
   const n = samples.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
@@ -130,8 +161,8 @@ document.addEventListener("keydown", unlockAudio, { capture: true });
 function enqueue(samples, rate) { queue.push(URL.createObjectURL(wavBlob(samples, rate))); if (!playing) playNext(); }
 function playNext() {
   const url = queue.shift();
-  if (!url) { playing = false; return; }
-  playing = true;
+  if (!url) { playing = false; playButton(); return; }
+  if (!playing) { playing = true; playButton(); }
   const el = player();
   el.onended = el.onerror = () => { URL.revokeObjectURL(url); playNext(); };
   el.src = url;
@@ -142,7 +173,7 @@ function stopSound() { queue.forEach((u) => URL.revokeObjectURL(u)); queue = [];
 // ---------- the microphone: raw sound, no echo cancellation, ended by a pause (as the sites record) ----------
 let micStream = null, rec = null, busy = false;
 async function startRec() {
-  stopSound();
+  stopSpeaking();
   const AC = window.AudioContext || window.webkitAudioContext;
   const ctx = new AC();  // made in the tap: iPhone and iPad start sound only inside a tap
   if (ctx.state === "suspended") ctx.resume().catch(() => {});
@@ -282,6 +313,8 @@ for (const text of EXAMPLES) {
 }
 $("typed").addEventListener("submit", (e) => { e.preventDefault(); const t = $("q").value.trim(); if (t) ask(t); });
 $("mic").onclick = () => (rec ? stopRec() : startRec());
+$("play").onclick = () => (busySpeaking() ? stopSpeaking() : replay());
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && busySpeaking()) stopSpeaking(); });
 for (const b of document.querySelectorAll(".lang button")) b.onclick = () => {
   override = b.dataset.lang || null;
   for (const x of document.querySelectorAll(".lang button")) x.setAttribute("aria-pressed", String(x === b));
@@ -290,4 +323,4 @@ asr().postMessage({ type: "load", model: "tiny-ears" });
 voice();
 
 // For automated checks (and the console).
-window.tinySpeechDemo = { ask, transcribe, speak, ready, packLoading };
+window.tinySpeechDemo = { ask, transcribe, speak, ready, packLoading, playback: () => ({ playing, making: speaking.size, kept: lastSay?.chunks.length || 0, complete: !!lastSay?.complete }) };
