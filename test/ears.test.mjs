@@ -1,5 +1,5 @@
 // The tiny ears (plan step B16): the matcher (engines/ears-match.js) on made-up sounds, San Miguel's word list, the site configs,
-// and, when the model file is here (engines/ears/ears-int8-*.onnx, not in git: see training/ears/README.md), the real thing in
+// and, when the model file is here (engines/ears/ears-int8-*.onnx, CC BY-SA 4.0: models/ears.md), the real thing in
 // Chromium: asr-worker.js with model "tiny-ears" hears four recorded questions exactly as training/asr/probe/probe.py did.
 // The matcher was also checked against probe.py on all 432 of the probe's cached sound files (144 clips, teacher and student, and
 // unheard voices): the same words every time (20 Nov 2026).

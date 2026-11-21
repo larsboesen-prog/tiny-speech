@@ -1,0 +1,29 @@
+tiny-speech
+Copyright 2026 the tiny-speech contributors (github.com/larsboesen-prog/tiny-speech)
+
+The code is licensed under the Apache License, Version 2.0 (LICENSE).
+
+This repository also contains:
+
+* engines/ears/ears-int8-2026-11-20.onnx ("tiny ears"), licensed under Creative Commons Attribution-ShareAlike 4.0
+  (https://creativecommons.org/licenses/by-sa/4.0/). It was trained on:
+  - CIEMPIESS Light, Balance and Fem, Carlos Daniel Hernández Mena et al., Universidad Nacional Autónoma de México (CC BY-SA 4.0)
+  - Crowdsourced high-quality Latin American Spanish speech, Google (OpenSLR 61, 71, 72; CC BY-SA 4.0)
+  - LibriSpeech, Vassil Panayotov, Guoguo Chen, Daniel Povey, Sanjeev Khudanpur (CC BY 4.0)
+  - speech synthesized with Piper voices es_MX claude and ald (rhasspy/piper)
+  and distilled from facebook/wav2vec2-lv-60-espeak-cv-ft, Meta AI (Apache License 2.0). See models/ears.md.
+
+* vendor/tiny-voca/js/ and the tiny-voca model format: tiny-voca, Copyright Muhammed Nazeem, Apache License 2.0
+  (https://github.com/n4ze3m/tiny-voca; vendor/tiny-voca/LICENSE).
+
+* vendor/tiny-voca/tiny-voca-mx1-2026-11-21.gguf (the MX1 voice), Apache License 2.0: trained from tiny-voca (Muhammed
+  Nazeem) with tiny-voca's dataset batch 2 (Muhammed Nazeem, CC BY 4.0) and audio generated with Qwen3-TTS (Alibaba Qwen
+  team, Apache License 2.0). See models/voice.md.
+
+* packs/: San Miguel de Allende listings from MapSMA (mapsma.com). The notes on Susan York's picks credit and link her posts
+  on cupcakesandcrablegs.com and remain hers.
+
+* test/fixtures/ears/*.wav: speech synthesized with Piper voices es_MX claude (Apache-2.0) and ald (CC0).
+
+Loaded at run time from their hosts, not included: onnxruntime-web (Microsoft, MIT), transformers.js (Hugging Face,
+Apache-2.0) and Whisper models (OpenAI, MIT) when Whisper is chosen.

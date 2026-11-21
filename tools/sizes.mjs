@@ -45,7 +45,7 @@ export function parts({ enginesDir = null } = {}) {
     const ears = dir.replace(/[^/]+\/$/, "") + "ears-lexicon.json";  // the tiny ears' word list, beside the city's versions
     return { id: c.id, places: m.counts.places, list, total: sum(list), ears: existsSync(ROOT + ears) ? [{ path: ears, ...measure(readFileSync(ROOT + ears)) }] : [] };
   });
-  // the tiny ears' model is the site's own file (engines/ears/, not in git: training/ears/README.md); measured when it is here
+  // the tiny ears' model is the site's own file (engines/ears/, CC BY-SA 4.0: models/ears.md); measured when it is here
   const earsModel = existsSync(ROOT + "engines/ears") ? readdirSync(ROOT + "engines/ears").filter((f) => /\.onnx$/.test(f)).map((f) => ({ path: "engines/ears/" + f, ...measure(readFileSync(ROOT + "engines/ears/" + f)) })) : [];
   return {
     engines,

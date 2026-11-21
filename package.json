@@ -2,9 +2,9 @@
   "name": "tiny-speech",
   "version": "0.3.0",
   "private": true,
-  "description": "Bilingual (English / Mexican Spanish) on-device voice core shared by MapSMA and CredBrief. Voice by tiny-voca (github.com/n4ze3m/tiny-voca).",
+  "description": "Private, in-browser voice questions and answers in English and Mexican Spanish: 8.9 MB speech-to-text (tiny ears), a rule-based reader and an 8 MB voice (MX1, built on tiny-voca by Muhammed Nazeem).",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "scripts": {
     "test": "node --test \"test/*.test.mjs\"",
     "test:live": "node test/live/real-models.mjs",
@@ -14,5 +14,9 @@
   },
   "devDependencies": {
     "playwright": "^1.50.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/larsboesen-prog/tiny-speech"
   }
 }

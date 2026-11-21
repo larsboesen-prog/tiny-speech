@@ -82,8 +82,9 @@ search over the word list, as `probe.py` does) and an AsrEngine that runs `ears-
 (plan step B16, `../../browser/README.md`: the worker's model `tiny-ears`, word for word what the probe heard; Whisper tiny stays a choice).
 
 Where the model is: the Kaggle notebook's output (version 2: `onnx/ears-int8.onnx`, `train/best.pt`, `train/last.pt`,
-`train/log.jsonl`; `python kaggle/push.py output larsbo99/tiny-ears-train DIR`). Not in this repository: it is trained partly on
-CC BY-SA speech (CIEMPIESS, Google's Latin American sets), so how it may be shared waits for the owner's licence decision.
+`train/log.jsonl`; `python kaggle/push.py output larsbo99/tiny-ears-train DIR`). The 8-bit file is in this repository as
+`engines/ears/ears-int8-2026-11-20.onnx` under **CC BY-SA 4.0** (owner, 21 Nov 2026), since it learned partly from CC BY-SA speech
+(CIEMPIESS, Google's Latin American sets): `../../models/ears.md`.
 
 ## Running it
 

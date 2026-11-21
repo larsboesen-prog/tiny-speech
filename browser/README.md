@@ -66,8 +66,8 @@ question here (Whisper tiny: about 2 s). Its text comes back in lower case, word
 
 1. **The model.** `ears-int8.onnx` from the training run's output (`python training/ears/kaggle/push.py output larsbo99/tiny-ears-train DIR`),
    copied to the site as `/tiny-speech/engines/ears/ears-int8-2026-11-20.onnx` (`apps/mapsma.json` `asr.ears.model`; a new model is a new
-   file name, so phones never keep an old one). Not in this repository: it learned partly from CC BY-SA speech (training/ears/README.md),
-   so the owner decides how it may be shared before it goes on the site. `engines/ears/vocab.json` (its 392 sounds) is in git.
+   file name, so phones never keep an old one). In git since 21 Nov 2026 under CC BY-SA 4.0 (it learned partly from CC BY-SA speech:
+   `models/ears.md`), with `engines/ears/vocab.json` (its 392 sounds).
 2. **The word list**: `packs/dist/mx-sma/ears-lexicon.json` (382 KB, 75 KB brotli), copied with the packs to `/tiny-speech/packs/`.
    Rebuilt with `node tools/ears-lexicon.mjs mx-sma` when the places change (a new city: the same command, no training).
 3. **The page.** The worker's address from `workerUrl(config, "asr")` (now with `&ears=…&lexicon=…`), and the model of each question from
