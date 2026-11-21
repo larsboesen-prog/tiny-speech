@@ -134,3 +134,23 @@ sound, how often the student and the teacher hear it as said: where the student 
 **Licence note for the owner:** CIEMPIESS and the Google Latin American sets are CC BY-SA 4.0. Whether a model trained on
 them must be shared alike is not settled; the safe course is to credit them on the sites (as tiny-voca is credited) and to
 publish the ears file under CC BY-SA 4.0 too, or to train without them (`--sets librispeech` plus other sets).
+
+## English, measured (21 Nov 2026): the weak side
+
+The owner, on the demo: "Speak out is good in English but understanding English is poor." Measured on the 67 English held-out
+requests read by three English voices it never heard (`../asr/probe/synth_en_test.py`: Piper en_US lessac, en_US ryan, en_GB alan;
+201 clips):
+
+| 201 English clips | Understood as said | Words wrong | Places found | Thing asked for heard right |
+|---|---|---|---|---|
+| Tiny ears | 67.2% | 21.9% | 59 of 93 | 107 of 162 |
+| Whisper tiny.en | 61.2% | 20.5% | 46 of 93 | 93 of 162 |
+| Whisper tiny.en with the sites' names hint | 60.7% | 17.0% | 61 of 93 | 97 of 162 |
+
+(Spanish, same measure, 144 held-out clips: 87.5% understood, 9.8% words wrong.) Mistakes: Spanish names and dishes said the English
+way ("enchiladas", "Café Umarán"), and short English words heard as Spanish ones ("me" → "mi", "I'm" → "y"). The word list is not
+the cause: an English-only word-pair model, English readings of Spanish words, an English mode, and both lists tried with the best
+kept each moved English by at most a point (63.7–68.2%), and the English-only lists alone broke Spanish (27.8%). The sound model is:
+it heard 28.6 h of English audiobooks and **no English restaurant request** (the Piper requests in training were the Spanish
+sentences only). Next: train on top of it with English requests read by many voices (Piper's LibriTTS-R, 904 speakers, and VCTK, 109
+accents, both CC BY 4.0) and more English speech, measured on this same set.
