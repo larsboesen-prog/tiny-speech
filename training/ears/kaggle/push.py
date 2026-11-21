@@ -52,8 +52,9 @@ def push(args):
         raise SystemExit(f"{args.kit}: no mode {args.mode} ({', '.join(kit['timeout'])})")
     gpu = args.mode in kit["gpu"]
     r = ApiSaveKernelRequest()
-    r.slug = f"{args.user}/{kit['prefix']}-{args.mode}"
-    r.new_title = f"{kit['prefix']}-{args.mode}"
+    name = args.name or f"{kit['prefix']}-{args.mode}"
+    r.slug = f"{args.user}/{name}"
+    r.new_title = name
     r.text = notebook(args.mode, args.kit, [s.split("=", 1) for s in args.set])
     r.language = "python"
     r.kernel_type = "notebook"
@@ -63,7 +64,8 @@ def push(args):
     r.enable_internet = True
     r.dataset_data_sources = []
     r.competition_data_sources = []
-    r.kernel_data_sources = [f"{args.user}/{kit['sources'][args.mode]}"] if args.mode in kit["sources"] else []
+    source = args.source or kit["sources"].get(args.mode)
+    r.kernel_data_sources = [f"{args.user}/{source}"] if source else []
     r.model_data_sources = []
     r.category_ids = []
     if gpu:
@@ -139,6 +141,8 @@ def main():
     a.add_argument("--user", required=True)
     a.add_argument("--kit", choices=list(KITS), default="ears")
     a.add_argument("--set", action="append", default=[], metavar="NAME=value", help='a NAME = "…" line of the notebook (voice: PICK=F1)')
+    a.add_argument("--name", help="the notebook's name, if not <kit>-<mode> (a second notebook can take the first one's output as input)")
+    a.add_argument("--source", help="another notebook of yours whose output this one reads (instead of the mode's usual one)")
     a.add_argument("--timeout-hours", type=float)
     a = sub.add_parser("status")
     a.add_argument("slug")

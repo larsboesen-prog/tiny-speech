@@ -21,6 +21,7 @@ REFS="${REFS:-}"
 GPUS="${GPUS:-1}"
 export TINY_VOCA_FRONTEND=table TINY_VOCA_PHONEME_TABLE="$TS/training/data/phonemes.jsonl"
 export PYTHONPATH="$WORK/tiny-voca/src${PYTHONPATH:+:$PYTHONPATH}"  # upstream's code, where it is not installed (Kaggle)
+export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"  # less of the GPU held idle by PyTorch's cache
 # Whisper's engine (CTranslate2, CUDA 12) looks for libcublas.so.12 and cuDNN 9 on the library path; on Kaggle (20 Nov 2026) they
 # are not there: the pip packages nvidia-cublas-cu12 / nvidia-cudnn-cu12 bring them, and this puts their folders on the path.
 nvlibs() { "$PY" - <<'PYLIB'

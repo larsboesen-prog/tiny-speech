@@ -85,6 +85,21 @@ def main():
     asr = WhisperModel(ASR, device="cuda", compute_type="float16")
     started = time.time()
 
+    def hear(w16):
+        """Whisper's words and language. Its engine takes GPU memory outside PyTorch, beside the 1.7B voice model on a 16 GB T4: on
+        Kaggle (20 Nov 2026) one of two halves ran out of memory after hours. So PyTorch's cache is emptied first, and a shortage is
+        retried; if it persists, the clip goes to review instead of stopping the run."""
+        for attempt in range(3):
+            try:
+                torch.cuda.empty_cache()
+                segments, info = asr.transcribe(w16, beam_size=3, condition_on_previous_text=False)
+                return " ".join(s.text.strip() for s in segments), info.language
+            except RuntimeError as error:
+                if "out of memory" not in str(error).lower():
+                    raise
+                time.sleep(2 + 3 * attempt)
+        return None, ""
+
     def judge(batch, waves, rate, attempt, seed):
         records = []
         for row, wave in zip(batch, waves):
@@ -103,13 +118,15 @@ def main():
                 if rate != 16000:
                     import torchaudio.functional as F
                     w16 = F.resample(w16, rate, 16000)
-                segments, info = asr.transcribe(w16.numpy(), beam_size=3, condition_on_previous_text=False)
-                transcript, heard = " ".join(s.text.strip() for s in segments), info.language
-                error = wer(normal(row["text"], row["lang"]), normal(transcript, row["lang"]) or "<empty>")
-                if heard != row["lang"]:
-                    reasons.append(f"language_{heard}")
-                if error > 0.15:
-                    reasons.append("asr_mismatch")
+                transcript, heard = hear(w16.numpy())
+                if transcript is None:
+                    transcript, reasons = "", reasons + ["asr_out_of_memory"]
+                else:
+                    error = wer(normal(row["text"], row["lang"]), normal(transcript, row["lang"]) or "<empty>")
+                    if heard != row["lang"]:
+                        reasons.append(f"language_{heard}")
+                    if error > 0.15:
+                        reasons.append("asr_mismatch")
             if np.isfinite(w).all() and peak > 0:
                 if rate != 24000:
                     import torchaudio.functional as F
