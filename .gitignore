@@ -1,4 +1,5 @@
 vendor/tiny-voca/*.gguf
+!vendor/tiny-voca/tiny-voca-mx1-*.gguf
 node_modules/
 training/data/.cache/
 browser/manifest.json
