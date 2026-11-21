@@ -18,10 +18,10 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-TIMEOUT = {"smoke": 1.5, "data": 11.5, "train": 11.6, "all": 11.6}  # hours: Kaggle stops the session then (protects the allowance)
+TIMEOUT = {"smoke": 1.5, "data": 11.5, "train": 11.6, "all": 11.6, "english": 6.6}  # hours: Kaggle stops the session then (protects the allowance)
 KITS = {
-    "ears": {"notebook": HERE.parent / "ears.ipynb", "prefix": "tiny-ears", "timeout": TIMEOUT, "gpu": {"train", "all"},
-             "sources": {"train": "tiny-ears-data"}},
+    "ears": {"notebook": HERE.parent / "ears.ipynb", "prefix": "tiny-ears", "timeout": TIMEOUT, "gpu": {"train", "all", "english"},
+             "sources": {"train": "tiny-ears-data", "english": "tiny-ears-data"}},
     "voice": {"notebook": HERE.parent.parent / "gpu" / "kaggle" / "voice.ipynb", "prefix": "tiny-voice",
               "timeout": {"design": 1.5, "teach": 11.6, "learn": 11.6}, "gpu": {"design", "teach", "learn"},
               "sources": {"learn": "tiny-voice-teach"}},  # teach reads the picked reference from the repository (training/voice/)

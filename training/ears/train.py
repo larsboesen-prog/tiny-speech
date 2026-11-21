@@ -14,6 +14,7 @@ said where there is a transcript, else against the teacher); resumes from
 OUT/last.pt. Log: OUT/log.jsonl.
 """
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -274,13 +275,14 @@ def losses(out, idx, logp, blank_weight, ctc_weight):
 
 
 @torch.no_grad()
-def agreement(model, rows, labels, device, limit=300, said=None, vocab=None):
+def agreement(model, rows, labels, device, limit=400, said=None, vocab=None):
     """sound error rate against the teacher's best sequence, on dev clips the student never learned from (lower is better);
     with transcripts, also against what was said, for the student and for the teacher (the bar to beat)"""
     model.eval()
     errors = total = 0
     vs_said = [0, 0, 0]  # student errors, teacher errors, sounds said
     crit = {}  # sound id → [heard right by the student, by the teacher, times said]
+    by = {}  # language → [student errors, teacher errors, sounds said]
     ids = {v: k for k, v in (vocab or {}).items()}
     for r in rows[:limit]:
         wave = sf.read(r["audio"], dtype="float32")[0]
@@ -297,6 +299,10 @@ def agreement(model, rows, labels, device, limit=300, said=None, vocab=None):
             vs_said[0] += edit(truth, hyp)
             vs_said[1] += edit(truth, ref)
             vs_said[2] += len(truth)
+            b = by.setdefault(r.get("read_as") or r.get("lang", "?"), [0, 0, 0])
+            b[0] += edit(truth, hyp)
+            b[1] += edit(truth, ref)
+            b[2] += len(truth)
             for (ph, ok_s), (_, ok_t) in zip(kept(truth, hyp), kept(truth, ref)):
                 if ids.get(ph) in CRITICAL:
                     c = crit.setdefault(ids[ph], [0, 0, 0])
@@ -305,7 +311,8 @@ def agreement(model, rows, labels, device, limit=300, said=None, vocab=None):
                     c[2] += 1
     model.train()
     extra = {"dev_sound_error_vs_said": round(vs_said[0] / vs_said[2], 4), "teacher_sound_error_vs_said": round(vs_said[1] / vs_said[2], 4),
-             "critical_heard_right_student_teacher": {k: [round(a / n, 3), round(b / n, 3), n] for k, (a, b, n) in crit.items()}} if vs_said[2] else {}
+             "critical_heard_right_student_teacher": {k: [round(a / n, 3), round(b / n, 3), n] for k, (a, b, n) in crit.items()},
+             "said_error_by_language_student_teacher": {k: [round(a / n, 4), round(t / n, 4), n] for k, (a, t, n) in by.items()}} if vs_said[2] else {}
     return errors / max(1, total), extra
 
 
@@ -329,6 +336,7 @@ def main():
     parser.add_argument("--check-minutes", type=float, default=30.0)
     parser.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 2))
     parser.add_argument("--no-augment", action="store_true", help="clean audio, no masking (a check that the model can learn at all)")
+    parser.add_argument("--init", type=Path, help="start from this checkpoint's weights (best.pt of an earlier run), unless resuming")
     parser.add_argument("--d", type=int, default=176)
     parser.add_argument("--layers", type=int, default=10)
     args = parser.parse_args()
@@ -346,7 +354,8 @@ def main():
                 x = json.loads(l)
                 said[x["id"]] = x["phones"]
     train = [r for r in rows if r["split"] == "train"]
-    dev = [r for r in rows if r["split"] == "dev"]
+    # the checks read the first 400 dev clips: spread over every set (the manifest lists the sets one after another)
+    dev = sorted((r for r in rows if r["split"] == "dev"), key=lambda r: hashlib.sha256(r["id"].encode()).hexdigest())
     print(json.dumps({"train_clips": len(train), "train_hours": round(sum(r["seconds"] for r in train) / 3600, 1), "dev_clips": len(dev), "device": device,
                       "with_transcript_sounds": sum(r["id"] in said for r in train)}), flush=True)
 
@@ -357,6 +366,10 @@ def main():
     scaler = torch.amp.GradScaler("cuda", enabled=device == "cuda")
     state = {"step": 0, "seconds_trained": 0.0, "epoch": 0, "best": None}
     last = args.out / "last.pt"
+    if args.init and not last.exists():
+        ck = torch.load(args.init, map_location=device)
+        model.load_state_dict({k: v.float() for k, v in ck["model"].items()})
+        print(json.dumps({"init": str(args.init), "from_step": ck.get("step"), "its_dev_sound_error_vs_said": ck.get("dev_sound_error_vs_said")}), flush=True)
     if last.exists():
         ck = torch.load(last, map_location=device)
         model.load_state_dict(ck["model"])

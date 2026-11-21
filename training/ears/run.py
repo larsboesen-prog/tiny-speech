@@ -6,11 +6,14 @@ python run.py --mode MODE --work WORK --out OUT [--hours H] [--data-from DIR] [.
   data   CPU, free on Kaggle: setup, synth, prepare, phones, pack  → OUT/data (the speech, packed in a few files)
   train  GPU: setup, unpack (from --data-from: the data session's output), gpucheck, teach, train, export
   all    one GPU session does everything (Colab, a rented machine)
+  english  GPU (21 Nov 2026: English understood 67% vs Spanish 87.5%): train mode on top of the shipped model (kaggle-init/ in the
+         repository), with English requests read by many English voices (synth_en) and English transcripts as sounds (phones)
 python run.py --stage NAME ...   one stage
 
 Stages (each runs once: a finished stage leaves OUT/done.<stage>, so running again resumes):
   setup     Python packages, the teacher (1.2 GB), Piper's two Mexican voices
   synth     Piper reads the restaurant requests' training sentences (in-domain speech; CPU)
+  synth_en  Piper's many-speaker English voices read the English and mixed training sentences (../asr/synth_piper_en.py)
   prepare   downloads and converts the speech sets, with transcripts (prepare.py)
   phones    the Spanish transcripts as sounds (phones.mjs), so the student also learns what was really said
   pack      WORK's speech into a few tar files in OUT/data (a Kaggle output keeps few large files well)
@@ -35,6 +38,8 @@ HERE = Path(__file__).resolve().parent
 TS = HERE.parents[1]
 PIPER_REVISION = "04ca88f5685ca5253c701af3687e155b113bd512"
 PIPER = ("es/es_MX/claude/high/es_MX-claude-high", "es/es_MX/ald/medium/es_MX-ald-medium")
+PIPER_EN = ("en/en_US/libritts_r/medium/en_US-libritts_r-medium", "en/en_GB/vctk/medium/en_GB-vctk-medium")  # 904 + 109 speakers, CC BY 4.0
+INIT = TS.parent / "kaggle-init/ears-v2-best.fp16.pt"  # the shipped model's checkpoint (ears-int8-2026-11-20.onnx), weights in half precision
 TEACHER = ("facebook/wav2vec2-lv-60-espeak-cv-ft", "ae45363bf3413b374fecd9dc8bc1df0e24c3b7f4")
 PY = sys.executable
 MODES = {
@@ -42,6 +47,7 @@ MODES = {
     "data": ["setup", "synth", "prepare", "phones", "pack"],
     "train": ["setup", "unpack", "gpucheck", "teach", "train", "export"],
     "all": ["setup", "synth", "prepare", "phones", "teach", "train", "export"],
+    "english": ["setup", "unpack", "synth_en", "phones", "gpucheck", "teach", "train", "export"],
 }
 
 
@@ -70,7 +76,7 @@ from huggingface_hub import hf_hub_download, snapshot_download
 import shutil, os
 snapshot_download("{TEACHER[0]}", revision="{TEACHER[1]}")
 os.makedirs("{args.work}/piper", exist_ok=True)
-for v in {PIPER!r}:
+for v in {PIPER + (PIPER_EN if args.mode == "english" else ())!r}:
     for ext in (".onnx", ".onnx.json"):
         p = hf_hub_download("rhasspy/piper-voices", v + ext, revision="{PIPER_REVISION}")
         shutil.copy(p, os.path.join("{args.work}/piper", os.path.basename(v) + ext))
@@ -82,6 +88,26 @@ print("models ready")
 def synth(args):
     sh(PY, TS / "training/asr/synth_piper.py", "--text", TS / "training/asr/text/utterances.jsonl", "--voices", args.work / "piper",
        "--out", args.work / "synth/piper", *(["--limit", 30] if args.mode == "smoke" else []), cwd=TS / "training/asr")
+
+
+def synth_en(args):
+    out = args.work / "synth/piper_en"
+    sh(PY, TS / "training/asr/synth_piper_en.py", "--text", TS / "training/asr/text/utterances.jsonl", "--voices", args.work / "piper",
+       "--out", out, "--readings", 10, "--workers", os.cpu_count() or 4, *(["--limit", 30] if args.mode == "smoke" else []), cwd=TS / "training/asr")
+    # into the speech list, as prepare.py lists clips (audio relative to WORK; 1 clip in 100 kept apart for the checks)
+    from prepare import split_of
+    have = {json.loads(l)["id"] for l in (args.work / "manifest.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()}
+    added = 0
+    with open(args.work / "manifest.jsonl", "a", encoding="utf-8") as f:
+        for l in (out / "manifest.jsonl").read_text(encoding="utf-8").splitlines():
+            r = json.loads(l) if l.strip() else None
+            if not r or r["id"] in have:
+                continue
+            f.write(json.dumps({"id": r["id"], "set": "piper_en", "lang": r["lang"], "read_as": "en", "seconds": r["seconds"],
+                                "audio": Path(r["audio"]).resolve().relative_to(args.work.resolve()).as_posix(), "speaker": r["voice"],
+                                "split": split_of(r["id"]), "text": r["text"]}, ensure_ascii=False) + "\n")
+            added += 1
+    print(json.dumps({"synth_en_added": added}), flush=True)
 
 
 def prepare(args):
@@ -167,6 +193,7 @@ def train(args):
     sh(PY, HERE / "train.py", "--manifest", args.work / "manifest.jsonl", "--labels", args.work / "labels", "--out", args.out / "train",
        "--phones", args.work / "phones.jsonl", "--vocab", vocab_file(), "--hours", f"{hours:.3f}", "--batch-seconds", args.batch_seconds,
        *(["--max-steps", 20, "--batch-seconds", 40, "--check-minutes", 0] if args.mode == "smoke" else []),
+       *(["--init", INIT, "--lr", "8e-4", "--warmup-minutes", "5"] if args.mode == "english" else []),
        *(["--workers", args.workers] if args.workers is not None else []))
     return True
 
@@ -177,7 +204,7 @@ def export(args):
        "--manifest", args.work / "manifest.jsonl", "--labels", args.work / "labels")
 
 
-STAGES = {"setup": setup, "synth": synth, "prepare": prepare, "phones": phones, "pack": pack, "unpack": unpack, "gpucheck": gpucheck,
+STAGES = {"setup": setup, "synth": synth, "synth_en": synth_en, "prepare": prepare, "phones": phones, "pack": pack, "unpack": unpack, "gpucheck": gpucheck,
           "teach": teach, "train": train, "export": export}
 
 
