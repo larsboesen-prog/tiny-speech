@@ -150,8 +150,9 @@ async function startRec() {
     if (!micStream || !micStream.getAudioTracks().some((t) => t.readyState === "live")) {
       micStream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
     }
-  } catch (err) { ctx.close().catch(() => {}); state(`No microphone (${err.name || err}). You can type the question instead.`); return; }
+  } catch (err) { ctx.close().catch(() => {}); micHelp(err); return; }
   micStream.getAudioTracks().forEach((t) => { t.enabled = true; });
+  $("micHelp").hidden = true;
   const r = { ctx, d: detector(ctx.sampleRate, LIMITS), began: 0, tick: 0, src: null, node: null, mute: null };
   try {
     if (ctx.state === "suspended") await ctx.resume();
@@ -209,6 +210,31 @@ async function stopRec() {
   } catch (err) {
     state(`Speech to text failed: ${err.message || err}`);
   } finally { busy = false; checkReady(); }
+}
+
+// When the browser refuses the microphone: what to do, for this kind of device. NotAllowedError is a refusal the page cannot
+// overturn (a "Don't allow" remembered for this site, the phone's setting, or an app's built-in browser that gives no microphone).
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const ANDROID = /Android/.test(navigator.userAgent);
+function micHelp(err) {
+  const name = err?.name || "";
+  let steps;
+  if (name === "NotFoundError" || name === "OverconstrainedError") steps = ["This device has no microphone the browser can use. Type the question instead."];
+  else if (!window.isSecureContext || !navigator.mediaDevices) steps = ["The microphone works only on a secure page (https://). Open https://larsboesen-prog.github.io/tiny-speech/demo/ ."];
+  else if (IOS) steps = [
+    "If you opened this link inside another app (Claude, Mail, Slack, WhatsApp…), open it in <b>Safari</b> instead: the share button, then <i>Open in Safari</i>.",
+    "In Safari: tap the page menu left of the address (or <b>aA</b>), then <b>Website Settings</b> › <b>Microphone</b> › <b>Allow</b> (or <i>Ask</i>), and reload.",
+    "Still blocked: iPhone <b>Settings</b> › <b>Apps</b> › <b>Safari</b> (older iPhones: Settings › Safari) › <b>Microphone</b> › <i>Ask</i> or <i>Allow</i>."];
+  else if (ANDROID) steps = [
+    "If you opened this link inside another app, open it in <b>Chrome</b> instead (the ⋮ menu, <i>Open in Chrome</i>).",
+    "In Chrome: tap the icon left of the address › <b>Permissions</b> (or <i>Site settings</i>) › <b>Microphone</b> › <b>Allow</b>, and reload.",
+    "Still blocked: Android <b>Settings</b> › <b>Apps</b> › <b>Chrome</b> › <b>Permissions</b> › <b>Microphone</b> › <i>Allow</i>."];
+  else steps = [
+    "Click the icon left of the address (a lock or sliders) › <b>Microphone</b> › <b>Allow</b>, and reload.",
+    "On a Mac, also <b>System Settings</b> › <b>Privacy &amp; Security</b> › <b>Microphone</b>: your browser switched on. On Windows: <b>Settings</b> › <b>Privacy</b> › <b>Microphone</b>."];
+  state(name === "NotFoundError" ? "No microphone found." : "The browser did not let this page use the microphone.");
+  $("micHelp").innerHTML = `<ol>${steps.map((x) => `<li>${x}</li>`).join("")}</ol><p>Or type the question, or tap an example: the answer is still read aloud.</p><p class="meta">${esc(name || String(err))}</p>`;
+  $("micHelp").hidden = false;
 }
 
 // ---------- a question: language, answer, voice ----------

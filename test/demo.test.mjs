@@ -87,3 +87,25 @@ test("nothing leaves the device but requests for files", { skip }, () => {
   const hosts = [...new Set(out.map((r) => new URL(r.url).host))].sort();
   assert.ok(hosts.every((h) => ["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"].includes(h)), hosts.join(", "));
 });
+
+test("the microphone refused (as an app's built-in browser or a remembered 'Don't allow' does): the page says how to allow it", { skip, timeout: 240000 }, async () => {
+  const { devices } = require("playwright");
+  const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
+  const strict = await chromium.launch({ ...(proxy ? { proxy: { server: proxy, bypass: "localhost,127.0.0.1" } } : {}),
+    args: ["--use-fake-device-for-media-stream", "--deny-permission-prompts"] });  // a microphone, but the prompt refused
+  try {
+    const page = await (await strict.newContext({ ...devices["iPhone 13"] })).newPage();
+    const errors = [];
+    page.on("pageerror", (e) => errors.push(String(e)));
+    await page.goto(`http://localhost:${port}/demo/`);
+    await page.waitForFunction(() => window.tinySpeechDemo && window.tinySpeechDemo.ready.ears && window.tinySpeechDemo.ready.pack, null, { timeout: 150000 });
+    await page.click("#mic");
+    await page.waitForSelector("#micHelp:not([hidden])", { timeout: 10000 });
+    const help = await page.evaluate(() => document.getElementById("micHelp").innerText);
+    console.log(JSON.stringify({ state: await text(page, "state"), help }));
+    assert.match(help, /Open in Safari/);
+    assert.match(help, /Website Settings › Microphone › Allow/);
+    assert.match(help, /Not(Allowed|Supported)Error/, "the refusal as the browser named it (headless Chromium as an iPhone: NotSupportedError)");
+    assert.deepEqual(errors, []);
+  } finally { await strict.close(); }
+});
