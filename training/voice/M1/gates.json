@@ -1,0 +1,16 @@
+{
+  "es": {
+    "sentences": 200,
+    "words_heard_right": 0.967,
+    "language_right": 1.0,
+    "passes": true
+  },
+  "en": {
+    "sentences": 200,
+    "words_heard_right": 0.941,
+    "language_right": 0.985,
+    "passes": true
+  },
+  "voice": "MX1",
+  "checkpoint": "/kaggle/tmp/tsw/runs/bilingual/inference.pt"
+}
