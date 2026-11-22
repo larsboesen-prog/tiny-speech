@@ -1,0 +1,10 @@
+{
+ "note": "Places people name that are not on the list (hotels): only for the ears' word list (tools/ears-lexicon.mjs), not part of the pack. /page5 answers them from its own data (page5/ask.js HOTELS).",
+ "landmarks": [
+  { "name": "Live Aqua", "say": ["live aqua"] },
+  { "name": "Rosewood", "say": ["rosewood"] },
+  { "name": "Belmond Casa de Sierra Nevada", "say": ["belmond", "casa de sierra nevada"] },
+  { "name": "Casa Blanca 7", "say": ["casa blanca"] },
+  { "name": "El Golpe de Vista", "say": ["golpe de vista"] }
+ ]
+}

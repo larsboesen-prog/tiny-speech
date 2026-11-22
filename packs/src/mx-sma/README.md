@@ -11,6 +11,7 @@ hand from now on (they are data: review changes as diffs), then run `node tools/
 | collections.json | Susan York's picks (8) and how answers name them |
 | hours.json | opening hours, one source, with checked dates where known |
 | lexicon.json | English words inside names, hand-written readings |
+| landmarks.json | places people name that are not on the list (hotels such as Live Aqua): words for the ears' list only, not part of the pack |
 | music.json | live music nights (D8), with how to fill it in at the top: three venues' nights from web listings (dated by the listing, so answers say "worth confirming"), five venues waiting for theirs |
 
 Known faults carried over from /page5 on purpose (the golden snapshot records today's answers; fix them as separate changes):

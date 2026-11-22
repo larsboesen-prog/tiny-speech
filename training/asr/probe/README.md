@@ -166,3 +166,46 @@ worker (`tools/names-test.mjs` on the Danish voice's 80 questions as a recorded 
 The same question asked again after a pick is answered at once (`mapsma/test/page5-names.test.mjs`: Casa Nostra 2.1 → 0.13 per sound).
 The rest: a name heard very differently in the two sentences (Tostévere as "is that open" and "does the one is it open"), or a learned
 reading that took in a neighbouring sound ("la shop o…" for La Chope).
+
+## Restaurants, streets and hotels (22 Nov 2026)
+
+The owner: "Some new variations fail: show me some high end restaurants, … restaurants on umaran, show me some quality restaurants.
+Show me rooftop restaurants is translated as show me rooftop esta … Show me restaurants in live aqua is shown as show me están sin
+light … You should be able to run English test and see what's written and improve". Three causes, in this order:
+
+1. **The reader**, given the right words: streets were not understood ("on Umarán" read as Café Umarán), nor "quality", nor hotels.
+   Now a place's street is the first part of its address (`domains/places/streets.js`; /page5's copy in its read.js): a question names
+   one after "on", "along", "calle", "en la calle" or before "street", and the answer lists the places on it ("2 places on Umarán";
+   "Is Café Umarán open?" is still the café). "Quality" counts as "best". /page5 also knows five hotels from its data: near the
+   Rosewood, the Belmond, Casa Blanca 7 or El Golpe de Vista (the places inside them, then the nearest); Live Aqua has no places on
+   MapSMA, so the answer says so and shows Centro.
+2. **Words missing from the list**: the streets (40, from the addresses), "aqua", "rosewood", "quality". Now in the list, the
+   streets and hotels with a Spanish and an English reading (an English speaker says "Hernández Macías" the English way; on the
+   Spanish page the English reading costs as other English does), with example questions in the word pairs at a small weight ("show
+   me some {quality, high end, rooftop, Italian…} restaurants", "restaurants on {street}", "restaurants near {hotel}").
+3. **"Restaurants" heard as Spanish words** ("está", "están", "es town"): its only reading was the American one. On the English page,
+   every English word now also has its spelling read by Spanish rules at a cost of 1 (`restawɾants`), as many non-native speakers say
+   it closer to the letters.
+
+Test sets: `list-questions.json` (24 questions about restaurants, streets, hotels and qualities) read by the 7 stand-in voices
+(`voices_synth.py`, 168 clips), and `list-questions-heldout.json`, 16 other questions written after the changes were chosen, read
+by those 7 and 3 more (Italian, Polish, Brazilian Portuguese; 160 clips). Measured with `list_eval.mjs`, through the page's audio path;
+"request right" = the reader gets the same request from the heard words as from what was said (with the new reader for both columns).
+
+| | Old list | Streets, hotels, list phrasing | **+ spelled readings (shipped)** |
+|---|---|---|---|
+| 168 list questions: request right | 31.5% | 42.9% | **47.6%** |
+| … written exactly; words wrong | 11.9%; 57.8% | 20.8%; 50.6% | 25.0%; 45.5% |
+| … the two native voices (request right, of 24 each) | 13, 15 | 19, 19 | 19, 19 |
+| **160 held-out questions: request right** | 19.4% | | **35.0%** |
+| … the two native voices (of 16 each) | 7, 6 | | 12, 9 |
+| 201 English requests / 90 everyday English: request right | 180 / 85 | 181 / 85 | 181 / 85 |
+| Spanish page: 144 Mexican / 144 other voices / 80 everyday: request right | 134 / 122 / 70 | 134 / 123 / 70 | (English page only) |
+| 560 accented name questions: names found (with names by sound); a wrong place | 402; 10 | | 402; 12 |
+
+The accented stand-ins stay hard: Piper's Danish, German, French… voices read English text by their own spelling rules ("restaurants"
+as "res toros", "es town"), further from English than a real accent; the owner's own recordings (record-names/) are the better test.
+Left for later: native English voices still say some Spanish street names in ways the list misses ("Insurgentes" as "in since",
+"Macías" as "macha"). A first try that gave streets and hotels the English reading at no cost on the Spanish page too, with "the
+rosewood" in the hotel words, put "the" into Spanish questions ("está me the last eh" for "¿Está abierta La Azotea?"): short words and
+the Spanish page's English readings are now kept out.

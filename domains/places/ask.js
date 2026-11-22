@@ -287,6 +287,9 @@ export function createAsker({ pack, shown = (p) => p.other || p.photo, random = 
     const og = q.nearSight ? { o: byId[q.nearSight], sight: q.nearSight } : q.near ? origin(here) : null;
     if (q.centro) pool = pool.filter(inCentro);
     if (q.area && !q.nearSight) pool = pool.filter((p) => { const a = fold(p.area + ' ' + ((INFO[p.id] || {}).address || '')); return areaOf(q.area).match.some((w) => a.includes(w)); });  // the Spanish page's areas are in Spanish
+    // a street: the places on it; none of the kind asked for there: said so, and the others shown (as for an area)
+    let streetMiss = false;
+    if (q.street) { const on = compiled(pack).streets.byId, f = pool.filter((p) => on.get(p.id) === q.street.key); if (f.length || !pool.length) pool = f; else streetMiss = true; }
     if (q.collection) pool = pool.filter((p) => picks[p.id]);
     if (q.unique) pool = pool.filter((p) => F(p).x);
     if (q.local) pool = pool.filter(local);
@@ -295,7 +298,7 @@ export function createAsker({ pack, shown = (p) => p.other || p.photo, random = 
     // (pizza -> Italian food), or else the rest of the question, or else places we recommend, takes its place; a topic the site has, but
     // not there ("rooftops in Guadalupe"), is said so, and the ones elsewhere are shown.
     const score = new Map();
-    let miss = null, whereMiss = false, recommend = false;
+    let miss = null, whereMiss = streetMiss, recommend = false;
     if (topics.length) {
       const scoreAll = (ts, from = pool) => {
         const m = new Map();
@@ -397,7 +400,7 @@ export function createAsker({ pack, shown = (p) => p.other || p.photo, random = 
   }
 
   function describe(q, n, og = null, ranked = {}) {  // "in Centro", "near you", what kind of places, "open now or within two hours"
-    const where = (q.centro && !(og && og.sight === pack.centre.place) ? TX.en.inCentre : q.area && q.area === compiled(pack).outOfTown ? areaOf(q.area).in.en : q.area && !(og && og.sight) ? areaOf(q.area).in.en : '')
+    const where = (q.centro && !(og && og.sight === pack.centre.place) ? TX.en.inCentre : q.area && q.area === compiled(pack).outOfTown ? areaOf(q.area).in.en : q.area && !(og && og.sight) ? areaOf(q.area).in.en : '') + (q.street ? ` on ${q.street.name}` : '')
       + (og ? (og.sight ? ` near ${sightName(og.sight)}` : og.mine ? ' near you' : ` near ${TX.en.centre}`) : '');
     const ts = shownTopics(q, ranked);
     let kind = ts.length || q.price || q.local || q.unique ? kindPhrase({ ...q, priceMiss: ranked.priceMiss }, ts) : q.cats && q.cats.length === 1 ? OLD_KIND[q.cats[0]] || null : null;
@@ -420,7 +423,7 @@ export function createAsker({ pack, shown = (p) => p.other || p.photo, random = 
   function listAnswer(q, n, ranked, offset, count) {
     const page = ranked.rows.slice(offset, offset + count), total = ranked.rows.length;
     const og = ranked.origin || null;
-    const elsewhere = { ...q, centro: false, area: null, unique: false, local: false, collection: null };  // "rooftops in Guadalupe": none there, the ones elsewhere
+    const elsewhere = { ...q, centro: false, area: null, street: null, unique: false, local: false, collection: null };  // "rooftops in Guadalupe": none there, the ones elsewhere
     const d = describe(ranked.whereMiss ? elsewhere : q, n, ranked.whereMiss ? null : og, ranked), k = page.length, asked = q.count || 0;  // "only" when a number was asked for
     const out = { kind: 'list', q, ids: page.map((r) => r.p.id), all: ranked.rows.map((r) => r.p.id), offset, count, left: Math.max(0, total - offset - k), say: [], lines: [], show: '', collection: q.collection,
       here: ranked.here || null, dist: og ? Object.fromEntries(page.map((r) => [r.p.id, r.m])) : null, mine: !!(og && og.mine) };
@@ -567,7 +570,7 @@ export function createAsker({ pack, shown = (p) => p.other || p.photo, random = 
   }
   function describeEs(q, n, og, ranked = {}) {  // " en el Centro", " cerca de ti"; the kind of place and its gender; " abiertos ahora o en las próximas dos horas"
     const near = og ? (og.sight ? ` cerca de ${sightName(og.sight, 'es')}`.replace(' de el ', ' del ') : og.mine ? ' cerca de ti' : ` cerca de ${TX.es.centre}`.replace(' de el ', ' del ')) : '';
-    const where = (q.centro && !(og && og.sight === pack.centre.place) ? TX.es.inCentre : q.area && q.area === compiled(pack).outOfTown ? areaOf(q.area).in.es : q.area && !(og && og.sight) ? areaOf(q.area).in.es : '') + near;
+    const where = (q.centro && !(og && og.sight === pack.centre.place) ? TX.es.inCentre : q.area && q.area === compiled(pack).outOfTown ? areaOf(q.area).in.es : q.area && !(og && og.sight) ? areaOf(q.area).in.es : '') + (q.street ? ` en la calle ${q.street.name}` : '') + near;
     const ts = shownTopics(q, ranked);
     let kind = ts.length || q.price || q.local || q.unique ? kindPhraseEs({ ...q, priceMiss: ranked.priceMiss }, ts) : q.cats && q.cats.length === 1 ? KIND_ES[q.cats[0]] || null : null;
     if ((q.unclear || ranked.recommend) && (!kind || kind[0] === 'lugares')) kind = ['lugares que recomendamos', 'lugar que recomendamos', 'm'];
@@ -586,7 +589,7 @@ export function createAsker({ pack, shown = (p) => p.other || p.photo, random = 
   }
   function listAnswerEs(q, n, ranked, offset, count) {
     const page = ranked.rows.slice(offset, offset + count), total = ranked.rows.length;
-    const og = ranked.origin || null, elsewhere = { ...q, centro: false, area: null, unique: false, local: false, collection: null };
+    const og = ranked.origin || null, elsewhere = { ...q, centro: false, area: null, street: null, unique: false, local: false, collection: null };
     const d = describeEs(ranked.whereMiss ? elsewhere : q, n, ranked.whereMiss ? null : og, ranked), k = page.length, asked = q.count || 0;
     const out = { kind: 'list', q, ids: page.map((r) => r.p.id), all: ranked.rows.map((r) => r.p.id), offset, count, left: Math.max(0, total - offset - k), say: [], lines: [], show: '', collection: q.collection,
       here: ranked.here || null, dist: og ? Object.fromEntries(page.map((r) => [r.p.id, r.m])) : null, mine: !!(og && og.mine) };
@@ -679,7 +682,7 @@ export function createAsker({ pack, shown = (p) => p.other || p.photo, random = 
     const named = q.named ? byId[q.named.id] : null;
     if (named && !q.wantsList) return { ...(es ? oneEs : one)(named, n, q, here), q };
     // "Is … open?" about one place whose name was not caught: say so, and offer the closest names, rather than a list of other places
-    const onePlace = (/^(is|are|when|what time|does|do|how late|until when|till when|tell me about|how about|what about|esta|estan|a que hora|cuando|abre|cierra|hasta que hora|que tal|donde esta|como llego)\b/.test(q.s) || q.howFar) && !q.wantsList && !q.near && !q.centro && !q.area && !q.cats && !q.asks && !q.nearSight;
+    const onePlace = (/^(is|are|when|what time|does|do|how late|until when|till when|tell me about|how about|what about|esta|estan|a que hora|cuando|abre|cierra|hasta que hora|que tal|donde esta|como llego)\b/.test(q.s) || q.howFar) && !q.wantsList && !q.near && !q.centro && !q.area && !q.street && !q.cats && !q.asks && !q.nearSight;
     if (onePlace) {
       const near = (q.nearNames || []).map((id) => byId[id]).filter((p) => p && shown(p));
       const names = near.map((p) => (es ? nmEs(p) : sayName(p.name)));
@@ -690,7 +693,7 @@ export function createAsker({ pack, shown = (p) => p.other || p.photo, random = 
         : names.length ? "I didn't catch the place's name. Did you mean:" : "I didn't catch the place's name. Please say it again, or type it.";
       return { kind: 'none', q, ids: [], near: near.map((p) => p.id), say: [{ text: say }], show, lines: [{ text: show }] };
     }
-    if (q.wantsList || q.asks || q.near || q.nearSight || q.centro || q.area || q.cats || q.window != null || q.dayIdx != null) {
+    if (q.wantsList || q.asks || q.near || q.nearSight || q.centro || q.area || q.street || q.cats || q.window != null || q.dayIdx != null) {
       const count = q.count || (q.collection ? C.count || 4 : 4);
       return (es ? listAnswerEs : listAnswer)(q, n, { ...list(q, n, here), here }, 0, count);
     }

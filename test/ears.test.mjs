@@ -28,7 +28,7 @@ function frames(sounds, hold = 2) {
 
 test("San Miguel's word list: every sound is one the recognizer knows", () => {
   const lex = buildLexicon(json("packs/dist/mx-sma/ears-lexicon.json"), vocab);
-  assert.equal(lex.words, 2794, "2,181 from the requests and the pack, and since 22 Nov 2026 the reader's words and everyday ones (tools/ears-lexicon.mjs)");
+  assert.equal(lex.words, 2842, "2,181 from the requests and the pack, and since 22 Nov 2026 the reader's words and everyday ones, the streets and hotels (tools/ears-lexicon.mjs)");
   assert.deepEqual(lex.missing, {}, "no word has a sound the recognizer cannot hear");
   assert.equal(V, 392);
 });

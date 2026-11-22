@@ -23,6 +23,7 @@ import { readGGUF } from "../vendor/tiny-voca/js/tiny-voca.js";  // the phonemiz
 import { fromGGUF } from "../vendor/tiny-voca/js/dizione/engine.js";
 import { ipaWord } from "../lang/es/ipa.js";
 import { numberWordsEs } from "../lang/es/sounds.js";
+import { streetIndex } from "../domains/places/streets.js";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const split = (t) => { const n = parseInt(createHash("sha256").update("asr-split1" + t.toLowerCase()).digest("hex").slice(0, 8), 16) % 100; return n < 10 ? "test" : n < 15 ? "dev" : "train"; };
@@ -37,6 +38,16 @@ const T_PLACE = { en: ["when is {p} open", "is {p} open now", "what time does {p
   es: ["a qué hora abre {p}", "está abierto {p}", "a qué hora cierra {p}", "dónde está {p}", "qué tan lejos está {p}", "{p} a qué hora abre"] };
 const T_WORD = { en: ["is there a {w} open now", "{w} near me", "where can i find {w}", "any {w} in centro", "what {w} are open now"],
   es: ["hay {w} abierto ahora", "dónde hay {w}", "{w} cerca de aquí", "busco {w} en el centro"] };
+// Lists, streets and landmarks (owner, 22 Nov 2026: "show me some high end restaurants", "restaurants on Umarán", "restaurants in Live
+// Aqua" failed: "Seems restaurants and street names fail")
+const T_LIST = { en: ["show me some {a} restaurants", "any {a} restaurants open now", "find me a {a} restaurant", "{a} restaurants near me"],
+  es: ["muéstrame restaurantes {a}", "hay restaurantes {a} abiertos", "busco un restaurante {a}"] };
+const LIST_WORDS = { en: ["good", "nice", "quality", "high end", "upscale", "fancy", "cheap", "expensive", "best", "rooftop", "italian", "mexican", "seafood", "vegan", "romantic", "quiet", "local"],
+  es: ["buenos", "baratos", "caros", "elegantes", "italianos", "mexicanos", "de mariscos", "veganos", "con terraza", "románticos"] };
+const T_STREET = { en: ["restaurants on {s}", "show me restaurants on {s}", "is there a restaurant on {s}", "what is on {s} street", "bars on calle {s}"],
+  es: ["restaurantes en la calle {s}", "qué hay en la calle {s}", "hay restaurantes en {s}"] };
+const T_LANDMARK = { en: ["restaurants in {h}", "show me restaurants near {h}", "what is near {h}"], es: ["restaurantes en {h}", "qué hay cerca de {h}"] };
+const NAME_SMALL = new Set("the del las los una para sobre entre".split(" "));
 const T_EXTRA = ["what music venues are open now", "where is there live music tonight", "find four restaurants in centro that are open now",
   "what vegan restaurant is open", "what is open right now", "where can i eat now"];
 const JUNK = new Set("pastele coctele mediterrane peruan corean originale pastr feat whos bfast modmex tradmex mex th os fi wi hr hrs min mins mxn am mid set pm".split(" "));
@@ -73,6 +84,8 @@ export async function earsLexicon(city, { extended = true, prefer = null, prefer
   const train = rows.filter((r) => (r.split || split(r.text)) === "train");
   const src = ROOT + `packs/src/${city}/`;
   const places = read(src + "places.json", []), areas = read(src + "areas.json", []);
+  const streets = streetIndex(places.map((p) => ({ id: p.id, address: (p.info || {}).address }))).streets;  // "Umarán 8" → Umarán
+  const landmarks = read(src + "landmarks.json", { landmarks: [] }).landmarks;  // hotels and the like, not on the list
   const english = new Set((read(src + "lexicon.json", {}).english || []).map((w) => w.toLowerCase()));
 
   const lang = new Map();  // word -> Set("es","en")
@@ -80,6 +93,11 @@ export async function earsLexicon(city, { extended = true, prefer = null, prefer
   for (const r of train) for (const w of words(r.text)) { if (r.lang !== "en") add(w, "es"); if (r.lang !== "es") add(w, "en"); }
   for (const p of places) for (const w of words(p.name + " " + (p.names || []).map((n) => n.t).join(" "))) { add(w, "es"); if (english.has(w)) add(w, "en"); }
   for (const a of areas) for (const w of words(JSON.stringify(a.say || a.words || a.names || ""))) add(w, "es");
+  // streets and landmarks: said the Spanish way and the English way ("Mesones", "Hernández Macías" from an English speaker); their small
+  // words ("de la", "the") keep the readings they have (given both ways at no cost, "the" crept into Spanish questions: "de the")
+  const nameWords = (t) => words(t).filter((w) => w.length > 3 && !NAME_SMALL.has(w));
+  for (const st of streets) for (const w of nameWords(st.name)) { add(w, "es"); add(w, "en"); }
+  for (const l of landmarks) for (const w of nameWords(l.say.join(" "))) { if (!phonemizer.isWord(w) || lang.has(w)) add(w, "es"); add(w, "en"); }
   for (let n = 0; n <= 100; n++) for (const w of words(numberWordsEs(n))) add(w, "es");
 
   const out = {};
@@ -134,6 +152,11 @@ export async function earsLexicon(city, { extended = true, prefer = null, prefer
       for (const t of T_PLACE.es) learn(t.replace("{p}", name), PLACE_TEMPLATE_WEIGHT * weightOf("es"));
     }
     for (const t of T_EXTRA) learn(t, PLACE_TEMPLATE_WEIGHT * weightOf("en"));
+    for (const l of ["en", "es"]) {
+      for (const t of T_LIST[l]) for (const a of LIST_WORDS[l]) learn(t.replace("{a}", a), PLACE_TEMPLATE_WEIGHT * weightOf(l));
+      for (const st of streets) { const s = st.name.toLowerCase(); for (const t of T_STREET[l]) learn(t.replace("{s}", s), PLACE_TEMPLATE_WEIGHT * weightOf(l)); }
+      for (const lm of landmarks) for (const say of lm.say) for (const t of T_LANDMARK[l]) learn(t.replace("{h}", say), PLACE_TEMPLATE_WEIGHT * weightOf(l));
+    }
     for (const w of Object.keys(out).slice(-added)) for (const t of T_WORD[out[w][0].lang]) learn(t.replace("{w}", w), WORD_TEMPLATE_WEIGHT * weightOf(out[w][0].lang));
     const round = (o) => { for (const k in o) o[k] = Math.round(o[k] * 1e4) / 1e4; };
     round(counts); round(pairs);
@@ -142,9 +165,20 @@ export async function earsLexicon(city, { extended = true, prefer = null, prefer
     const names = new Set();
     for (const p of places) for (const w of words(p.name + " " + (p.names || []).map((n) => n.t).join(" "))) names.add(w);
     for (const a of areas) for (const w of words(JSON.stringify(a.say || a.words || a.names || ""))) names.add(w);
+    if (prefer === "en") for (const st of streets) for (const w of words(st.name).filter((w) => w.length > 3 && !NAME_SMALL.has(w))) names.add(w);  // English speakers say them the Spanish way too; Spanish speakers not the English way
+    for (const l of landmarks) for (const w of words(l.say.join(" ")).filter((w) => w.length > 3 && !NAME_SMALL.has(w))) names.add(w);
     for (const [w, prons] of Object.entries(out)) if (!names.has(w)) for (const p of prons) if (p.lang !== prefer) p.cost = otherCost;
   }
-  const summary = `${Object.keys(out).length} words (${Object.values(out).filter((p) => p.some((x) => x.lang === "es")).length} with Spanish sounds, ${Object.values(out).filter((p) => p.some((x) => x.lang === "en")).length} with English), ${Object.keys(pairs).length} word pairs from ${train.length} training sentences${extended ? ` and ${templates} template questions; ${added} words from the reader and everyday lists` : ""}`;
+  // The English page: English words also as their spelling is read by Spanish rules, at a cost of 1 (many non-native speakers say
+  // "restaurants" closer to its letters; 22 Nov 2026, accented stand-in voices: right requests 42.9% → 47.6%, English and Spanish
+  // controls unchanged)
+  let spelled = 0;
+  if (prefer === "en") for (const [w, prons] of Object.entries(out)) {
+    if (!/^[a-z]+$/.test(w) || !prons.some((p) => p.lang === "en") || prons.some((p) => p.lang === "es" && !p.cost)) continue;
+    const ph = ipaWord(w).map((x) => x.replace("ˈ", ""));
+    if (ph.length && !prons.some((p) => p.phones.join(" ") === ph.join(" "))) { prons.push({ lang: "en", phones: ph, cost: 1 }); spelled++; }
+  }
+  const summary = `${spelled ? `${spelled} English words also as spelled; ` : ""}${Object.keys(out).length} words (${Object.values(out).filter((p) => p.some((x) => x.lang === "es")).length} with Spanish sounds, ${Object.values(out).filter((p) => p.some((x) => x.lang === "en")).length} with English), ${Object.keys(pairs).length} word pairs from ${train.length} training sentences${extended ? ` and ${templates} template questions; ${added} words from the reader and everyday lists` : ""}`;
   return { words: out, unigrams: counts, bigrams: pairs, summary };
 }
 

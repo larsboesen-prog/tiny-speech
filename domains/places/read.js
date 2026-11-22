@@ -21,6 +21,7 @@
 //                         food wanted; the word "restaurant"; "is there…"; a number of places; "4 more"; plural words; "find…"
 
 import { fold, sound, lev, need, skeleton, SKELETON } from '../../core/text/sound.js';
+import { streetIndex, findStreet } from './streets.js';
 export { fold, sound };
 export const SOON = 120;          // "open now" = open now or opening within this many minutes
 const MAX_COUNT = 8;
@@ -53,6 +54,7 @@ export function compiled(pack) {
       masks: pack.areas.filter((a) => a.maskInNames).map((a) => new RegExp(a.maskInNames, 'g')),
       collections: (pack.collections || []).map((x) => ({ id: x.id, re: wordsRe(x.words) })),
       outOfTown: (pack.areas.find((a) => a.role === 'outOfTown') || {}).id || null,
+      streets: streetIndex(pack.places.map((p) => ({ id: p.id, address: (p.info || {}).address }))),  // from the addresses: "Umarán 8" → Umarán
     };
     COMPILED.set(pack, c);
   }
@@ -230,6 +232,9 @@ export function parse(text, pack) {
   const where = compiled(pack);  // the centre's words, then each area's, in the pack's order
   if (where.centre.test(where.centreNot ? rest.replace(where.centreNot, ' ') : rest)) q.centro = true;  // Whisper often writes "central"
   else { const a = where.areas.find((x) => x.re.test(rest)); if (a) q.area = a.id; }
+  // a street ("restaurants on Umarán", "en la calle Mesones"); its words are then not a place's name (Café Umarán)
+  const st = findStreet(q.s, where.streets);
+  if (st) { q.street = { key: st.key, name: st.name }; q.sNames = st.masked; }
   // what
   const c = new Set();
   if (/\b(coffee|cafes?|bakery|bakeries|pastry|pastries|bread|panaderia|panaderias|cafeterias?|pan dulce|pasteles?|cafecito)\b/.test(rest)) c.add('bfast');
@@ -277,7 +282,7 @@ export function parse(text, pack) {
   // "something unique", "hidden gems"; "where do locals eat"; "best" (every place here is a favourite: the answer says so)
   q.unique = /\b(unique|different|unusual|special|hidden gems?|gems?|off the beaten|quirky|interesting|original|one of a kind|secret|unic[oa]s?|diferentes?|especial(es)?|raros?|joyas?|escondid[oa]s?|secretos?|originales?|curios[oa]s?|fuera de lo comun)\b/.test(rest.replace(/\b(special occasion|special night|ocasion especial)\b/g, ' '));
   q.local = /\b(locals|local people|where locals|like a local|local favou?rites?|local food|local places|los locales|la gente de aqui|lugarenos|como (un )?local|como los locales|comen los locales|gente local|comida local)\b/.test(rest);
-  q.best = /\b(best|top|favou?rites?|greatest|finest|must try|good|great|nice|recommend\w*|mejor|mejores|favorit[oa]s?|buen[oa]?s?|recomiend\w*|recomendad[oa]s?|recomendar|imperdibles?)\b/.test(rest.replace(/\b(good|great) (value|price|prices)\b|\bbuen precio\b/g, ' '));
+  q.best = /\b(best|top|favou?rites?|greatest|finest|must try|good|great|nice|quality|recommend\w*|calidad|mejor|mejores|favorit[oa]s?|buen[oa]?s?|recomiend\w*|recomendad[oa]s?|recomendar|imperdibles?)\b/.test(rest.replace(/\b(good|great) (value|price|prices)\b|\bbuen precio\b/g, ' '));
   q.eat = /\b(eat|eats|eating|food|hungry|meal|meals|restaurants?|lunch|dinner|comer|come|comen|comemos|comida|comidas|hambre|restaurantes?|almorzar|cenar|cena|llenan|llenen|llenar|llenarme|llenarnos|quedar llenos|full meal|filling)\b/.test(rest);  // a meal, not an ice cream or a coffee
   // a day of the week ("open on Mondays", "brunch on Sunday", "el sábado"); the weekend is Saturday
   const dm = /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|lunes|martes|miercoles|jueves|viernes|sabado|domingo)s?\b/.exec(rest);
@@ -323,7 +328,7 @@ export function createReader({ places, MEALS, pack }) {
     }) };
   });
   function matchPlace(q) {
-    const tok = maskNumberTimes(maskAreaNames(pack, q.s)).split(' ').filter(Boolean);
+    const tok = maskNumberTimes(maskAreaNames(pack, q.sNames || q.s)).split(' ').filter(Boolean);
     // The sound of each run of the question's words, made once per question, not once per name (19 Nov 2026: 5,000 places).
     const runs = new Map();
     const run = (i, len) => {
@@ -397,7 +402,7 @@ export function requestOf(q) {
   const keep = (o) => { const r = Object.fromEntries(Object.entries(o).filter(([, v]) => v != null && v !== false && v !== '' && !(Array.isArray(v) && !v.length))); return Object.keys(r).length ? r : null; };
   return keep({
     place: q.named ? q.named.id : null, list: q.wantsList, what: q.topics, kinds: q.cats,
-    where: keep({ centro: q.centro, area: q.area, nearMe: q.near, nearSight: q.nearSight, howFar: q.howFar }),
+    where: keep({ centro: q.centro, area: q.area, street: q.street ? q.street.key : null, nearMe: q.near, nearSight: q.nearSight, howFar: q.howFar }),
     when: keep({ now: q.now, window: q.window, meal: q.meal, mealNow: q.mealNow, lateMeal: q.lateMeal, tonight: q.tonight, day: q.dayIdx, tomorrow: q.tomorrow }),
     price: q.price, priciest: q.priciest, unique: q.unique, local: q.local, best: q.best, collection: q.collection, surprise: q.surprise,
     eat: q.eat, restaurant: q.restaurantWord, exists: q.exists, count: q.count, more: q.more,
