@@ -4,6 +4,7 @@
 import { writeFileSync } from "node:fs";
 import { earsLexicon } from "../../../tools/ears-lexicon.mjs";
 
-const { words, unigrams, bigrams, summary } = await earsLexicon("mx-sma");
+// The probe's measurements (README.md here) were made with the list as it was before 22 Nov 2026: {extended: false} keeps it.
+const { words, unigrams, bigrams, summary } = await earsLexicon("mx-sma", { extended: false });
 writeFileSync(process.argv[2], JSON.stringify({ words, unigrams, bigrams }));
 console.log(summary);

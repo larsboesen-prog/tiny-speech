@@ -1,0 +1,12 @@
+# Everyday question words for the tiny ears' word list (tools/ears-lexicon.mjs), English then Spanish (22 Nov 2026: the owner
+# asked "what music venues are open now" and the ears could not write "venues"). One word or more per line; "#" lines are notes.
+hear listen watch watching tv television show shows game games match play playing see visit go going eat eating drink drinking dine
+open opens opening closed close closes closing late early tonight today tomorrow morning afternoon evening night now later soon
+near nearby close far walk walking distance minutes hour hours best good great nice quiet busy cheap expensive table reservation
+book booking outside inside terrace patio view views music live band dance dinner lunch breakfast brunch drinks cocktail cocktails beer wine
+which what where when who how why any some many much more less other another next last first second third
+oír escuchar ver tele televisión partido partidos jugar última último primera primero segunda próximo próxima siguiente
+abre abren cierra cierran abierto abierta abiertos abiertas cerrado cerrada temprano tarde noche hoy mañana ahora luego pronto
+cerca lejos caminar caminando minutos hora horas mejor bueno buena tranquilo barato caro mesa reservar reservación afuera adentro
+terraza patio vista vistas música vivo banda bailar cena comida desayuno almuerzo bebidas coctel cocteles cerveza vino
+cuál cuáles qué dónde cuándo quién cómo algún alguna algunos muchos más menos otro otra

@@ -154,3 +154,25 @@ kept each moved English by at most a point (63.7–68.2%), and the English-only 
 it heard 28.6 h of English audiobooks and **no English restaurant request** (the Piper requests in training were the Spanish
 sentences only). Next: train on top of it with English requests read by many voices (Piper's LibriTTS-R, 904 speakers, and VCTK, 109
 accents, both CC BY 4.0) and more English speech, measured on this same set.
+
+## The word list grown to the reader's words (22 Nov 2026)
+
+The owner, on the live /page5: "What music venues are open now" became "what music view open now" (and found a bar with a view):
+"venues" was not in the word list, and the ears can only write words in it. 643 words the reader understands (nightlife, concerts,
+gigs, rooftops, views, pubs, dancing, Tuesday, weekend, Japanese, tapas…) could never be heard. `tools/ears-lexicon.mjs` now adds
+them (from the reader's rules), the days, "venue(s)" and everyday question words (`tools/ears-words.txt`): 2,794 words instead of
+2,181, each new one with one reading (English when tiny-voca's dictionary knows it, else Spanish). Its word-pair model also learns
+template questions (about every place: "when is Estoril open", "a qué hora abre Estoril"; about every new word: "is there a tapas
+open now") at a small weight, chosen by measurement: at full weight new short words stole from known ones ("eats" for "pizza").
+
+The shipped 8.9 MB model, decoded with each list (`../asr/probe/`: probe.py's matcher, identical to the browser's):
+
+| | Old list | New list |
+|---|---|---|
+| Questions using the new words, English (30 × 3 unheard English voices) | 33.3% understood, 33.6% words wrong | **68.9%**, 18.0% |
+| Questions using the new words, Spanish (20 × 2 Mexican + 2 unheard voices) | 67.5%, 22.7% | **77.5%**, 14.5% |
+| English held-out requests (201) | 67.2%, 21.9% | 65.7%, 22.1% |
+| Spanish held-out requests (144): understood; places found | 87.5%; 26 of 32 | 86.8%; **29 of 32** |
+
+The held-out sets are made of the requests' own words, so they can only show the cost (a few clips); the first two rows are questions
+as people ask them. The probe keeps the old list (`earsLexicon(city, {extended: false})`) so its earlier measurements stand.
