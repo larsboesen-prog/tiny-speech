@@ -61,7 +61,7 @@ test("MapSMA uses the tiny ears with Whisper tiny as the other choice; CredBrief
 const require = createRequire(import.meta.url);
 let chromium = null;
 try { ({ chromium } = require("playwright")); } catch { /* not installed */ }
-const model = readdirSync(ROOT + "engines/ears").find((f) => /^ears-int8.*\.onnx$/.test(f));
+const model = readdirSync(ROOT + "engines/ears").filter((f) => /^ears-int8.*\.onnx$/.test(f)).sort().pop();  // the newest (the shipped one)
 const skipLive = !chromium ? "Playwright is not installed" : !model ? "no ears model in engines/ears/ (training/ears/README.md)" : false;
 let web, browser;
 before(async () => {

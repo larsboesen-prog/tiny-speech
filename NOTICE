@@ -5,7 +5,7 @@ The code is licensed under the Apache License, Version 2.0 (LICENSE).
 
 This repository also contains:
 
-* engines/ears/ears-int8-2026-11-20.onnx ("tiny ears"), licensed under Creative Commons Attribution-ShareAlike 4.0
+* engines/ears/ears-int8-2026-11-22.onnx and ears-int8-2026-11-20.onnx ("tiny ears"), licensed under Creative Commons Attribution-ShareAlike 4.0
   (https://creativecommons.org/licenses/by-sa/4.0/). It was trained on:
   - CIEMPIESS Light, Balance and Fem, Carlos Daniel Hernández Mena et al., Universidad Nacional Autónoma de México (CC BY-SA 4.0)
   - Crowdsourced high-quality Latin American Spanish speech, Google (OpenSLR 61, 71, 72; CC BY-SA 4.0)

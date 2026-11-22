@@ -196,3 +196,23 @@ The wrong page costs: an English speaker on the ES page 68.9% → 60.0% (questio
 page 86.8% → 86.1%. An earlier, harder lean (English readings only) lost more than it won (63.7%), as did trying both lists and
 keeping the better score. The lean is small next to the sound model's English; that is the retrain's job. /page5 loads the list of
 its language (the EN|ES switch reloads the page); the neutral list stays for pages that do not know (the demo, the check page).
+
+## The English retrain (22 Nov 2026): English 67% → 88%
+
+`larsbo99/tiny-ears-english` v1 (`run.py --mode english`, 5.7 GPU hours on Kaggle's T4s): from the shipped checkpoint
+(`../../../kaggle-init/ears-v2-best.fp16.pt`), with the English and mixed training requests read 10 times each by Piper's LibriTTS-R
+(904 speakers) and VCTK (109) voices (66,881 training clips, 114.2 h in all) and English transcripts as sounds. Held-out sound errors
+against what was said, English: 16.1% at the first check → 13.6% at the kept step 22,633 (the teacher 12.8%); Spanish 15.9% (the
+teacher 22.1%). The exported file passed every gate (8,883,368 bytes). Measured with the word lists leaning to the speaker's language:
+
+| | First model | Retrained |
+|---|---|---|
+| English held-out requests (201, three unheard English voices) | 67.2% understood, 21.6% words wrong | **88.1%, 10.1%** |
+| English questions with everyday words (90) | 68.9%, 15.1% | **87.8%, 5.7%** |
+| Mexican Spanish held-out requests (144) | 87.5%, 9.4% | **91.0%, 8.7%** |
+| Spanish questions with everyday words (80) | 78.8%, 12.9% | 77.5%, 14.7% |
+| Argentine and Spain-Spanish voices never heard (144) | 86.1%, 10.9% | 82.6%, 13.4% |
+
+The gains hold for the English test voices unrelated to the training voices (ryan 44 → 61, alan 45 → 57 of 67), not only for lessac
+(46 → 59), from which LibriTTS-R and VCTK were fine-tuned. The cost: 5 of 144 clips of the non-Mexican Spanish voices and 1 of 80
+of the everyday Spanish questions. Shipped as `engines/ears/ears-int8-2026-11-22.onnx` (the first model stays beside it).

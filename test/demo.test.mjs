@@ -15,7 +15,7 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const require = createRequire(import.meta.url);
 let chromium = null;
 try { ({ chromium } = require("playwright")); } catch { /* not installed */ }
-const MODEL = "engines/ears/ears-int8-2026-11-20.onnx";
+const MODEL = "engines/ears/ears-int8-2026-11-22.onnx";
 const skip = !chromium ? "Playwright is not installed" : !existsSync(ROOT + MODEL) ? `no ${MODEL} here (training/ears/README.md)` : false;
 const CLIP = JSON.parse(readFileSync(ROOT + "test/fixtures/ears/clips.json", "utf8")).clips.find((c) => /raindog/i.test(c.said));
 const TYPES = { ".js": "text/javascript", ".mjs": "text/javascript", ".html": "text/html; charset=utf-8", ".json": "application/json", ".wav": "audio/wav" };

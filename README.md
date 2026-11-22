@@ -88,8 +88,10 @@ The same 144 sentences read by two voices it **never heard** in training (Argent
 | Whisper tiny | 52.1% | 62 of 108 | 25.5% | 18 of 32 |
 
 - **Language** decided right for 93.8% of those clips (Whisper tiny 97.2%); the page also has an English / Español switch.
-- **English** is the weaker side: on the voice's own English sentences it heard 80–100% of the words, where Whisper tiny.en
-  heard 100%. About three quarters of the training speech was Spanish.
+- **English** (retrained 22 Nov 2026 with English requests read by about 1,000 English voices): on 201 English requests read by
+  three voices it never heard, understood **88.1%** (the first model 67.2%, Whisper tiny.en 61.2%), words wrong 10.1%, places found
+  89 of 93; questions using everyday words, 87.8%. Mexican Spanish improved with it (87.5% → 91.0%); two non-Mexican Spanish voices
+  lost a little (86.1% → 82.6%). `models/ears.md` has every number.
 - **Speed**: 0.2–0.5 s to turn a 3-second question into text on one CPU core (Whisper tiny: about 2 s).
 - **Closed vocabulary**: it can only write words in the city's list. A word outside the list comes out as the nearest list
   word, or not at all. That is what makes it accurate for the city, and why it is not a general dictation model.
@@ -134,7 +136,7 @@ The demo (`demo/demo.js`, about 270 lines) is the smallest complete example. The
 
 ```js
 // speech to text: the tiny ears with a city's word list
-const ears = new Worker("/tiny-speech/browser/asr-worker.js?ears=/tiny-speech/engines/ears/ears-int8-2026-11-20.onnx"
+const ears = new Worker("/tiny-speech/browser/asr-worker.js?ears=/tiny-speech/engines/ears/ears-int8-2026-11-22.onnx"
   + "&lexicon=/tiny-speech/packs/dist/mx-sma/ears-lexicon.json", { type: "module" });
 ears.postMessage({ type: "load", model: "tiny-ears" });                       // → {type: "ready"}
 ears.postMessage({ type: "transcribe", reqId: 1, model: "tiny-ears", audio }); // Float32Array, 16 kHz → {type: "text", text}
@@ -190,7 +192,7 @@ time.
 | What | Licence |
 |---|---|
 | The code | Apache License 2.0 (`LICENSE`) |
-| The tiny ears model, `engines/ears/ears-int8-2026-11-20.onnx` | **CC BY-SA 4.0**: it learned from CC BY-SA speech. See `models/ears.md` |
+| The tiny ears model, `engines/ears/ears-int8-2026-11-22.onnx` (and the earlier `-2026-11-20`) | **CC BY-SA 4.0**: it learned from CC BY-SA speech. See `models/ears.md` |
 | The MX1 voice, `vendor/tiny-voca/tiny-voca-mx1-2026-11-21.gguf` | Apache License 2.0. See `models/voice.md` |
 | tiny-voca's JavaScript engine and phonemizer, `vendor/tiny-voca/js/` | Apache License 2.0, Muhammed Nazeem |
 | San Miguel's pack, `packs/` | MapSMA's listings (mapsma.com), shared here under Apache License 2.0 for the demo and tests. Hours and music nights are a snapshot: check before you go |

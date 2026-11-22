@@ -1,4 +1,4 @@
-# Model card: tiny ears (`ears-int8-2026-11-20.onnx`)
+# Model card: tiny ears (`ears-int8-2026-11-22.onnx`)
 
 A small speech-sound recognizer for English and Mexican Spanish questions in the browser. It writes no words itself: every 20 ms
 it gives the probability of each of 392 speech sounds, and a matcher finds the most likely sentence made of a given word list
@@ -6,15 +6,15 @@ it gives the probability of each of 392 speech sounds, and a matcher finds the m
 
 | | |
 |---|---|
-| File | `engines/ears/ears-int8-2026-11-20.onnx`, 8,883,368 bytes, SHA-256 `8dee5a57cf6db288a567c067315b4812e7a2f961e21e49475d655f1306f4cb77` |
+| File | `engines/ears/ears-int8-2026-11-22.onnx`, 8,883,368 bytes, SHA-256 `9630d40e72cd203c4126d3a8e7ed8f169a81e1da770532f5d94f0f476ab90fe9` (the English retrain; the first model, `ears-int8-2026-11-20.onnx`, SHA-256 `8dee5a57…`, is kept) |
 | Sounds | `engines/ears/vocab.json`: 392 symbols (espeak IPA phones of both languages, and the blank `<pad>`) |
 | Architecture | Conformer: log-mel inside the model (80 bands, 25 ms windows, 10 ms hop) → 2 convolutions (to 20 ms frames) → 10 blocks (width 176, 4 heads with ALiBi-style position slopes, convolution kernel 15) → 392 outputs. 7.5 million parameters |
 | Format | ONNX opset 17, weights 8-bit (dynamic quantization; the mel filter bank stays 32-bit). Input `audio`: float32 [1, samples], raw 16 kHz mono. Output `logprobs`: [1, frames, 392] |
 | Runs on | onnxruntime-web 1.18 (WebAssembly, one thread) in a worker: `browser/asr-worker.js` with model `tiny-ears`. 0.2–0.5 s for a 3-second question on one CPU core |
 | Word matching | `engines/ears-match.js`: CTC prefix beam search over a trie of the word list's pronunciations, with a two-word language model (beam 256, prune 10, LM weight 0.5). The word list: `tools/ears-lexicon.mjs <city>` → `packs/dist/<city>/ears-lexicon.json` (2,181 words for San Miguel) |
-| Date | 20 November 2026 |
+| Date | 22 November 2026 (first model: 20 November 2026) |
 | Licence | **CC BY-SA 4.0** (https://creativecommons.org/licenses/by-sa/4.0/), because it learned from CC BY-SA 4.0 speech |
-| Attribution | "tiny ears (ears-int8-2026-11-20) by the tiny-speech contributors, github.com/larsboesen-prog/tiny-speech, CC BY-SA 4.0; trained on CIEMPIESS (UNAM), Google's crowdsourced Latin American Spanish and LibriSpeech" |
+| Attribution | "tiny ears (ears-int8-2026-11-22) by the tiny-speech contributors, github.com/larsboesen-prog/tiny-speech, CC BY-SA 4.0; trained on CIEMPIESS (UNAM), Google's crowdsourced Latin American Spanish and LibriSpeech" |
 
 ## Intended use
 
@@ -56,6 +56,29 @@ No test or held-out sentence was in training.
 
 ## Evaluation
 
+### The English retrain (22 November 2026, the current file)
+
+The first model understood English requests far worse than Spanish ones (67% against 88%): it had heard English audiobooks but no
+English request. The retrain started from it (step 28,735) and added English and mixed requests from the training split read 10
+times each by Piper's many-speaker English voices (LibriTTS-R, 904 speakers, and VCTK, 109 speakers of many accents; both CC BY 4.0;
+about 5 hours), and CTC on what was said in English too (LibriSpeech and those requests, read by tiny-voca's phonemizer). 5.7 GPU
+hours on Kaggle; the checkpoint kept (step 22,633) had the fewest sound errors against what was said on 660 held-out clips of every
+set: English 13.6% (the teacher 12.8%), Spanish 15.9% (the teacher 22.1%).
+
+Decoded with San Miguel's word list leaning to the language spoken (as /page5 does):
+
+| | First model | **Retrained** |
+|---|---|---|
+| English requests, 201 clips, 3 English voices never heard (US, US, GB): understood | 67.2% | **88.1%** |
+| … words wrong; places found | 21.6%; 57 of 93 | **10.1%; 89 of 93** |
+| … by voice (lessac, kin to the training voices; ryan; alan) | 46, 44, 45 of 67 | **59, 61, 57 of 67** |
+| English questions with everyday words (30 × 3 voices) | 68.9% | **87.8%** |
+| Mexican Spanish requests, 144 clips: understood (words wrong) | 87.5% (9.4%) | **91.0%** (8.7%) |
+| Spanish questions with everyday words (20 × 4 voices) | 78.8% | 77.5% |
+| Argentine and Spain-Spanish voices never heard, 144 clips | 86.1% (10.9%) | 82.6% (13.4%) |
+
+### The first model (20 November 2026)
+
 With the matcher and San Miguel's word list, on synthetic Mexican Spanish requests (`training/asr/probe/`):
 
 | 72 held-out clips (Piper es_MX claude, ald) | Understood exactly as said | The thing asked for heard right | Words wrong | Places found |
@@ -79,7 +102,7 @@ hears four recorded questions word for word as the Python probe did, and `test/d
 - **Synthetic voices only.** Every number above is on text-to-speech voices. Real speakers, accents across Mexico, children,
   older voices, a noisy bar and cheap phone microphones are not measured yet; expect lower numbers. The next test is 5–10
   consented Mexican speakers.
-- **English is weaker** than Spanish (about a quarter of the training speech; 80–100% of words in short checks where Whisper
+- **English** was the weaker side in the first model; the retrain closed most of the gap (above). Before it: (about a quarter of the training speech; 80–100% of words in short checks where Whisper
   tiny.en heard all).
 - **Closed vocabulary.** A word outside the list comes out as the nearest list word, or nothing: right for a guide, wrong for
   dictation. A page should show what was heard so the visitor can correct it, as the demo does.

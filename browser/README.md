@@ -65,7 +65,7 @@ question here (Whisper tiny: about 2 s). Its text comes back in lower case, word
 | First visit, MapSMA with the plain-JS voice | 28.6 MB (17.0 MB brotli) | 74.6 MB English only, 118.2 MB both |
 
 1. **The model.** `ears-int8.onnx` from the training run's output (`python training/ears/kaggle/push.py output larsbo99/tiny-ears-train DIR`),
-   copied to the site as `/tiny-speech/engines/ears/ears-int8-2026-11-20.onnx` (`apps/mapsma.json` `asr.ears.model`; a new model is a new
+   copied to the site as `/tiny-speech/engines/ears/ears-int8-2026-11-22.onnx` (since 22 Nov: the English retrain; before, `-2026-11-20`) (`apps/mapsma.json` `asr.ears.model`; a new model is a new
    file name, so phones never keep an old one). In git since 21 Nov 2026 under CC BY-SA 4.0 (it learned partly from CC BY-SA speech:
    `models/ears.md`), with `engines/ears/vocab.json` (its 392 sounds).
 2. **The word list**: `packs/dist/mx-sma/ears-lexicon.json` (545 KB, 95 KB brotli since 22 Nov 2026: the reader's words too), copied with the packs to `/tiny-speech/packs/`.

@@ -11,11 +11,11 @@ Hugging Face sends model files as they are; once stored on the phone, nothing is
 | Ears, English: Whisper tiny.en, 8-bit | 7 | 43.5 MB | 24.8 MB | 24.0 MB |
 | Ears, Spanish: Whisper tiny (multilingual), 8-bit | 7 | 43.6 MB | 27.3 MB | 26.7 MB |
 | Tiny ears: onnxruntime-web 1.18, one thread (its engine file is also today's voice's) | 2 | 10.7 MB | 2.9 MB | 2.1 MB |
-| Tiny ears: the model, 8-bit (both languages) | 1 | 8.9 MB | 7.3 MB | 7.1 MB |
-| Tiny ears: mx-sma's word list | 1 | 381.9 KB | 92.2 KB | 74.7 KB |
+| Tiny ears: the model, 8-bit (both languages) | 1 | 8.9 MB | 7.0 MB | 6.8 MB |
+| Tiny ears: mx-sma's word list | 1 | 544.5 KB | 120.2 KB | 95.3 KB |
 | Voice today: tiny-voca ONNX + onnxruntime 1.18 + Pyodide (dizione) | 15 | 63.2 MB | 33.2 MB | 29.6 MB |
 | Voice, plain JS: tiny-voca GGUF | 1 | 8.0 MB | 7.5 MB | 7.5 MB |
-| Core code: browser/, core/, lang/, domains/, engines/ (JavaScript) | 30 | 312.6 KB | 116.8 KB | 102.4 KB |
+| Core code: browser/, core/, lang/, domains/, engines/ (JavaScript) | 30 | 312.7 KB | 116.8 KB | 102.4 KB |
 | tiny-voca's plain-JS runtime (vendor/tiny-voca/js) | 14 | 174.6 KB | 54.1 KB | 47.5 KB |
 | Site configs and data the core reads (apps/, lang/*.json) | 6 | 15.4 KB | 6.4 KB | 5.3 KB |
 | City pack mx-sma (100 places) | 3 | 75.4 KB | 18.7 KB | 15.8 KB |
@@ -26,7 +26,7 @@ Hugging Face sends model files as they are; once stored on the phone, nothing is
 | MapSMA English today (ears + ONNX voice + core + pack) | 129.7 MB | 57.5 MB |
 | MapSMA English, plain-JS voice | 74.6 MB | 35.4 MB |
 | … and Spanish questions (second Whisper) | 118.2 MB | 62.1 MB |
-| MapSMA with the tiny ears (both languages), plain-JS voice | 28.6 MB | 17.0 MB |
+| MapSMA with the tiny ears (both languages), plain-JS voice | 28.7 MB | 16.7 MB |
 | CredBrief (ears English + ONNX voice + core) | 129.6 MB | 57.4 MB |
 
 ## Every file
@@ -52,8 +52,8 @@ Hugging Face sends model files as they are; once stored on the phone, nothing is
 | huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json | 2480466 | 629867 | 558778 |
 | cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort-wasm-simd.wasm | 10595041 | 2816839 | 2059200 |
 | cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/esm/ort.wasm.min.js | 142864 | 47288 | 31034 |
-| engines/ears/ears-int8-2026-11-20.onnx | 8883368 | 7260970 | 7111831 |
-| packs/dist/mx-sma/ears-lexicon.json | 381888 | 92157 | 74717 |
+| engines/ears/ears-int8-2026-11-22.onnx | 8883368 | 6997051 | 6797689 |
+| packs/dist/mx-sma/ears-lexicon.json | 544508 | 120248 | 95312 |
 | cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort-wasm-simd.wasm | 10595041 | 2816839 | 2059200 |
 | cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort.wasm.min.js | 142930 | 47308 | 30986 |
 | cdn.jsdelivr.net/pyodide/v0.26.4/full/numpy-1.26.4-cp312-cp312-pyodide_2024_0_wasm32.whl | 11959269 | 2856952 | 2152143 |
@@ -97,7 +97,7 @@ Hugging Face sends model files as they are; once stored on the phone, nothing is
 | engines/asr-ears.js | 3038 | 1547 | 1319 |
 | engines/asr-whisper.js | 3797 | 1617 | 1396 |
 | engines/bilingual.js | 5084 | 2297 | 1994 |
-| engines/ears-match.js | 6400 | 2669 | 2359 |
+| engines/ears-match.js | 6464 | 2699 | 2384 |
 | engines/tinyvoca-js.js | 8060 | 3307 | 2891 |
 | engines/whisper-tokens.js | 2728 | 1255 | 1093 |
 | vendor/tiny-voca/js/dizione/align.js | 1534 | 669 | 610 |
@@ -119,7 +119,7 @@ Hugging Face sends model files as they are; once stored on the phone, nothing is
 | engines/ears/vocab.json | 4637 | 1881 | 1511 |
 | apps/credbrief.json | 503 | 290 | 249 |
 | apps/index.json | 286 | 178 | 152 |
-| apps/mapsma.json | 786 | 405 | 345 |
+| apps/mapsma.json | 786 | 405 | 344 |
 | packs/dist/mx-sma/2026-11-19.eb1cdd/manifest.json | 2684 | 1141 | 993 |
 | packs/dist/mx-sma/2026-11-19.eb1cdd/base.json | 60222 | 15828 | 13561 |
 | packs/dist/mx-sma/live.a6f7f223.json | 12499 | 1730 | 1281 |

@@ -9,6 +9,6 @@
   "caches": { "libs": "mapsma-voice-libs-1", "voice": "mapsma-tinyvoca-", "voiceJs": "mapsma-tinyvoca-js-", "packs": "mapsma" },
   "voice": { "dizione": "/page5/tinyvoca/dizione.zip", "es": "device" },
   "asr": { "engine": "ears", "models": { "en": "onnx-community/whisper-tiny.en", "es": "onnx-community/whisper-tiny" }, "hintBudget": 220,
-    "ears": { "model": "/tiny-speech/engines/ears/ears-int8-2026-11-20.onnx", "lexicon": "/tiny-speech/packs/mx-sma/ears-lexicon.json" } },
+    "ears": { "model": "/tiny-speech/engines/ears/ears-int8-2026-11-22.onnx", "lexicon": "/tiny-speech/packs/mx-sma/ears-lexicon.json" } },
   "limits": { "recMaxMs": 8000 }
 }

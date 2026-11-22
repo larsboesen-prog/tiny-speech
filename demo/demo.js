@@ -13,7 +13,7 @@ import { createAsker, nowAt } from "../domains/places/ask.js";
 
 const CITY = "mx-sma";
 const at = (path) => new URL(path, import.meta.url).href;
-const EARS_MODEL = at("../engines/ears/ears-int8-2026-11-20.onnx");
+const EARS_MODEL = at("../engines/ears/ears-int8-2026-11-22.onnx");
 const EARS_LEXICON = at(`../packs/dist/${CITY}/ears-lexicon.json`);
 const VOICE_FILE = at("../vendor/tiny-voca/tiny-voca-mx1-2026-11-21.gguf");
 const VOICE_SHA = "921d4f8406fd7f988541c5a5487e5b8712740440a93f2f68b836baec4e1a07c6";
