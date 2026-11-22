@@ -92,3 +92,48 @@ speakers and rerun both. Ship only if the tiny one still beats Whisper tiny on r
 Run: `node training/asr/probe/lexicon.mjs lexicon.json`, then
 `python probe.py --manifest <clips.jsonl> --split dev --lexicon lexicon.json --out heard/probe.jsonl --lm 0.5 1 2 --bonus 0 1.5 3`
 (Python with torch and transformers; the recognizer downloads once, 1.2 GB), then `node tools/asr-eval.mjs heard/*.jsonl`.
+
+## Names by sound (22 Nov 2026)
+
+The owner, after the English retrain: "it still fails on place names said with an accent. 'Estoril' is not recognised
+at all. 1. Match place names by sound… ('a story', 'es to real' → Estoril). No retraining. 2. Ask when unsure… One tap picks the
+place." Matching the written guess against the names loses too much: the matcher has already turned "Estoril" into "is it" or "a
+stroll". So `engines/ears-spot.js` looks for each of the city's names in the ears' **sounds** (the 20 ms frames, before words are
+chosen): the best stretch of the recording where the name's sounds could have been said (Viterbi over the name's CTC states, the rest
+of the recording heard freely), scored as the cost per sound against hearing the whole recording freely. Readings come from the same
+word list (every word's Spanish and English sounds, and the soft b/d/g/y heard hard); the names and their other spoken forms from
+the pack (`packs/dist/<city>/ears-names.json`, written by `tools/ears-lexicon.mjs`). 634 readings of 99 of San Miguel's 100 names;
+12–22 ms per question in Node, 21 ms in the browser worker. `soundChoice` decides: the sounds speak only when the words named no
+place in a question shaped like one about a place ("Is X open?", "X, when is it open?", "¿Está abierto X?"); a clear winner (at
+most 2.5 per sound, the next name 1.0 further) answers; otherwise the names within 1.0 of the best (best at most 3.0) are offered as
+buttons, under the list when the question also asked for a kind of place; on the English page a name the words found but the sounds
+clearly contradict (by 1.5) is offered beside the sounds' choice.
+
+**Test sets.** Not the owner's voice yet (record-names/ and `tools/names-test.mjs` measure that): `accent_synth.py` has five
+foreign-language Piper voices (Danish talesyntese, German thorsten, Swedish nst, French siwis, Belgian Dutch nathalie) and two English
+ones (US ryan, GB alan) read "Is X open?" and "X, when is it open?" for the 40 names of record-names/names.json: 560 clips. Their
+frames as /page5 hears them (`page_path.py`: 48 kHz, then listen.js's to16k; the same results as the clean 16 kHz files, 402 vs 401).
+Controls: the 201 English requests and 90 everyday English questions, and the 288 Spanish requests (Mexican and unheard voices) and
+80 everyday Spanish ones, as before. `names_eval.mjs` gives the numbers; the settings were chosen among 2,880 as those adding no wrong
+answer on any set.
+
+| 560 accented clips (English page) | Names found before | After | + offered as buttons | A wrong place before → after |
+|---|---|---|---|---|
+| all | 370 (66%) | **402 (72%)** | 81 (found or one tap: **483, 86%**) | 14 → 10 |
+| Danish (talesyntese) | 31 of 80 | 37 | 19 | 3 → 2 |
+| German (thorsten) | 39 | 44 | 18 | 1 → 1 |
+| Swedish (nst) | 63 | 67 | 7 | 2 → 2 |
+| French (siwis) | 42 | 47 | 19 | 4 → 3 |
+| Belgian Dutch (nathalie) | 54 | 61 | 12 | 2 → 0 |
+| US English (ryan) | 74 | 76 | 0 | 1 → 1 |
+| British English (alan) | 67 | 70 | 6 | 1 → 1 |
+
+| Controls | Names found before → after | A wrong place | "Did you mean" under answers to questions naming no place |
+|---|---|---|---|
+| English, 291 clips (114 name a place) | 94 → 101 | 1 → 1 | 4 of 177 ("where's the best mezcal bar in town": San Mezcal, under the list) |
+| Spanish, 368 clips (96 name a place) | 72 → 73 | 3 → 3 | 0 |
+
+The rest of the misses: the sounds' best name is wrong (Lavanda heard as Bennu), or nothing is close. Through Chromium's fake
+microphone the Danish "Is Estoril open?" scores 2.2 (2.1 from the file), which is why the answer limit is 2.5, not the 2.25 that
+gave the same results here. `tools/names-test.mjs` runs the same before/after on a recorded set through the browser worker: the
+Danish stand-in's 40 "Is X open?" 17 → 22 found, 12 more offered (34 of 40 found or one tap away).

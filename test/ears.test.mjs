@@ -96,3 +96,23 @@ test("in the browser, the worker's tiny ears hear recorded questions as the prob
     [`/engines/ears/${model}`, "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort-wasm-simd.wasm"].sort(), "both kept for the next visit");
   console.log(JSON.stringify(texts.map((m) => ({ text: m.text, runMs: m.runMs, matchMs: m.matchMs }))));
 });
+
+// Names by sound (22 Nov 2026): with ?names=, the worker also says which place names fit the sounds best. A Danish voice (Piper
+// da_DK talesyntese, CC0 data) says "Is Estoril open?"; the words come out "is it open", the sounds still say Estoril, well ahead.
+// (The -cut copy starts at the speech, as the page cuts it: a second of digital silence before it, which no microphone gives,
+// changes what the ears hear.)
+test("in the browser, the worker finds a name by sound when the words miss it", { skip: skipLive, timeout: 180000 }, async () => {
+  const url = `/tiny-speech/asr-worker.js?v=1&libs=t-ears-libs&ears=/engines/ears/${model}&lexicon=/packs/mx-sma/ears-lexicon-en.json&names=/packs/mx-sma/ears-names.json`;
+  const steps = [{ send: { type: "load", model: "tiny-ears" } }, { wait: "ready" },
+    { send: { type: "transcribe", reqId: 1, model: "tiny-ears", audio: { wav: "/fixtures/ears/acc-67-0-da_DK-talesyntese-medium-cut.wav" } } }, { wait: "text" }];
+  const page = await (await browser.newContext()).newPage();
+  await page.goto(`http://localhost:${web.port}/harness/harness.html`);
+  const r = await page.evaluate(([u, s]) => window.run(u, { module: true, steps: s, timeoutMs: 120000 }), [url, steps]);
+  const m = r.posted.find((x) => x && x.type === "text");
+  assert.equal(m.error, undefined, m.error);
+  assert.doesNotMatch(m.text, /estoril/, `the words miss the name: "${m.text}"`);
+  assert.equal(m.spot.length, 5);
+  assert.deepEqual(m.spot[0], { id: "67", name: "Estoril", perSound: m.spot[0].perSound });
+  assert.ok(m.spot[0].perSound < 2.5 && m.spot[1].perSound - m.spot[0].perSound > 1, JSON.stringify(m.spot.slice(0, 2)));
+  console.log(JSON.stringify({ text: m.text, spot: m.spot.slice(0, 3), spotMs: m.spotMs }));
+});

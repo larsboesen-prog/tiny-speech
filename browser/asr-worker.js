@@ -11,7 +11,8 @@
 // are found again. Without ?libs= (a test copy) the cache gets a name of its own. No site or host names here (plan step B9).
 // Messages in: {type: "load", model} and {type: "transcribe", reqId, model, audio (16 kHz Float32Array), language ("es": multilingual
 // Whisper only), hint (names, as text) or hintNames (names in order of need) with hintBudget (tokens)}.
-// Messages out: progress {id, frac}, ready {id, core}, warm {id, ms}, error {id, message}, text {reqId, text | error, waitMs, runMs}.
+// Messages out: progress {id, frac}, ready {id, core}, warm {id, ms}, error {id, message}, text {reqId, text | error, waitMs, runMs,
+// spot? (the ears with ?names=)}.
 //
 // The tiny ears (plan step B16, 20 Nov 2026): model "tiny-ears" is the 8.9 MB sound recognizer and the city's word list
 // (engines/asr-ears.js) instead of Whisper, through the same messages; Whisper tiny stays a choice (any other model id). Its files:
@@ -19,6 +20,8 @@
 // (packs/<city>/ears-lexicon.json), made by core/config.js workerUrl from the site's asr.ears. It needs no hint and no language
 // (one model, both languages); its text comes back in lower case, words only. onnxruntime-web 1.18 (one thread, the same engine
 // file the voice worker keeps) is loaded only when the ears are asked for, and transformers.js only when Whisper is.
+// Names by sound (22 Nov 2026): with ?names=<the city's ears-names.json>, the text message also carries `spot`, the five place names
+// that fit the sounds best ([{id, name, perSound}], engines/ears-spot.js), for the page to use when the words missed the name.
 
 const CORE = "tiny-speech 0.3.0";
 const TRANSFORMERS = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
@@ -33,6 +36,7 @@ const ENGINES = HERE.searchParams.get("engines");
 const EARS = {
   model: new URL(HERE.searchParams.get("ears") || "../engines/ears/ears-int8.onnx", HERE).href,
   lexicon: HERE.searchParams.get("lexicon") ? new URL(HERE.searchParams.get("lexicon"), HERE).href : "",
+  names: HERE.searchParams.get("names") ? new URL(HERE.searchParams.get("names"), HERE).href : "",
 };
 EARS.vocab = new URL("vocab.json", EARS.model).href;
 const ORT = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/";  // 1.18 as the voice worker: from 1.19 every build reserves 4 GB
@@ -62,7 +66,8 @@ const earsLibs = () => earsLoading || (earsLoading = Promise.all([
     ort.env.wasm.wasmPaths = mirror(ORT);
     return ort;
   }),
-  import(new URL("../engines/asr-ears.js", import.meta.url).href),
+  // with the worker's own version (and whether it finds names by sound), so a browser that kept an older engine file fetches this one
+  import(new URL(`../engines/asr-ears.js?v=${encodeURIComponent(HERE.searchParams.get("v") || "")}${EARS.names ? "&names=1" : ""}`, import.meta.url).href),
 ]).then(([ort, engine]) => ({ ort, engine })));
 
 // transformers.js keeps the model files in cache storage itself, but fetches onnxruntime's engine (a .wasm of 10-20 MB) through the
@@ -118,8 +123,9 @@ async function keptBytes(url, id) {
 async function loadEars() {
   if (!EARS.lexicon) throw new Error("the tiny ears need the city's word list: ?lexicon= in the worker's address (asr.ears.lexicon in the site's config)");
   const json = (url) => netFetch(url).then((r) => { if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); });
-  const [{ ort, engine }, model, vocab, lexicon] = await Promise.all([earsLibs(), keptBytes(EARS.model, "tiny-ears"), json(EARS.vocab), json(EARS.lexicon)]);
-  return engine.createEars({ ort, model, vocab, lexicon });
+  const [{ ort, engine }, model, vocab, lexicon, names] = await Promise.all([earsLibs(), keptBytes(EARS.model, "tiny-ears"), json(EARS.vocab), json(EARS.lexicon),
+    EARS.names ? json(EARS.names).catch(() => null) : null]);  // no names file: words only, as before
+  return engine.createEars({ ort, model, vocab, lexicon, names });
 }
 
 // One call for both kinds of model: Whisper's pipeline, or the ears' hear().
@@ -269,7 +275,8 @@ onmessage = async ({ data }) => {
       let began = 0;  // for the page's timing window: waiting for the model (and its warm-up) vs turning speech into text
       if (model.hear) {  // the tiny ears: no hint, no language, nothing to retry
         const out = await serial(() => { began = performance.now(); return model.hear(data.audio); });
-        postMessage({ type: "text", reqId: data.reqId, text: out.text, engine: "tiny-ears", waitMs: Math.round(began - asked), runMs: Math.round(performance.now() - began), matchMs: out.matchMs });
+        postMessage({ type: "text", reqId: data.reqId, text: out.text, engine: "tiny-ears", waitMs: Math.round(began - asked), runMs: Math.round(performance.now() - began), matchMs: out.matchMs,
+          ...(out.spot ? { spot: out.spot, spotMs: out.spotMs } : {}) });
         return;
       }
       let h = null;

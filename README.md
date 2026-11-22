@@ -50,7 +50,9 @@ flowchart LR
    the most likely sentence made of **the city's own words** (2,181 for San Miguel: place names, dishes, areas, everyday
    question words in both languages) with a two-word language model. That is why it hears "Raindog Cantina" or "Bocaciega",
    which a general model writes as something else, and why it is so small: the model only has to hear sounds; the words come
-   from the city.
+   from the city. When an accent turns a name into other words ("Is Estoril open?" written "is it open"), the name finder
+   (`engines/ears-spot.js`) still looks for each of the city's names in the sounds themselves; the page then answers about the
+   clear winner or offers the two or three closest names as buttons.
 3. **Decide the language** (`core/lang-decide.js`): from the words, with the city's names masked out first ("Is La Azotea
    open?" is English though "la" is Spanish), and the last question's language. The visitor can choose instead.
 4. **Read and answer** (`domains/places/`, `domains/music/`): rules turn the words into a request ("open now", "near the
@@ -92,6 +94,11 @@ The same 144 sentences read by two voices it **never heard** in training (Argent
   three voices it never heard, understood **88.1%** (the first model 67.2%, Whisper tiny.en 61.2%), words wrong 10.1%, places found
   89 of 93; questions using everyday words, 87.8%. Mexican Spanish improved with it (87.5% → 91.0%); two non-Mexican Spanish voices
   lost a little (86.1% → 82.6%). `models/ears.md` has every number.
+- **Names said with an accent** (names by sound, 22 Nov 2026): on 560 stand-in clips of five non-native English voices (Danish,
+  German, Swedish, French, Belgian Dutch) and two native ones asking about 40 San Miguel places, names found 370 → **402**, and 81
+  more offered as a button (86% found or one tap away); a wrong place 14 → 10. On 659 ordinary English and Spanish questions it adds
+  no wrong answer. `training/asr/probe/README.md` has the method; `record-names/` records your own voice for the same test
+  (`tools/names-test.mjs`).
 - **Speed**: 0.2–0.5 s to turn a 3-second question into text on one CPU core (Whisper tiny: about 2 s).
 - **Closed vocabulary**: it can only write words in the city's list. A word outside the list comes out as the nearest list
   word, or not at all. That is what makes it accurate for the city, and why it is not a general dictation model.

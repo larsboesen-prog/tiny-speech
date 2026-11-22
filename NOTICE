@@ -23,7 +23,8 @@ This repository also contains:
 * packs/: San Miguel de Allende listings from MapSMA (mapsma.com). The notes on Susan York's picks credit and link her posts
   on cupcakesandcrablegs.com and remain hers.
 
-* test/fixtures/ears/*.wav: speech synthesized with Piper voices es_MX claude (Apache-2.0) and ald (CC0).
+* test/fixtures/ears/*.wav: speech synthesized with Piper voices es_MX claude (Apache-2.0) and ald (CC0), and (acc-*.wav) da_DK
+  talesyntese (CC0 data) reading English questions.
 
 Loaded at run time from their hosts, not included: onnxruntime-web (Microsoft, MIT), transformers.js (Hugging Face,
 Apache-2.0) and Whisper models (OpenAI, MIT) when Whisper is chosen.

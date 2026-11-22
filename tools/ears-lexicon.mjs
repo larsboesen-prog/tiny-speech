@@ -160,4 +160,11 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     writeFileSync(out, text);
     console.log(`${out}: ${summary}; ${text.length} bytes, sha256 ${createHash("sha256").update(text).digest("hex").slice(0, 12)}`);
   }
+  // the place names the ears look for by sound (engines/ears-spot.js): each place's name and its other spoken forms ("La Cabra" for La
+  // Cabra Iluminada), as the city's pack has them
+  const names = read(ROOT + `packs/src/${city}/places.json`, []).map((p) => ({ id: p.id, name: p.name, ...((p.names || []).length ? { alts: p.names.map((n) => n.t) } : {}) }));
+  const out = process.argv[3] ? process.argv[3].replace(/ears-lexicon[^/]*\.json$|\.json$/, "ears-names.json") : ROOT + `packs/dist/${city}/ears-names.json`;
+  const text = JSON.stringify({ names });
+  writeFileSync(out, text);
+  console.log(`${out}: ${names.length} places; ${text.length} bytes`);
 }

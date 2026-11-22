@@ -1,0 +1,206 @@
+{
+ "city": "mx-sma",
+ "about": "40 San Miguel place names to record once in your own voice: a test set for finding names by sound (not for training)",
+ "names": [
+  {
+   "id": "67",
+   "name": "Estoril",
+   "prompt": "Is Estoril open?"
+  },
+  {
+   "id": "60",
+   "name": "La Azotea",
+   "prompt": "Is La Azotea open?"
+  },
+  {
+   "id": "2",
+   "name": "Lavanda",
+   "prompt": "Is Lavanda open?"
+  },
+  {
+   "id": "48",
+   "name": "Bocaciega",
+   "prompt": "Is Bocaciega open?"
+  },
+  {
+   "id": "8",
+   "name": "Café Umarán",
+   "prompt": "Is Café Umarán open?"
+  },
+  {
+   "id": "9",
+   "name": "K'ibok Coffee",
+   "prompt": "Is K'ibok Coffee open?"
+  },
+  {
+   "id": "10",
+   "name": "Amapola",
+   "prompt": "Is Amapola open?"
+  },
+  {
+   "id": "11",
+   "name": "Zenteno Café",
+   "prompt": "Is Zenteno Café open?"
+  },
+  {
+   "id": "15",
+   "name": "Raíces",
+   "prompt": "Is Raíces open?"
+  },
+  {
+   "id": "16",
+   "name": "Rústica",
+   "prompt": "Is Rústica open?"
+  },
+  {
+   "id": "18",
+   "name": "Luna de Queso",
+   "prompt": "Is Luna de Queso open?"
+  },
+  {
+   "id": "22",
+   "name": "Tacos Don Tomás",
+   "prompt": "Is Tacos Don Tomás open?"
+  },
+  {
+   "id": "33",
+   "name": "Hierba Santa",
+   "prompt": "Is Hierba Santa open?"
+  },
+  {
+   "id": "42",
+   "name": "Andanza",
+   "prompt": "Is Andanza open?"
+  },
+  {
+   "id": "43",
+   "name": "Agavia",
+   "prompt": "Is Agavia open?"
+  },
+  {
+   "id": "45",
+   "name": "Tostévere",
+   "prompt": "Is Tostévere open?"
+  },
+  {
+   "id": "46",
+   "name": "San Mezcal",
+   "prompt": "Is San Mezcal open?"
+  },
+  {
+   "id": "47",
+   "name": "Olas Altas",
+   "prompt": "Is Olas Altas open?"
+  },
+  {
+   "id": "50",
+   "name": "La Cabra Iluminada",
+   "prompt": "Is La Cabra Iluminada open?"
+  },
+  {
+   "id": "51",
+   "name": "Casa Nostra",
+   "prompt": "Is Casa Nostra open?"
+  },
+  {
+   "id": "52",
+   "name": "Fenicia",
+   "prompt": "Is Fenicia open?"
+  },
+  {
+   "id": "53",
+   "name": "La Parada",
+   "prompt": "Is La Parada open?"
+  },
+  {
+   "id": "58",
+   "name": "La Chope",
+   "prompt": "Is La Chope open?"
+  },
+  {
+   "id": "59",
+   "name": "La Hija del Manantial",
+   "prompt": "Is La Hija del Manantial open?"
+  },
+  {
+   "id": "65",
+   "name": "Cava Sautto",
+   "prompt": "Is Cava Sautto open?"
+  },
+  {
+   "id": "70",
+   "name": "Birria Xalisco",
+   "prompt": "Is Birria Xalisco open?"
+  },
+  {
+   "id": "71",
+   "name": "El Rinconcito",
+   "prompt": "Is El Rinconcito open?"
+  },
+  {
+   "id": "72",
+   "name": "Nudol",
+   "prompt": "Is Nudol open?"
+  },
+  {
+   "id": "74",
+   "name": "Sikelia",
+   "prompt": "Is Sikelia open?"
+  },
+  {
+   "id": "76",
+   "name": "El Vergel",
+   "prompt": "Is El Vergel open?"
+  },
+  {
+   "id": "77",
+   "name": "Cava Garambullo",
+   "prompt": "Is Cava Garambullo open?"
+  },
+  {
+   "id": "X1",
+   "name": "Kan Bei",
+   "prompt": "Is Kan Bei open?"
+  },
+  {
+   "id": "X3",
+   "name": "Carnitas El Güero",
+   "prompt": "Is Carnitas El Güero open?"
+  },
+  {
+   "id": "X5",
+   "name": "Mariscos Los Delfines",
+   "prompt": "Is Mariscos Los Delfines open?"
+  },
+  {
+   "id": "X8",
+   "name": "Petit Four",
+   "prompt": "Is Petit Four open?"
+  },
+  {
+   "id": "X17",
+   "name": "Tío Lucas",
+   "prompt": "Is Tío Lucas open?"
+  },
+  {
+   "id": "X19",
+   "name": "Mama Mía",
+   "prompt": "Is Mama Mía open?"
+  },
+  {
+   "id": "X20",
+   "name": "Raindog Cantina",
+   "prompt": "Is Raindog Cantina open?"
+  },
+  {
+   "id": "X21",
+   "name": "Johnny's Piano Bar",
+   "prompt": "Is Johnny's Piano Bar open?"
+  },
+  {
+   "id": "S10",
+   "name": "Parque Juárez",
+   "prompt": "Where is Parque Juárez?"
+  }
+ ]
+}

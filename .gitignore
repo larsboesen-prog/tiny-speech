@@ -7,3 +7,4 @@ engines/ears/*.onnx
 training/result/
 !engines/ears/ears-int8-2026-11-20.onnx
 !engines/ears/ears-int8-2026-11-22.onnx
+training/names-test/

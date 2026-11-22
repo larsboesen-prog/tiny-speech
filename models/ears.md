@@ -77,6 +77,21 @@ Decoded with San Miguel's word list leaning to the language spoken (as /page5 do
 | Spanish questions with everyday words (20 × 4 voices) | 78.8% | 77.5% |
 | Argentine and Spain-Spanish voices never heard, 144 clips | 86.1% (10.9%) | 82.6% (13.4%) |
 
+### Names by sound (22 November 2026, no retraining)
+
+When an accent turns a place name into other words, `engines/ears-spot.js` looks for each of the city's names in the model's
+sounds (before words are chosen) and the page answers about a clear winner or offers the closest names as buttons. Stand-in accented
+English (five non-native Piper voices and two native ones, 40 names, 560 clips, heard through the page's own audio path):
+
+| | Names found | + offered as a button | A wrong place |
+|---|---|---|---|
+| Words only (before) | 370 (66%) | | 14 |
+| **With names by sound** | **402 (72%)** | 81 (86% found or one tap away) | 10 |
+| … the Danish voice alone | 31 → 37 of 80 | 19 | 3 → 2 |
+
+Ordinary questions (291 English, 368 Spanish clips): names found 94 → 101 and 72 → 73, no new wrong answer.
+Method and every setting: `training/asr/probe/README.md`, "Names by sound".
+
 ### The first model (20 November 2026)
 
 With the matcher and San Miguel's word list, on synthetic Mexican Spanish requests (`training/asr/probe/`):

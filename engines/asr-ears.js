@@ -6,6 +6,7 @@
 //
 // Runs where onnxruntime runs (a worker with onnxruntime-web, or Node with onnxruntime-node): the caller passes `ort` in.
 import { buildLexicon, decode } from "./ears-match.js";
+import { buildNameSpotter } from "./ears-spot.js";
 
 export const EARS_ID = "tiny-ears";
 export const isEars = (id) => String(id || "").startsWith(EARS_ID);
@@ -15,18 +16,21 @@ export const framesOf = (samples) => Math.floor((samples - 400) / 320) + 1;  // 
 /**
  * ort: an onnxruntime module ({InferenceSession, Tensor}); model: the ONNX file's bytes (ears-int8.onnx); vocab: {sound: id}
  * (engines/ears/vocab.json); lexicon: the city's word list (parsed JSON). settings: the matcher's (ears-match.js decode).
+ * names: the city's places ({names: [{id, name, alts}]}, packs/dist/<city>/ears-names.json), to look for by sound (ears-spot.js):
+ * hear() then also returns `spot`, the five names that fit the sounds best, for when the words missed the name (owner, 22 Nov 2026).
  */
-export async function createEars({ ort, model, vocab, lexicon, settings = {}, sessionOptions = {} }) {
+export async function createEars({ ort, model, vocab, lexicon, names = null, settings = {}, sessionOptions = {} }) {
   const session = await ort.InferenceSession.create(model, { executionProviders: ["wasm"], ...sessionOptions });
   const lex = buildLexicon(lexicon, vocab);
   const blank = vocab["<pad>"], V = Object.keys(vocab).length;
   const input = session.inputNames[0], output = session.outputNames[0];
+  const spotter = names && (names.names || names).length ? buildNameSpotter(names.names || names, lexicon, vocab) : null;
   return {
     id: EARS_ID,
     words: lex.words,
-    /** audio: 16 kHz mono Float32Array → {text, frames, runMs (the model), matchMs (the word list)} */
+    /** audio: 16 kHz mono Float32Array → {text, frames, runMs (the model), matchMs (the word list), spot?: [{id, name, perSound}]} */
     async hear(audio) {
-      if (!audio || audio.length < MIN_SAMPLES) return { text: "", frames: 0, runMs: 0, matchMs: 0 };
+      if (!audio || audio.length < MIN_SAMPLES) return { text: "", frames: 0, runMs: 0, matchMs: 0, ...(spotter ? { spot: [] } : {}) };
       let peak = 0;
       for (let i = 0; i < audio.length; i++) { const a = Math.abs(audio[i]); if (a > peak) peak = a; }
       const wave = new Float32Array(audio.length), g = 0.9 / (peak || 1);  // as the probe and the training checks hear it
@@ -37,7 +41,9 @@ export async function createEars({ ort, model, vocab, lexicon, settings = {}, se
       if (width !== V) throw new Error(`the model gives ${width} sounds, the vocabulary has ${V}`);
       const t1 = performance.now();
       const text = decode(lp.data, frames, V, lex, blank, settings);
-      return { text, frames, runMs: Math.round(t1 - t0), matchMs: Math.round(performance.now() - t1) };
+      const t2 = performance.now();
+      const spot = spotter ? spotter.spot(lp.data, frames, V, blank, 5).map((x) => ({ id: x.id, name: x.name, perSound: Math.round(x.perSound * 1000) / 1000 })) : null;
+      return { text, frames, runMs: Math.round(t1 - t0), matchMs: Math.round(t2 - t1), ...(spot ? { spot, spotMs: Math.round(performance.now() - t2) } : {}) };
     },
     dispose: async () => { try { await session.release(); } catch { /* already gone */ } },
   };
