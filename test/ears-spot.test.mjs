@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { buildNameSpotter, soundChoice, ONE_PLACE, subjectOf, SOUND_RULES } from "../engines/ears-spot.js";
+import { buildNameSpotter, soundChoice, ONE_PLACE, ONE_PLACE_LOOSE, subjectOf, SOUND_RULES } from "../engines/ears-spot.js";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const json = (p) => JSON.parse(readFileSync(ROOT + p, "utf8"));
@@ -71,6 +71,20 @@ test("the rules: a clear winner answers, close names are asked about, list quest
   // spot results as [id, perSound] pairs work the same
   assert.deepEqual(soundChoice("is it open", { named: null }, [["67", 2.03], ["58", 3.3]]).pick, "67");
   assert.equal(SOUND_RULES.accept, 2.5);
+});
+
+// the owner's own recordings (22 Nov 2026): "X, when is it open?" written "… when is el", "Is X open?" written "X open"
+test("the loose shapes from a real voice, and questions about a kind of place or a where", () => {
+  const list = (...xs) => xs.map(([id, perSound]) => ({ id, perSound }));
+  for (const t of ["um an when is el", "hi lucas when is el", "cava when is it", "y olas and a when", "say open", "el been open", "cava can open"]) assert.ok(ONE_PLACE_LOOSE.test(t), t);
+  for (const t of ["what is open", "anything open", "is there a cafe open", "show me all the places open"]) assert.ok(!ONE_PLACE_LOOSE.test(t), t);
+  assert.deepEqual(soundChoice("hi lucas when is el", { named: null }, list(["X17", 1.3], ["42", 2.5])), { pick: "X17", ask: [], keep: false });
+  assert.deepEqual(soundChoice("pisco open", { named: null, topics: ["peruvian"] }, list(["70", 1.3], ["1", 2.5])), { pick: null, ask: [], keep: false }, "short, with a subject: the list");
+  assert.ok(!ONE_PLACE.test("where is a quality steak restaurant") && !ONE_PLACE.test("where's an italian place"), "a kind of place, not a name");
+  assert.ok(ONE_PLACE.test("where is johnnys piano bar") && ONE_PLACE.test("is a stroll open"));
+  // a street or a hotel is where to look: the list stays, names are only offered under it
+  assert.deepEqual(soundChoice("esta sea live aqua please", { named: null, hotel: { en: "Live Aqua" } }, list(["67", 1.0], ["38", 2.5])), { pick: null, ask: ["67"], keep: true });
+  assert.deepEqual(soundChoice("is it open on mesones", { named: null, street: { key: "mesones" } }, list(["67", 1.0], ["38", 2.5])), { pick: null, ask: ["67"], keep: true });
 });
 
 test("a request with a subject: a kind of food, an area, near me, a list", () => {

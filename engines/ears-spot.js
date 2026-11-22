@@ -156,9 +156,13 @@ export const SOUND_RULES = {
 const foldText = (s) => fold(s).replace(/[^a-z0-9ñ' ]+/g, " ").replace(/\s+/g, " ").trim();
 // The shape of a question about one place: "Is X open?", "When does X close?", "Where is X?", "X, when is it open?", "¿Está abierto X?",
 // "¿A qué hora abre X?" — not "Is there…", "¿Qué está abierto…?" (a list).
-export const ONE_PLACE = /^(is|does|when does|when is|what time does|what time is|how late is|how late does|until when is|where is|where's|tell me about|how about|what about|esta|a que hora|cuando abre|cuando cierra|donde esta|que tal)\b(?! (there|anything|anywhere|any|something|somewhere|hay)\b)|\b(when is it open|is it open|what time does it|a que hora abre)\b|(?<!que )\besta abiert[oa]\b/;
+export const ONE_PLACE = /^(is|does|when does|when is|what time does|what time is|how late is|how late does|until when is|where is|where's|tell me about|how about|what about|esta|a que hora|cuando abre|cuando cierra|donde esta|que tal)\b(?! (there|anything|anywhere|any|something|somewhere|hay)\b)(?<!^where is(?= (a|an|some)\b))(?<!^where's(?= (a|an|some)\b))|\b(when is it open|is it open|what time does it|a que hora abre)\b|(?<!que )\besta abiert[oa]\b/;
+// …and as the ears write the owner's own voice (22 Nov 2026, 80 recorded questions): "X, when is it open?" as "… when is el", "… when is
+// it", "… a when"; "Is X open?" as "X open" ("say open", "cava open"). The short one counts only when nothing else is asked ("tacos open"
+// is a list).
+export const ONE_PLACE_LOOSE = /\bwhen(?: is(?: it| el| he)?)?$|^(?!(?:what|whats|what s|anything|everything|who|which|where|is there|are there|any|hay|que)\b)(?:\S+ ){1,3}open(?: now)?$/;
 /** Whether the reader's request asks for something besides a place's name (a kind of food, an area, near me, a list…). */
-export const subjectOf = (q) => !!(q && (q.cats || q.area || q.centro || q.near || q.nearSight || q.asks || q.wantsList || (q.topics && q.topics.length) || q.collection || q.meal || q.susan));
+export const subjectOf = (q) => !!(q && (q.cats || q.area || q.centro || q.street || q.hotel || q.near || q.nearSight || q.asks || q.wantsList || (q.topics && q.topics.length) || q.collection || q.meal || q.susan));
 /**
  * text: the heard words; q: the reader's request for them ({named, plural, near, cats, …}); spot: spot()'s list (or [[id, perSound]]).
  * Returns {pick: id | null, ask: [ids], keep: bool}: pick = answer about that place; ask = offer these names as buttons (keep = keep
@@ -178,10 +182,12 @@ export function soundChoice(text, q, spot, { rules = SOUND_RULES, override = tru
     return !mine || mine.perSound - top.perSound >= rules.override ? { pick: null, ask: [top.id, named], keep: false } : none;
   }
   if (q && (q.plural || q.near)) return none;
-  if (!ONE_PLACE.test(foldText(text))) {  // not shaped like a question about a place: only a very clear name, when nothing else was asked
+  const t = foldText(text);
+  if (!ONE_PLACE.test(t) && !(ONE_PLACE_LOOSE.test(t) && !subjectOf(q))) {  // not shaped like a question about a place: only a very clear name, when nothing else was asked
     return rules.strong && !subjectOf(q) && top.perSound <= rules.strong && gap >= rules.strongGap ? { pick: top.id, ask: [], keep: false } : none;
   }
-  if (top.perSound <= rules.accept && gap >= rules.gap) return { pick: top.id, ask: [], keep: false };
+  // a street or a hotel is where to look ("restaurants near Live Aqua"): its list stays, the names are only offered under it
+  if (top.perSound <= rules.accept && gap >= rules.gap && !(q && (q.street || q.hotel))) return { pick: top.id, ask: [], keep: false };
   if (top.perSound <= rules.askBelow) return { pick: null, ask: list.filter((s) => s.perSound <= top.perSound + rules.window).slice(0, 3).map((s) => s.id), keep: subjectOf(q) };
   return none;
 }
