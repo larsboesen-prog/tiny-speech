@@ -10,6 +10,12 @@
 // questions about every place ("when is La Azotea open", "a qué hora abre Estoril") and every new word ("is there a tapas open now"),
 // so the new words can win when they were said, without stealing from words people use (measured: training/ears/README.md).
 // earsLexicon(city, {extended: false}) gives the list as before (the ears probe's measurements were made with it).
+// Leaning lists (22 Nov 2026, the owner: "In the UI select EN so text is in English: why can't the ear model give more preference to
+// English words, and the same for Spanish when ES is selected?"): ears-lexicon-en.json and -es.json, for a page whose reader chose a
+// language: that language's sentences count LEAN.preferWeight times, and the other language's readings of a word cost LEAN.otherCost
+// (the city's names are said either way). Measured, matched page and speaker: words wrong English 18.0% → 15.1%, Spanish 14.5% → 12.9%
+// on questions with the new words; held-out understood English 65.7% → 67.2%, Spanish 86.8% → 87.5%. On the wrong page an English
+// speaker loses (68.9% → 60.0%): the page's EN|ES switch matters (training/ears/README.md).
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
@@ -34,6 +40,7 @@ const T_WORD = { en: ["is there a {w} open now", "{w} near me", "where can i fin
 const T_EXTRA = ["what music venues are open now", "where is there live music tonight", "find four restaurants in centro that are open now",
   "what vegan restaurant is open", "what is open right now", "where can i eat now"];
 const JUNK = new Set("pastele coctele mediterrane peruan corean originale pastr feat whos bfast modmex tradmex mex th os fi wi hr hrs min mins mxn am mid set pm".split(" "));
+export const LEAN = { preferWeight: 6, otherCost: 1 };
 const READER = ["domains/places/read.js", "domains/music/index.js", "lang/en/index.js", "lang/es/index.js"];
 
 /** The plain words in a rule's alternatives ("cafes?|bars?|happy hour" → cafe, cafes, bar, bars, happy, hour); patterns with other regex
@@ -57,7 +64,10 @@ function ruleWords(src) {
 }
 
 /** {words, unigrams, bigrams, summary} for a city (packs/src/<city>/), with the requests' training split. */
-export async function earsLexicon(city, { extended = true } = {}) {
+export async function earsLexicon(city, { extended = true, prefer = null, preferWeight = 1, otherCost = 0 } = {}) {
+  // prefer "en" | "es": the page's language. Its sentences count preferWeight times, the other language's 1/preferWeight; a reading
+  // in the other language costs otherCost log points (not for the city's names, said either way).
+  const weightOf = (lang) => (!prefer ? 1 : lang === prefer ? preferWeight : lang === "mixed" ? 1 : 1 / preferWeight);
   const phonemizer = await fromGGUF(readGGUF(new Uint8Array(readFileSync(VOICE)).buffer));
   const rows = readFileSync(ROOT + "training/asr/text/utterances.jsonl", "utf8").trim().split("\n").map((l) => JSON.parse(l));
   const train = rows.filter((r) => (r.split || split(r.text)) === "train");
@@ -89,7 +99,8 @@ export async function earsLexicon(city, { extended = true } = {}) {
   const pairs = {}, counts = {};
   for (const r of train) {
     const ws = ["<s>", ...words(r.text).filter((w) => out[w]), "</s>"];
-    ws.forEach((w, i) => { counts[w] = (counts[w] || 0) + 1; if (i) { const k = ws[i - 1] + " " + w; pairs[k] = (pairs[k] || 0) + 1; } });
+    const k1 = weightOf(r.lang);
+    ws.forEach((w, i) => { counts[w] = (counts[w] || 0) + k1; if (i) { const k = ws[i - 1] + " " + w; pairs[k] = (pairs[k] || 0) + k1; } });
   }
   let added = 0, templates = 0;
   if (extended) {
@@ -119,12 +130,19 @@ export async function earsLexicon(city, { extended = true } = {}) {
     };
     for (const p of places) {
       const name = p.name.toLowerCase().replace(/[^\p{L}' ]+/gu, " ").replace(/\s+/g, " ").trim();
-      for (const t of [...T_PLACE.en, ...T_PLACE.es]) learn(t.replace("{p}", name), PLACE_TEMPLATE_WEIGHT);
+      for (const t of T_PLACE.en) learn(t.replace("{p}", name), PLACE_TEMPLATE_WEIGHT * weightOf("en"));
+      for (const t of T_PLACE.es) learn(t.replace("{p}", name), PLACE_TEMPLATE_WEIGHT * weightOf("es"));
     }
-    for (const t of T_EXTRA) learn(t, PLACE_TEMPLATE_WEIGHT);
-    for (const w of Object.keys(out).slice(-added)) for (const t of T_WORD[out[w][0].lang]) learn(t.replace("{w}", w), WORD_TEMPLATE_WEIGHT);
+    for (const t of T_EXTRA) learn(t, PLACE_TEMPLATE_WEIGHT * weightOf("en"));
+    for (const w of Object.keys(out).slice(-added)) for (const t of T_WORD[out[w][0].lang]) learn(t.replace("{w}", w), WORD_TEMPLATE_WEIGHT * weightOf(out[w][0].lang));
     const round = (o) => { for (const k in o) o[k] = Math.round(o[k] * 1e4) / 1e4; };
     round(counts); round(pairs);
+  }
+  if (prefer && otherCost) {
+    const names = new Set();
+    for (const p of places) for (const w of words(p.name + " " + (p.names || []).map((n) => n.t).join(" "))) names.add(w);
+    for (const a of areas) for (const w of words(JSON.stringify(a.say || a.words || a.names || ""))) names.add(w);
+    for (const [w, prons] of Object.entries(out)) if (!names.has(w)) for (const p of prons) if (p.lang !== prefer) p.cost = otherCost;
   }
   const summary = `${Object.keys(out).length} words (${Object.values(out).filter((p) => p.some((x) => x.lang === "es")).length} with Spanish sounds, ${Object.values(out).filter((p) => p.some((x) => x.lang === "en")).length} with English), ${Object.keys(pairs).length} word pairs from ${train.length} training sentences${extended ? ` and ${templates} template questions; ${added} words from the reader and everyday lists` : ""}`;
   return { words: out, unigrams: counts, bigrams: pairs, summary };
@@ -133,9 +151,13 @@ export async function earsLexicon(city, { extended = true } = {}) {
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const city = process.argv[2];
   if (!city) { console.error("usage: node tools/ears-lexicon.mjs <city> [out.json]"); process.exit(2); }
-  const { words: w, unigrams, bigrams, summary } = await earsLexicon(city);
-  const text = JSON.stringify({ words: w, unigrams, bigrams });
-  const out = process.argv[3] || ROOT + `packs/dist/${city}/ears-lexicon.json`;
-  writeFileSync(out, text);
-  console.log(`${out}: ${summary}; ${text.length} bytes, sha256 ${createHash("sha256").update(text).digest("hex").slice(0, 12)}`);
+  // the list for any page, and one leaning to each language (a page that knows its reader's language loads that one)
+  for (const prefer of [null, "en", "es"]) {
+    const { words: w, unigrams, bigrams, summary } = await earsLexicon(city, prefer ? { prefer, ...LEAN } : {});
+    const text = JSON.stringify({ words: w, unigrams, bigrams });
+    const out = prefer ? (process.argv[3] ? process.argv[3].replace(/\.json$/, `-${prefer}.json`) : ROOT + `packs/dist/${city}/ears-lexicon-${prefer}.json`)
+      : process.argv[3] || ROOT + `packs/dist/${city}/ears-lexicon.json`;
+    writeFileSync(out, text);
+    console.log(`${out}: ${summary}; ${text.length} bytes, sha256 ${createHash("sha256").update(text).digest("hex").slice(0, 12)}`);
+  }
 }

@@ -66,7 +66,7 @@ class Lexicon:
                         ids.append(vocab[ph])
                     if ids and tuple(ids) not in seen:
                         seen.add(tuple(ids))
-                        self.add(ids, word)
+                        self.add(ids, word, p.get("cost", 0.0))  # a reading can cost (the page's other language)
             for p in prons if rules else []:
                 for said, heard in rules:
                     for i, ph in enumerate(p["phones"]):

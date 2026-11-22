@@ -35,7 +35,7 @@ export function buildLexicon(data, vocab) {
           if (!(ph in vocab)) { missing[ph] = (missing[ph] || 0) + 1; ids = null; break; }
           ids.push(vocab[ph]);
         }
-        if (ids && ids.length && !seen.has(ids.join(","))) { seen.add(ids.join(",")); add(ids, word); }
+        if (ids && ids.length && !seen.has(ids.join(","))) { seen.add(ids.join(",")); add(ids, word, p.cost || 0); }  // a reading can cost (the page's other language)
       }
     }
   }

@@ -176,3 +176,23 @@ The shipped 8.9 MB model, decoded with each list (`../asr/probe/`: probe.py's ma
 
 The held-out sets are made of the requests' own words, so they can only show the cost (a few clips); the first two rows are questions
 as people ask them. The probe keeps the old list (`earsLexicon(city, {extended: false})`) so its earlier measurements stand.
+
+### Leaning to the page's language (22 Nov 2026)
+
+The owner: "In the UI select EN so text is in English: why can't the ear model give more preference to English words spoken, and the
+same for Spanish when ES is selected?" A page that knows its reader's language now loads a list leaning to it
+(`ears-lexicon-en.json`, `-es.json`, from `tools/ears-lexicon.mjs`): that language's sentences count 6 times in the word-pair model,
+the other's a sixth, and a word's reading in the other language costs 1 log point (the city's names are said either way). Chosen
+among 5 settings; the shipped model, same sets as above:
+
+| Page and speaker in the same language | Neutral list | Leaning list |
+|---|---|---|
+| English questions with the new words: understood, words wrong | 68.9%, 18.0% | 68.9%, **15.1%** |
+| English held-out (201) | 65.7%, 22.1% | **67.2%**, 21.6% |
+| Spanish questions with the new words | 77.5%, 14.5% | **78.8%**, 12.9% |
+| Spanish held-out (144) | 86.8%, 9.5% | **87.5%**, 9.4% |
+
+The wrong page costs: an English speaker on the ES page 68.9% → 60.0% (questions with the new words); a Spanish speaker on the EN
+page 86.8% → 86.1%. An earlier, harder lean (English readings only) lost more than it won (63.7%), as did trying both lists and
+keeping the better score. The lean is small next to the sound model's English; that is the retrain's job. /page5 loads the list of
+its language (the EN|ES switch reloads the page); the neutral list stays for pages that do not know (the demo, the check page).
