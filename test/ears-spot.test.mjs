@@ -67,7 +67,13 @@ test("the rules: a clear winner answers, close names are asked about, list quest
   // the words named a place: kept, unless the sounds clearly say another (then both are offered); not on the Spanish page
   assert.deepEqual(soundChoice("is la parada open", { named: { id: "53" } }, list(["53", 0.6], ["2", 3])), { pick: null, ask: [], keep: false });
   assert.deepEqual(soundChoice("is lavanda open", { named: { id: "2" } }, list(["53", 1.0], ["9", 2.4], ["2", 2.9])), { pick: null, ask: ["53", "2"], keep: false });
-  assert.deepEqual(soundChoice("is lavanda open", { named: { id: "2" } }, list(["53", 1.0], ["2", 2.9]), { override: false }), { pick: null, ask: [], keep: false });
+  assert.deepEqual(soundChoice("is lavanda open", { named: { id: "2" } }, list(["53", 1.5], ["2", 2.9]), { override: false }), { pick: null, ask: [], keep: false }, "the Spanish page: not when only fairly clear");
+  // very clear on any page (the owner's "is la colmena a pho": La Cabra Iluminada 0.22 per sound, the named Panadería La Colmena 1.2 more)
+  assert.deepEqual(soundChoice("is la colmena a pho", { named: { id: "X18" } }, list(["50", 0.22], ["X18", 1.5]), { override: false }), { pick: null, ask: ["50", "X18"], keep: false });
+  // short and mostly a name, though the words picked up a food word ("pisco open": Birria Xalisco 0.41, the next 2.0)
+  assert.deepEqual(soundChoice("pisco open", { named: null, topics: ["peruvian"], asks: true }, list(["70", 0.41], ["X1", 2.0])), { pick: "70", ask: [], keep: false });
+  assert.deepEqual(soundChoice("si a sana", { named: null, topics: ["healthy"], asks: true }, list(["33", 0.31], ["X1", 1.53])), { pick: "33", ask: [], keep: false });
+  assert.deepEqual(soundChoice("show me some healthy food near centro", { named: null, topics: ["healthy"], centro: true }, list(["33", 0.31], ["X1", 1.53])), { pick: null, ask: [], keep: false }, "a longer question, or a where: its list");
   // spot results as [id, perSound] pairs work the same
   assert.deepEqual(soundChoice("is it open", { named: null }, [["67", 2.03], ["58", 3.3]]).pick, "67");
   assert.equal(SOUND_RULES.accept, 2.5);
@@ -116,4 +122,15 @@ test("a name learned from a pick: how it sounded becomes a reading, and the same
   spotter.forget();
   assert.deepEqual(spotter.learned(), []);
   assert.ok(Math.abs(spotter.spot(f.lp, f.n, V, BLANK).find((x) => x.id === "67").perSound - before.perSound) < 1e-9, "as before");
+});
+
+test("voiceless and v/i readings: searched for the closest names, and they find a name said that way", () => {
+  const spotter = buildNameSpotter(names, lexicon, vocab);
+  // "Bocaciega" said "pokasieka" (b → p, ɣ → k): made-up sounds around it
+  const f = frames(["ɪ", "z", "p", "o", "k", "a", "s", "j", "e", "k", "a", "oʊ", "p", "ə", "n"]);
+  const top = spotter.spot(f.lp, f.n, V, BLANK);
+  assert.equal(top[0].name, "Bocaciega");
+  assert.ok(top[0].perSound < 0.2, JSON.stringify(top[0]));
+  const plain = buildNameSpotter(names, lexicon, vocab, { devoice: false }).spot(f.lp, f.n, V, BLANK).find((x) => x.name === "Bocaciega");
+  assert.ok(!plain || plain.perSound > top[0].perSound + 0.5, "without the voiceless readings it is much further");
 });

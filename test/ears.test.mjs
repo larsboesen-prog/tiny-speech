@@ -116,3 +116,30 @@ test("in the browser, the worker finds a name by sound when the words miss it", 
   assert.ok(m.spot[0].perSound < 2.5 && m.spot[1].perSound - m.spot[0].perSound > 1, JSON.stringify(m.spot.slice(0, 2)));
   console.log(JSON.stringify({ text: m.text, spot: m.spot.slice(0, 3), spotMs: m.spotMs }));
 });
+
+// Learning from picks in the worker, on a fixed file (no microphone): the Danish voice's "Is Tacos Don Tomás open?" (heard "is text mes
+// open", Tacos Don Tomás 1.4 per sound, Jacques 1.8); the visitor picks it; the same question then costs almost nothing; a new worker
+// given the reading back (as the page does on the next visit) hears it the same; forget undoes it.
+test("in the browser, the worker learns a picked name, takes it back next visit, and forgets it", { skip: skipLive, timeout: 180000 }, async () => {
+  const url = `/tiny-speech/asr-worker.js?v=1&libs=t-ears-libs&ears=/engines/ears/${model}&lexicon=/packs/mx-sma/ears-lexicon-en.json&names=/packs/mx-sma/ears-names.json`;
+  const wav = { wav: "/fixtures/ears/acc-22-0-da_DK-talesyntese-medium-cut.wav" };
+  const hear = (reqId) => [{ send: { type: "transcribe", reqId, model: "tiny-ears", audio: wav } }, { wait: "text" }];
+  const page = await (await browser.newContext()).newPage();
+  await page.goto(`http://localhost:${web.port}/harness/harness.html`);
+  const run = (steps) => page.evaluate(([u, s]) => window.run(u, { module: true, steps: s, timeoutMs: 120000 }), [url, steps]);
+  const a = await run([{ send: { type: "load", model: "tiny-ears" } }, { wait: "ready" }, ...hear(1), { send: { type: "learn", heardId: "last", id: "22" } }, { wait: "learned" }, ...hear(2),
+    { send: { type: "forget" } }, ...hear(3)]);
+  const texts = a.posted.filter((m) => m && m.type === "text"), learned = a.posted.find((m) => m && m.type === "learned");
+  const cost = (m) => m.spot.find((x) => x.id === "22").perSound;
+  console.log(JSON.stringify({ text: texts[0].text, before: cost(texts[0]), learned: learned.phones.join(" "), after: cost(texts[1]), forgotten: cost(texts[2]) }));
+  assert.ok(learned.phones && learned.phones.length >= 3);
+  assert.ok(cost(texts[0]) > 1, "before: not clear");
+  assert.equal(texts[1].spot[0].id, "22");
+  assert.ok(cost(texts[1]) < 0.3, "after the pick: clear");
+  assert.ok(Math.abs(cost(texts[2]) - cost(texts[0])) < 1e-6, "forgotten: as before");
+  // the next visit: a new worker given the reading back
+  const b = await run([{ send: { type: "readings", readings: [{ id: "22", phones: learned.phones }] } }, { send: { type: "load", model: "tiny-ears" } }, { wait: "ready" }, ...hear(1)]);
+  const t = b.posted.find((m) => m && m.type === "text");
+  assert.equal(t.spot[0].id, "22");
+  assert.ok(cost(t) < 0.3, `taken back: ${cost(t)}`);
+});

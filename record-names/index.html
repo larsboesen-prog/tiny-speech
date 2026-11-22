@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Record place names</title>
-<meta name="description" content="Record 40 San Miguel place names in your own voice, each in two questions, as a test set for finding names by sound. The recordings stay on this device until you save them.">
+<meta name="description" content="Record San Miguel place names in your own voice (40 in two questions, then 60 more once), as a test set for finding names by sound. The recordings stay on this device until you save them.">
 <meta name="robots" content="noindex">
 <style>
 /* One column: the name to say now with a big record button; below, every name with its take. */
@@ -53,12 +53,12 @@ li .b button { padding: 6px 10px; font-size: 14px; }
 <body>
 <main>
   <header>
-    <h1>Record 40 place names, twice</h1>
-    <p class="lead">Say each question once, as you would ask MapSMA: first the 40 names in “Is … open?”, then the same names in “…, when is it open?”. The first round shows what the page learns when you pick a name; the second checks whether that helped. The recordings are not used to train anything and are not published. They stay on this device until you save the file.</p>
+    <h1>Record San Miguel place names</h1>
+    <p class="lead">Say each question once, as you would ask MapSMA: first 40 names in “Is … open?”, then the same names in “…, when is it open?”, then the other 60 places once. The first two rounds show what the page learns when you pick a name; the third checks the page on names it was not tuned on. The recordings are not used to train anything and are not published. They stay on this device until you save the file.</p>
   </header>
 
   <section class="card now" aria-live="polite">
-    <p class="n" id="n">Question 1 of 80</p>
+    <p class="n" id="n">Question 1 of 140</p>
     <p class="say" id="say">…</p>
     <button type="button" id="rec" disabled>Record</button>
     <div class="level" aria-hidden="true"><i id="level"></i></div>
@@ -68,7 +68,7 @@ li .b button { padding: 6px 10px; font-size: 14px; }
 
   <section class="card">
     <div class="bar">
-      <span class="prog" id="prog">0 of 80 recorded</span>
+      <span class="prog" id="prog">0 of 140 recorded</span>
       <span><button type="button" class="main" id="save" disabled>Save recordings</button></span>
     </div>
     <p class="note" id="saveNote">When all are done (or as many as you like), save the file, then hand it over on the page Claude gave you.</p>
@@ -78,6 +78,6 @@ li .b button { padding: 6px 10px; font-size: 14px; }
 
   <p class="note">The recording stops by itself when you stop talking (or tap Stop). Speak normally, at your usual distance from the phone; a quiet room is fine but not needed. <button type="button" id="clear">Delete all recordings</button></p>
 </main>
-<script type="module" src="record.js?v=20261122b"></script>
+<script type="module" src="record.js?v=20261123"></script>
 </body>
 </html>

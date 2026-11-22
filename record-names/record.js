@@ -8,8 +8,8 @@
 import { detector, speechAt16k } from "../browser/listen.js";
 
 const $ = (id) => document.getElementById(id);
-const LIMITS = { REC_MAX_MS: 6000, END_SILENCE_MS: 900 };
-let NAMES = [], ITEMS = [], cur = 0, takes = new Map();  // ITEMS: one per question ({key "67#1", id, name, take, prompt}); takes: key -> Float32Array (16 kHz)
+const LIMITS = { REC_MAX_MS: 6000, END_SILENCE_MS: 900, LEAD_MS: 500 };  // half a second kept before the speech (as /page5 since 22 Nov 2026)
+let NAMES = [], MORE = [], ITEMS = [], cur = 0, takes = new Map();  // ITEMS: one per question ({key "67#1", id, name, take, prompt}); takes: key -> Float32Array (16 kHz)
 
 // ---------- kept in this browser: IndexedDB (a reload or a closed tab loses nothing) ----------
 const DB = "record-names", STORE = "takes";
@@ -145,6 +145,7 @@ function stopRec() {
   takes.set(r.key, pcm); keep(r.key, pcm);
   const i = ITEMS.findIndex((n) => n.key === r.key);
   state(`Kept ${(pcm.length / 16000).toFixed(1)} s for “${ITEMS[i].name}”${ITEMS[i].take === 2 ? " (second question)" : ""}.`);
+  if (ITEMS[i].take === 2 && cur === 2 * NAMES.length && !takes.has(ITEMS[cur].key)) state(`The first ${2 * NAMES.length} are done. Now ${MORE.length} more places, once each.`);
   const next = ITEMS.findIndex((n, k) => k > i && !takes.has(n.key)), first = ITEMS.findIndex((n) => !takes.has(n.key));
   cur = next >= 0 ? next : first >= 0 ? first : i;
   if (takes.size === ITEMS.length) state(`All ${ITEMS.length} recorded. Save the file below.`);
@@ -185,10 +186,12 @@ $("clear").addEventListener("click", async () => {
 
 (async () => {
   try {
-    NAMES = (await (await fetch(new URL("names.json?v=20261122b", import.meta.url))).json()).names;
+    const list = await (await fetch(new URL("names.json?v=20261123", import.meta.url))).json();
+    NAMES = list.names; MORE = list.more || [];
   } catch (err) { state(`The names could not be loaded: ${err.message || err}`); return; }
   ITEMS = [...NAMES.map((n) => ({ key: `${n.id}#1`, id: n.id, name: n.name, take: 1, prompt: n.prompt })),
-    ...NAMES.map((n) => ({ key: `${n.id}#2`, id: n.id, name: n.name, take: 2, prompt: n.prompt2 || `${n.name}, when is it open?` }))];
+    ...NAMES.map((n) => ({ key: `${n.id}#2`, id: n.id, name: n.name, take: 2, prompt: n.prompt2 || `${n.name}, when is it open?` })),
+    ...MORE.map((n) => ({ key: `${n.id}#3`, id: n.id, name: n.name, take: 3, prompt: n.prompt }))];  // the other places, once (22 Nov 2026)
   takes = await kept();
   for (const key of [...takes.keys()]) if (!ITEMS.some((n) => n.key === key)) takes.delete(key);
   const first = ITEMS.findIndex((n) => !takes.has(n.key));

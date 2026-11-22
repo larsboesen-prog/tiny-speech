@@ -239,3 +239,36 @@ Still missed (6 of 80): "Is Café Umarán open?" heard "me a" (nothing close), "
 when is it open?" heard "pocas y que es el" (no shape), "Is Birria Xalisco open?" heard "pisco open" (pisco is a drink: a list), "Is
 Hierba Santa open?" heard "sí a sana" (healthy food: a list), "Parque Juárez, is it open now?" heard "tacos is it open now". One wrong
 place: "Is La Cabra Iluminada open?" heard "is la colmena a pho" → Panadería La Colmena (the words named it).
+
+### The six still missed, fixed (22 Nov 2026, the owner: "First propose fix to correct 6 misses", then "Yes to all")
+
+Their raw sounds showed one pattern: the owner's **b, d, g come out as p, t, k** ("Birria" as `p i r i a`, "Bocaciega" as `p o k e…`),
+as Danish (and German, Dutch) speakers say them, and a written v as v ("Agavia" as `k a v i…`, not `aɣaβja`). What changed:
+
+1. **Name readings without voice, and with v and i** (`engines/ears-spot.js`: b/d/g → p/t/k, β → v, j → i), for names of at least 5
+   sounds, searched only for the 20 names closest with the plain readings (about 37 ms for a 3-second question in Node). For every
+   name, they made short ones look like everyday words (Bennu as "p e n u", the end of "open": second in every "… open?") and cost 13
+   direct answers on the accented set; at 5 sounds and more they cost none. An extra cost on these readings (0.2–0.5 per sound) was
+   tried too: it undid most of the owner's gains (3 of 6 instead of 5).
+2. **A short question that is mostly a name** (at most 3 words, at most 0.6 per sound, 1.2 ahead of the next) is answered even when the
+   words do not look like a question about a place or picked up a food word ("pisco open" → Birria Xalisco, "sí a sana" → Hierba
+   Santa). First tried at 5 words, 1.0 and 1.0: it answered "What vegan restaurant is open?" with The Restaurant (5 wrong on the
+   controls), so it was tightened until none of the controls changed.
+3. **The words named one place, the sounds very clearly another** (at most 1.0 per sound, 1.0 better), on either page: both are
+   offered ("is la colmena a pho": La Cabra Iluminada or Panadería La Colmena).
+4. English readings for every place name in the word list: no gain on the owner's set, 3 fewer names on the 201 English requests;
+   **not kept**.
+5. **Half a second kept before the detected speech** (was a quarter) in /page5's listener and the recorder: "Is Café Umarán open?" was
+   recorded as 1.0 s with only "…marán" left. Not measurable on this set (the cut sound is gone).
+
+| | Update 7 | **With 1–3 (and 5)** |
+|---|---|---|
+| The owner's 80: found / + buttons / found or one tap / wrong | 58 / 16 / 74 / 1 | **61 / 18 / 79 / 0** |
+| … second round after learning from the first round's picks | 31 of 40 | 32 of 40 |
+| 560 accented stand-ins: found / + buttons / wrong | 402 / 86 / 12 | **404 / 86 / 9** |
+| 201 English requests, 90 everyday English: names found / wrong | 90 / 1; 11 / 0 | the same |
+| 328 list questions: wrong places | 8 | 8 |
+| Spanish page, 368 clips: found / + buttons / wrong | 72 / 2 / 3 | 71 / 4 / 3 |
+
+All of 1–3 were found on the owner's set; the recorder now has a third round (the other 60 places, once) to check them on names
+never looked at while tuning.

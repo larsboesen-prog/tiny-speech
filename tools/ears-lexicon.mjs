@@ -91,6 +91,8 @@ export async function earsLexicon(city, { extended = true, prefer = null, prefer
   const lang = new Map();  // word -> Set("es","en")
   const add = (w, l) => { if (!lang.has(w)) lang.set(w, new Set()); lang.get(w).add(l); };
   for (const r of train) for (const w of words(r.text)) { if (r.lang !== "en") add(w, "es"); if (r.lang !== "es") add(w, "en"); }
+  // place names the Spanish way (and the English way when the pack says so, or English requests named them). Giving every name an
+  // English reading too was tried on 22 Nov 2026 (the owner's recordings): no gain for them, 3 fewer names on the 201 English requests.
   for (const p of places) for (const w of words(p.name + " " + (p.names || []).map((n) => n.t).join(" "))) { add(w, "es"); if (english.has(w)) add(w, "en"); }
   for (const a of areas) for (const w of words(JSON.stringify(a.say || a.words || a.names || ""))) add(w, "es");
   // streets and landmarks: said the Spanish way and the English way ("Mesones", "Hernández Macías" from an English speaker); their small

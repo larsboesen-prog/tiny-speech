@@ -4,7 +4,7 @@
 //
 //   NODE_PATH=/opt/node-tools/node_modules node tools/names-test.mjs <recordings.json> [--lang en|es] [--out report.json]
 //
-// recordings.json: what record-names/ saves ({names: [{id, name, take (1 or 2), prompt, wav (base64 16 kHz WAV)}]}). Each question is
+// recordings.json: what record-names/ saves ({names: [{id, name, take (1, 2 or 3: the other places once), prompt, wav (base64 16 kHz WAV)}]}). Each question is
 // heard exactly as /page5 hears it: the ears in Chromium through browser/asr-worker.js (the newest model, the page's word list leaning
 // to --lang, the city's names to find by sound). For each: BEFORE = the place the reader finds in the written words (what /page5
 // answered until update 5); AFTER = with the names by sound (engines/ears-spot.js soundChoice, as /page5 uses it): the place answered,
@@ -68,11 +68,12 @@ const first = await run(clips.flatMap(hear));
 const rows = clips.map((c) => judge(c, first.texts.get(c.i)));
 const tally = (xs) => ({ n: xs.length, before: xs.filter((x) => x.before === x.id).length, wrongBefore: xs.filter((x) => x.before && x.before !== x.id).length,
   after: xs.filter((x) => x.after === x.id).length, offered: xs.filter((x) => x.after !== x.id && x.offered.includes(x.id)).length, wrong: xs.filter((x) => x.after && x.after !== x.id).length });
-const sum = { all: tally(rows), take1: tally(rows.filter((x) => x.take === 1)), take2: tally(rows.filter((x) => x.take === 2)) };
+const sum = { all: tally(rows), take1: tally(rows.filter((x) => x.take === 1)), take2: tally(rows.filter((x) => x.take === 2)), take3: tally(rows.filter((x) => x.take === 3)) };
 const line = (t) => `names found before ${t.before} of ${t.n} (${(100 * t.before / t.n).toFixed(0)}%), after ${t.after} (${(100 * t.after / t.n).toFixed(0)}%), ${t.offered} more as a button; a wrong place ${t.wrongBefore} → ${t.wrong}`;
 console.log(`${rows.length} recorded questions, the ${lang === "es" ? "Spanish" : "English"} page:`);
 console.log(`  all:     ${line(sum.all)}`);
 if (sum.take2.n) { console.log(`  take 1:  ${line(sum.take1)}`); console.log(`  take 2:  ${line(sum.take2)}`); }
+if (sum.take3.n) console.log(`  take 3 (the other places, never looked at while tuning):  ${line(sum.take3)}`);
 
 // learning from picks: the second takes after learning from the first
 const second = clips.filter((c) => c.take === 2);

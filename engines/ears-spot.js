@@ -8,6 +8,12 @@
 // nothing more. No dependencies; runs where the ears run (a worker, a page, Node).
 
 const HARD = { "β": "b", "ð": "d", "ɣ": "ɡ", "ʝ": "j" };  // as ears-match.js: a soft b/d/g/y may be heard hard
+// …and b/d/g without voice, as p/t/k (the owner's 80 recorded questions, 22 Nov 2026: "Birria" heard "p i r i a", "Bocaciega" "p o k e…":
+// Danish, German, Dutch speakers say them so). Only for the names looked for by sound, not for the words.
+const DEVOICE = { b: "p", d: "t", "ɡ": "k" };
+// …and a written v said as v, a glide as a full vowel ("Agavia" heard "k a v i a" from the owner, not "aɣaβja")
+const SOFT = { "β": "v", j: "i" };
+const EXTRA_MIN = 5;  // sounds: the extra readings only for names at least this long
 const NEG = -Infinity;
 const fold = (s) => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const words = (s) => (fold(s).match(/[a-z0-9ñ']+/g) || []).map((w) => w.replace(/^'+|'+$/g, "")).filter(Boolean);
@@ -18,13 +24,25 @@ const words = (s) => (fold(s).match(/[a-z0-9ñ']+/g) || []).map((w) => w.replace
  * Returns {spot(lp, frames, V, blank, top = 5) → [{id, name, cost, perSound, start, end}] best first, size}. A few milliseconds per
  * question (12–22 ms for 100 places on one core in Node).
  */
-export function buildNameSpotter(names, lexicon, vocab, { maxReadings = 6 } = {}) {
+export function buildNameSpotter(names, lexicon, vocab, { maxReadings = 6, devoice = true, extraCost = 0 } = {}) {
+  // a reading as written and with soft sounds heard hard; with `all` also without voice, and as v and i (devoice)
+  const variants = (ph, all) => {
+    const out = [];
+    for (const base of all && devoice ? [ph, ph.map((x) => SOFT[x] ?? x)] : [ph]) {
+      const hard = base.map((x) => HARD[x] ?? x);
+      out.push(base, hard);
+      if (all && devoice) out.push(hard.map((x) => DEVOICE[x] ?? x));
+    }
+    return out.filter((v, i) => out.findIndex((u) => u.join(" ") === v.join(" ")) === i);
+  };
   const lookup = (w) => lexicon.words[w] || lexicon.words[fold(w)] || Object.entries(lexicon.words).find(([k]) => fold(k) === w)?.[1] || null;
-  const entries = [];  // {id, name, seq: Int32Array of sound ids}
+  // {id, name, seq: Int32Array of sound ids, extra}: the readings as written first; the extra ones (without voice, v, i) are searched
+  // only for the names that came closest with those (spot), which keeps the search near its old time
+  const entries = [];
   for (const n of names) {
     const forms = [n.name, ...(n.alts || [])];
     const seen = new Set();
-    for (const form of forms) {
+    for (const all of [false, true]) for (const form of forms) {
       const ws = words(form);
       if (!ws.length) continue;
       let readings = [[]];
@@ -33,36 +51,46 @@ export function buildNameSpotter(names, lexicon, vocab, { maxReadings = 6 } = {}
         const prons = lookup(w);
         if (!prons) { ok = false; break; }
         const next = [];
-        for (const r of readings) for (const p of prons) for (const v of [p.phones, p.phones.map((x) => HARD[x] ?? x)]) next.push([...r, ...v]);
-        readings = next.slice(0, maxReadings * 2);
+        for (const r of readings) for (const p of prons) for (const v of variants(p.phones, all)) next.push([...r, ...v]);
+        readings = next.slice(0, maxReadings * (all ? 4 : 2));
       }
       if (!ok) continue;
-      for (const r of readings.slice(0, maxReadings * 2)) {
+      for (const r of readings) {
         if (r.some((x) => !(x in vocab))) continue;
         const key = r.join(" ");
         if (seen.has(key)) continue;
         seen.add(key);
-        entries.push({ id: n.id, name: n.name, seq: Int32Array.from(r.map((x) => vocab[x])) });
+        if (all && r.length < EXTRA_MIN) continue;  // short names said another way look like everyday words (Bennu as "p e n u": "open")
+        entries.push({ id: n.id, name: n.name, seq: Int32Array.from(r.map((x) => vocab[x])), extra: all });
       }
     }
   }
+  const SECOND = 20;  // the names whose extra readings are searched too
 
   /** The name sounds' best placement (Viterbi, CTC with blanks, free start and end), as the cost over hearing every frame freely. */
-  function costOf(lp, frames, V, blank, seq, best) {
-    const L = seq.length, S = 2 * L + 1;
-    const lab = new Int32Array(S);
-    for (let s = 0; s < S; s++) lab[s] = s % 2 === 0 ? blank : seq[(s - 1) >> 1];
+  // The search runs on a compact copy of the frames: only the sounds some name uses (and the blank), so a frame's row stays in the cache
+  // (82 → about half the time for 1,900 readings).
+  let used = null;  // sound id → column, made on the first search (learn() may add sounds: then remade)
+  const columns = () => {
+    const ids = new Set(); for (const e of entries) for (const x of e.seq) ids.add(x);
+    used = { ids: [...ids], col: new Map([...ids].map((x, i) => [x, i])) };
+    for (const e of entries) e.lab = null;
+  };
+  function costOf(E, frames, U, blank, e, best) {
+    const seq = e.seq, L = seq.length, S = 2 * L + 1;
+    if (!e.lab) { e.lab = new Int32Array(S); for (let s = 0; s < S; s++) e.lab[s] = s % 2 === 0 ? blank : used.col.get(seq[(s - 1) >> 1]); }
+    const lab = e.lab;
     let prev = new Float64Array(S).fill(NEG), cur = new Float64Array(S);
     let prevStart = new Int32Array(S), curStart = new Int32Array(S);
     let before = 0, after = NEG, afterStart = 0, afterEnd = 0;
     for (let t = 0; t < frames; t++) {
-      const o = t * V;
+      const o = t * U;
       for (let s = 0; s < S; s++) {
         let v = prev[s], st = prevStart[s];
         if (s > 0 && prev[s - 1] > v) { v = prev[s - 1]; st = prevStart[s - 1]; }
         if (s > 1 && lab[s] !== blank && lab[s] !== lab[s - 2] && prev[s - 2] > v) { v = prev[s - 2]; st = prevStart[s - 2]; }
         if (s < 2 && before > v) { v = before; st = t; }  // the name starts here
-        cur[s] = v === NEG ? NEG : v + lp[o + lab[s]];
+        cur[s] = v === NEG ? NEG : v + E[o + lab[s]];
         curStart[s] = st;
       }
       const done = Math.max(prev[S - 1], prev[S - 2]);  // the name ended at t-1: the rest is heard freely
@@ -78,16 +106,32 @@ export function buildNameSpotter(names, lexicon, vocab, { maxReadings = 6 } = {}
     return { cost: before - total, start, end: stop };
   }
 
+  // the frames as the search reads them: best[t] (the frame heard freely) and E (the used sounds' columns, the blank last)
+  function compact(lp, frames, V, blank) {
+    if (!used || entries.some((e) => !e.lab && e.seq.some((x) => !used.col.has(x)))) columns();
+    const U = used.ids.length + 1, E = new Float32Array(frames * U), best = new Float64Array(frames);
+    for (let t = 0; t < frames; t++) {
+      const o = t * V; let m = NEG;
+      for (let c = 0; c < V; c++) if (lp[o + c] > m) m = lp[o + c];
+      best[t] = m;
+      for (let k = 0; k < U - 1; k++) E[t * U + k] = lp[o + used.ids[k]];
+      E[t * U + U - 1] = lp[o + blank];
+    }
+    return { E, U, best, b: U - 1 };
+  }
+
   function spot(lp, frames, V, blank, top = 5) {
-    const best = new Float64Array(frames);
-    for (let t = 0; t < frames; t++) { let m = NEG; const o = t * V; for (let c = 0; c < V; c++) if (lp[o + c] > m) m = lp[o + c]; best[t] = m; }
+    const { E, U, best, b } = compact(lp, frames, V, blank);
     const byId = new Map();
-    for (const e of entries) {
-      const r = costOf(lp, frames, V, blank, e.seq, best);
-      const perSound = r.cost / e.seq.length;
+    const run = (e) => {
+      const r = costOf(E, frames, U, b, e, best);
+      const perSound = r.cost / e.seq.length + (e.extra ? extraCost : 0);  // a voiceless or v/i reading wins only when it fits clearly better
       const had = byId.get(e.id);
       if (!had || perSound < had.perSound) byId.set(e.id, { id: e.id, name: e.name, cost: r.cost, perSound, start: r.start, end: r.end });
-    }
+    };
+    for (const e of entries) if (!e.extra) run(e);
+    const near = new Set([...byId.values()].sort((a, b) => a.perSound - b.perSound).slice(0, SECOND).map((x) => x.id));
+    for (const e of entries) if (e.extra && near.has(e.id)) run(e);
     return [...byId.values()].sort((a, b) => a.perSound - b.perSound).slice(0, top);
   }
 
@@ -100,12 +144,11 @@ export function buildNameSpotter(names, lexicon, vocab, { maxReadings = 6 } = {}
   /** The sounds heard where name `id` fits best: the frames of its best placement read freely (each frame's best sound, repeats and
    * blanks dropped), as sound symbols. [] when the name cannot be placed. */
   function heardAs(lp, frames, V, blank, id) {
-    const best = new Float64Array(frames);
-    for (let t = 0; t < frames; t++) { let m = NEG; const o = t * V; for (let c = 0; c < V; c++) if (lp[o + c] > m) m = lp[o + c]; best[t] = m; }
+    const { E, U, best, b } = compact(lp, frames, V, blank);
     let at = null;
     for (const e of entries) {
       if (e.id !== id || e.learned) continue;
-      const r = costOf(lp, frames, V, blank, e.seq, best), perSound = r.cost / e.seq.length;
+      const r = costOf(E, frames, U, b, e, best), perSound = r.cost / e.seq.length;
       if (!at || perSound < at.perSound) at = { perSound, start: r.start, end: r.end };
     }
     if (!at) return [];
@@ -152,6 +195,10 @@ export const SOUND_RULES = {
   override: 1.5,   // the words named a place but the sounds clearly say another (this much better): ask between the two (English page)
   strong: 1.0,     // a question not shaped like one about a place: answer about a name at most this per sound…
   strongGap: 1.5,  // …this far ahead of the next (in practice only a name learned from the visitor gets this close)
+  // a short question (at most `short` words) that is mostly a name: a name this clear answers even when the words do not look like a
+  // question about a place, or picked up a stray food word ("pisco open" → Peruvian food; the owner's "Is Birria Xalisco open?")
+  short: 3, shortClear: 0.6, shortGap: 1.2,  // (5 words, 1.0, 1.0 picked "The Restaurant" for "what vegan restaurant is open")
+  clear: 1.0, clearGap: 1.0,  // the words named one place, the sounds another this clearly: ask between the two, any page
 };
 const foldText = (s) => fold(s).replace(/[^a-z0-9ñ' ]+/g, " ").replace(/\s+/g, " ").trim();
 // The shape of a question about one place: "Is X open?", "When does X close?", "Where is X?", "X, when is it open?", "¿Está abierto X?",
@@ -177,13 +224,18 @@ export function soundChoice(text, q, spot, { rules = SOUND_RULES, override = tru
   const [top, second] = list, gap = second ? second.perSound - top.perSound : Infinity;
   const named = q && q.named ? q.named.id : null;
   if (named) {
-    if (!override || top.id === named || top.perSound > rules.accept) return none;
-    const mine = list.find((s) => s.id === named);
-    return !mine || mine.perSound - top.perSound >= rules.override ? { pick: null, ask: [top.id, named], keep: false } : none;
+    if (top.id === named) return none;
+    const mine = list.find((s) => s.id === named), worse = mine ? mine.perSound - top.perSound : Infinity;
+    // the sounds clearly say another name: ask between the two (English page); or, any page, a very clear one ("is la colmena a pho"
+    // for the owner's "Is La Cabra Iluminada open?": La Cabra Iluminada 0.22 per sound)
+    if ((override && top.perSound <= rules.accept && worse >= rules.override) || (top.perSound <= (rules.namedClear ?? rules.clear) && worse >= rules.clearGap)) return { pick: null, ask: [top.id, named], keep: false };
+    return none;
   }
   if (q && (q.plural || q.near)) return none;
   const t = foldText(text);
-  if (!ONE_PLACE.test(t) && !(ONE_PLACE_LOOSE.test(t) && !subjectOf(q))) {  // not shaped like a question about a place: only a very clear name, when nothing else was asked
+  if (!ONE_PLACE.test(t) && !(ONE_PLACE_LOOSE.test(t) && !subjectOf(q))) {  // not shaped like a question about a place: only a very clear name
+    const where = q && (q.street || q.hotel || q.nearSight || q.area || q.centro);
+    if (!where && t.split(" ").length <= rules.short && top.perSound <= rules.shortClear && gap >= rules.shortGap) return { pick: top.id, ask: [], keep: false };
     return rules.strong && !subjectOf(q) && top.perSound <= rules.strong && gap >= rules.strongGap ? { pick: top.id, ask: [], keep: false } : none;
   }
   // a street or a hotel is where to look ("restaurants near Live Aqua"): its list stays, the names are only offered under it

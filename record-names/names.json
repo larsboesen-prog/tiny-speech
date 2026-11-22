@@ -1,6 +1,6 @@
 {
  "city": "mx-sma",
- "about": "40 San Miguel place names to record once in your own voice, each in two questions: a test set for finding names by sound and for learning from picks (not for training)",
+ "about": "San Miguel place names to record in your own voice: 40 names in two questions, then the other 60 once (a test set for finding names by sound and for learning from picks; not for training)",
  "names": [
   {
    "id": "67",
@@ -241,6 +241,308 @@
    "name": "Parque Juárez",
    "prompt": "Where is Parque Juárez?",
    "prompt2": "Parque Juárez, is it open now?"
+  }
+ ],
+ "more": [
+  {
+   "id": "1",
+   "name": "Jacques",
+   "prompt": "Is Jacques open?"
+  },
+  {
+   "id": "3",
+   "name": "Café Santa Ana",
+   "prompt": "Is Café Santa Ana open?"
+  },
+  {
+   "id": "13",
+   "name": "Buonforno",
+   "prompt": "Is Buonforno open?"
+  },
+  {
+   "id": "17",
+   "name": "Panadería El Maple",
+   "prompt": "Is Panadería El Maple open?"
+  },
+  {
+   "id": "20",
+   "name": "Andy's Taco Cart",
+   "prompt": "Is Andy's Taco Cart open?"
+  },
+  {
+   "id": "21",
+   "name": "Nieves de San Felipe",
+   "prompt": "Is Nieves de San Felipe open?"
+  },
+  {
+   "id": "23",
+   "name": "Quesadillas",
+   "prompt": "Is Quesadillas open?"
+  },
+  {
+   "id": "24",
+   "name": "Esquites",
+   "prompt": "Is Esquites open?"
+  },
+  {
+   "id": "25",
+   "name": "Esquites y mollejitas",
+   "prompt": "Is Esquites y mollejitas open?"
+  },
+  {
+   "id": "27",
+   "name": "Market tamales",
+   "prompt": "Is Market tamales open?"
+  },
+  {
+   "id": "28",
+   "name": "El Café de la Mancha",
+   "prompt": "Is El Café de la Mancha open?"
+  },
+  {
+   "id": "29",
+   "name": "TorrArt Café",
+   "prompt": "Is TorrArt Café open?"
+  },
+  {
+   "id": "31",
+   "name": "Amor & Cacao",
+   "prompt": "Is Amor & Cacao open?"
+  },
+  {
+   "id": "32",
+   "name": "Café Oratorio",
+   "prompt": "Is Café Oratorio open?"
+  },
+  {
+   "id": "34",
+   "name": "Arriba y Abajo",
+   "prompt": "Is Arriba y Abajo open?"
+  },
+  {
+   "id": "35",
+   "name": "Baja Fish Taquito",
+   "prompt": "Is Baja Fish Taquito open?"
+  },
+  {
+   "id": "38",
+   "name": "Bacal",
+   "prompt": "Is Bacal open?"
+  },
+  {
+   "id": "39",
+   "name": "Don Taco Tequila",
+   "prompt": "Is Don Taco Tequila open?"
+  },
+  {
+   "id": "49",
+   "name": "Inside Café",
+   "prompt": "Is Inside Café open?"
+  },
+  {
+   "id": "54",
+   "name": "Lima",
+   "prompt": "Is Lima open?"
+  },
+  {
+   "id": "55",
+   "name": "Sushi Gami",
+   "prompt": "Is Sushi Gami open?"
+  },
+  {
+   "id": "61",
+   "name": "Selina",
+   "prompt": "Is Selina open?"
+  },
+  {
+   "id": "62",
+   "name": "Luna Rooftop",
+   "prompt": "Is Luna Rooftop open?"
+  },
+  {
+   "id": "66",
+   "name": "La Frontera Frailes",
+   "prompt": "Is La Frontera Frailes open?"
+  },
+  {
+   "id": "68",
+   "name": "Zumo",
+   "prompt": "Is Zumo open?"
+  },
+  {
+   "id": "69",
+   "name": "Trino",
+   "prompt": "Is Trino open?"
+  },
+  {
+   "id": "73",
+   "name": "Cien 24",
+   "prompt": "Is Cien 24 open?"
+  },
+  {
+   "id": "75",
+   "name": "Casa Giovanni & Marina",
+   "prompt": "Is Casa Giovanni & Marina open?"
+  },
+  {
+   "id": "78",
+   "name": "Viñedo San Miguel",
+   "prompt": "Is Viñedo San Miguel open?"
+  },
+  {
+   "id": "80",
+   "name": "The Restaurant",
+   "prompt": "Is The Restaurant open?"
+  },
+  {
+   "id": "S1",
+   "name": "Parroquia de San Miguel Arcángel",
+   "prompt": "Where is Parroquia de San Miguel Arcángel?"
+  },
+  {
+   "id": "S2",
+   "name": "Jardín Principal",
+   "prompt": "Where is Jardín Principal?"
+  },
+  {
+   "id": "S3",
+   "name": "Museo Casa de Allende",
+   "prompt": "Where is Museo Casa de Allende?"
+  },
+  {
+   "id": "S4",
+   "name": "Bellas Artes",
+   "prompt": "Where is Bellas Artes?"
+  },
+  {
+   "id": "S5",
+   "name": "Templo de la Concepción",
+   "prompt": "Where is Templo de la Concepción?"
+  },
+  {
+   "id": "S6",
+   "name": "Biblioteca Pública",
+   "prompt": "Where is Biblioteca Pública?"
+  },
+  {
+   "id": "S7",
+   "name": "Templo de San Francisco",
+   "prompt": "Where is Templo de San Francisco?"
+  },
+  {
+   "id": "S8",
+   "name": "Oratorio de San Felipe Neri",
+   "prompt": "Where is Oratorio de San Felipe Neri?"
+  },
+  {
+   "id": "S9",
+   "name": "Mercado de Artesanías",
+   "prompt": "Where is Mercado de Artesanías?"
+  },
+  {
+   "id": "S11",
+   "name": "Plaza de Toros",
+   "prompt": "Where is Plaza de Toros?"
+  },
+  {
+   "id": "S12",
+   "name": "Instituto Allende",
+   "prompt": "Where is Instituto Allende?"
+  },
+  {
+   "id": "S13",
+   "name": "El Mirador",
+   "prompt": "Where is El Mirador?"
+  },
+  {
+   "id": "S14",
+   "name": "El Charco del Ingenio",
+   "prompt": "Where is El Charco del Ingenio?"
+  },
+  {
+   "id": "S15",
+   "name": "Fábrica La Aurora",
+   "prompt": "Where is Fábrica La Aurora?"
+  },
+  {
+   "id": "S16",
+   "name": "Santuario de Atotonilco",
+   "prompt": "Where is Santuario de Atotonilco?"
+  },
+  {
+   "id": "81",
+   "name": "Geek & Coffee",
+   "prompt": "Is Geek & Coffee open?"
+  },
+  {
+   "id": "X2",
+   "name": "Ghar",
+   "prompt": "Is Ghar open?"
+  },
+  {
+   "id": "X4",
+   "name": "El Pato Barbacoa y Mixiotes",
+   "prompt": "Is El Pato Barbacoa y Mixiotes open?"
+  },
+  {
+   "id": "X6",
+   "name": "El Puerto Seafood",
+   "prompt": "Is El Puerto Seafood open?"
+  },
+  {
+   "id": "X7",
+   "name": "Mercado Ignacio Ramírez",
+   "prompt": "Is Mercado Ignacio Ramírez open?"
+  },
+  {
+   "id": "X9",
+   "name": "Café Rama",
+   "prompt": "Is Café Rama open?"
+  },
+  {
+   "id": "X10",
+   "name": "Churrería San Agustín",
+   "prompt": "Is Churrería San Agustín open?"
+  },
+  {
+   "id": "X11",
+   "name": "Panadería La Buena Vida",
+   "prompt": "Is Panadería La Buena Vida open?"
+  },
+  {
+   "id": "X12",
+   "name": "Áperi",
+   "prompt": "Is Áperi open?"
+  },
+  {
+   "id": "X13",
+   "name": "Quince Rooftop",
+   "prompt": "Is Quince Rooftop open?"
+  },
+  {
+   "id": "X14",
+   "name": "Fátima 7 Rooftop",
+   "prompt": "Is Fátima 7 Rooftop open?"
+  },
+  {
+   "id": "X15",
+   "name": "Terraza La Vista",
+   "prompt": "Is Terraza La Vista open?"
+  },
+  {
+   "id": "X16",
+   "name": "Bennu",
+   "prompt": "Is Bennu open?"
+  },
+  {
+   "id": "X18",
+   "name": "Panadería La Colmena",
+   "prompt": "Is Panadería La Colmena open?"
+  },
+  {
+   "id": "X22",
+   "name": "Casa Europa",
+   "prompt": "Where is Casa Europa?"
   }
  ]
 }
