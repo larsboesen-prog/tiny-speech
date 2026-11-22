@@ -178,7 +178,7 @@ light … You should be able to run English test and see what's written and impr
    one after "on", "along", "calle", "en la calle" or before "street", and the answer lists the places on it ("2 places on Umarán";
    "Is Café Umarán open?" is still the café). "Quality" counts as "best". /page5 also knows five hotels from its data: near the
    Rosewood, the Belmond, Casa Blanca 7 or El Golpe de Vista (the places inside them, then the nearest); Live Aqua has no places on
-   MapSMA, so the answer says so and shows Centro.
+   MapSMA, so "in Live Aqua" says so and shows the nearest to its pin (20.919975, -100.739347, from the owner's Google Maps link).
 2. **Words missing from the list**: the streets (40, from the addresses), "aqua", "rosewood", "quality". Now in the list, the
    streets and hotels with a Spanish and an English reading (an English speaker says "Hernández Macías" the English way; on the
    Spanish page the English reading costs as other English does), with example questions in the word pairs at a small weight ("show
