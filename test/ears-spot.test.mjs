@@ -58,8 +58,11 @@ test("the rules: a clear winner answers, close names are asked about, list quest
   assert.deepEqual(soundChoice("where is the best mezcal bar in town", { named: null, cats: ["share"] }, list(["46", 2.83], ["1", 3.9])), { pick: null, ask: ["46"], keep: true });
   // nothing near: the words' answer
   assert.deepEqual(soundChoice("is it open", { named: null }, list(["1", 3.4], ["2", 3.5])), { pick: null, ask: [], keep: false });
-  // not about one place: the sounds stay out of it
-  assert.deepEqual(soundChoice("what music venues are open now", { named: null }, list(["X21", 1.0], ["2", 3.5])), { pick: null, ask: [], keep: false });
+  // not about one place: the sounds stay out of it, unless a name is very clear (in practice one learned from the visitor) and
+  // nothing else was asked
+  assert.deepEqual(soundChoice("what music venues are open now", { named: null, wantsList: true }, list(["X21", 1.0], ["2", 3.5])), { pick: null, ask: [], keep: false });
+  assert.deepEqual(soundChoice("say cost on to me sin si se o", { named: null }, list(["22", 1.3], ["1", 2.8])), { pick: null, ask: [], keep: false });
+  assert.deepEqual(soundChoice("say cost on to me sin si se o", { named: null }, list(["22", 0.48], ["1", 2.79])), { pick: "22", ask: [], keep: false });
   assert.deepEqual(soundChoice("is anything open near me", { named: null, near: true }, list(["X21", 1.0], ["2", 3.5])), { pick: null, ask: [], keep: false });
   // the words named a place: kept, unless the sounds clearly say another (then both are offered); not on the Spanish page
   assert.deepEqual(soundChoice("is la parada open", { named: { id: "53" } }, list(["53", 0.6], ["2", 3])), { pick: null, ask: [], keep: false });
@@ -75,4 +78,28 @@ test("a request with a subject: a kind of food, an area, near me, a list", () =>
   assert.equal(subjectOf({ topics: ["tacos"] }), true);
   assert.equal(subjectOf({ topics: [], cats: null, area: null }), false);
   assert.equal(subjectOf(null), false);
+});
+
+// Learning from picks (owner, 22 Nov 2026: "build option 1"): the sounds heard where a name fits become one more reading of it.
+test("a name learned from a pick: how it sounded becomes a reading, and the same sounds then cost almost nothing", () => {
+  const spotter = buildNameSpotter(names, lexicon, vocab);
+  // "Estoril" said as "a stroll": ə s t ɹ oʊ l, between other sounds
+  const f = frames(["ɪ", "z", "ə", "s", "t", "ɹ", "oʊ", "l", "oʊ", "p", "ə", "n"]);
+  const before = spotter.spot(f.lp, f.n, V, BLANK).find((x) => x.id === "67");
+  const heard = spotter.heardAs(f.lp, f.n, V, BLANK, "67");
+  assert.ok(heard.length >= 3 && heard.includes("ɹ"), JSON.stringify(heard));
+  assert.equal(spotter.learn("67", heard), true);
+  const after = spotter.spot(f.lp, f.n, V, BLANK)[0];
+  assert.equal(after.id, "67");
+  assert.ok(after.perSound < 0.1 && after.perSound < before.perSound, `${before.perSound} → ${after.perSound}`);
+  assert.deepEqual(spotter.learned(), [{ id: "67", phones: heard }]);
+  // unusable readings are refused; at most three per name are kept; forget drops them all
+  assert.equal(spotter.learn("67", ["s"]), false, "too short");
+  assert.equal(spotter.learn("67", ["s", "t", "nope"]), false, "a sound the ears do not know");
+  assert.equal(spotter.learn("nowhere", ["s", "t", "o"]), false, "no such place");
+  for (const extra of [["e", "s", "t", "o"], ["e", "s", "t", "u"], ["a", "s", "t", "o"]]) spotter.learn("67", extra);
+  assert.equal(spotter.learned().filter((r) => r.id === "67").length, 3);
+  spotter.forget();
+  assert.deepEqual(spotter.learned(), []);
+  assert.ok(Math.abs(spotter.spot(f.lp, f.n, V, BLANK).find((x) => x.id === "67").perSound - before.perSound) < 1e-9, "as before");
 });

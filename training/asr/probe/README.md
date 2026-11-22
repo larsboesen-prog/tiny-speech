@@ -137,3 +137,32 @@ The rest of the misses: the sounds' best name is wrong (Lavanda heard as Bennu),
 microphone the Danish "Is Estoril open?" scores 2.2 (2.1 from the file), which is why the answer limit is 2.5, not the 2.25 that
 gave the same results here. `tools/names-test.mjs` runs the same before/after on a recorded set through the browser worker: the
 Danish stand-in's 40 "Is X open?" 17 → 22 found, 12 more offered (34 of 40 found or one tap away).
+
+## Learning from picks (22 Nov 2026)
+
+The owner: "Will model learn and further improve from did you mean selection?", then "build option 1" (the phone remembers, nothing
+leaves it). When the visitor picks a name among "Did you mean", the ears read how that name sounded in that question
+(`heardAs`: the frames where the name's best placement lies, each frame's best sound, repeats and blanks dropped: "Is Estoril open?"
+from the Danish voice gives `ɛ s t ɹ ʊ l`-like sounds) and keep it as one more reading of the name (`learn`; the latest three per
+name). /page5 keeps them in localStorage and gives them back to the ears on every visit; Voice settings can forget them. Sounds
+only, never audio. One rule was added with it: a question not shaped like one about a place answers about a name only when it is very
+clear (at most 1.0 per sound, 1.5 ahead of the next); without learned readings no name gets that clear (402 found on the accented set
+with or without the rule, the controls unchanged), but a learned one does.
+
+`learn_eval.mjs` simulates it on the accented stand-in set: each voice asks "Is X open?" for the 40 names; where the page offers the
+right name as a button, the visitor taps it and the ears learn; then the same voice asks "X, when is it open?" (another sentence, so
+the name is heard in other surroundings). And the 291 ordinary English questions with each voice's learned names in place.
+
+| 7 voices × 40 names, "X, when is it open?" | Names found | + offered as a button | A wrong place |
+|---|---|---|---|
+| Names by sound, nothing learned | 192 of 280 | 39 | 4 |
+| **After learning from the taps on "Is X open?" (42 names learned)** | **211** | 28 | 4 |
+| After learning from every "Is X open?" not answered right (70) | 216 | 29 | 3 |
+| … Danish voice: from taps (12 learned) | 15 → 20 of 40 | 7 → 6 | 0 |
+| … French voice (11 learned) | 24 → 29 | 8 → 6 | 2 → 2 |
+
+Ordinary questions with every voice's learned names: no new wrong answer, no new "Did you mean", none lost. Through the browser
+worker (`tools/names-test.mjs` on the Danish voice's 80 questions as a recorded set): second takes 16 → 20 of 40 after 12 picks.
+The same question asked again after a pick is answered at once (`mapsma/test/page5-names.test.mjs`: Casa Nostra 2.1 → 0.13 per sound).
+The rest: a name heard very differently in the two sentences (Tostévere as "is that open" and "does the one is it open"), or a learned
+reading that took in a neighbouring sound ("la shop o…" for La Chope).

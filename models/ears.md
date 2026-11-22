@@ -92,6 +92,10 @@ English (five non-native Piper voices and two native ones, 40 names, 560 clips, 
 Ordinary questions (291 English, 368 Spanish clips): names found 94 → 101 and 72 → 73, no new wrong answer.
 Method and every setting: `training/asr/probe/README.md`, "Names by sound".
 
+**Learning from picks** (still no retraining): a name picked among "Did you mean" is kept on the device as the sounds the model heard
+for it, one more reading of that name. After one pick on "Is X open?", the same voices' "X, when is it open?" found 192 → 211 of
+280 names, with no new wrong answer on ordinary questions ("Learning from picks" in the same README).
+
 ### The first model (20 November 2026)
 
 With the matcher and San Miguel's word list, on synthetic Mexican Spanish requests (`training/asr/probe/`):

@@ -1,5 +1,5 @@
 // The name recorder (record-names/, owner 22 Nov 2026: "a simple page where I can record 30 to 50 place names once in [the owner's] own voice"):
-// in Chromium with a fake microphone saying "Is Estoril open?", one take is kept, survives a reload, and is saved as the file
+// each name in two questions (80); in Chromium with a fake microphone saying "Is Estoril open?", one take is kept, survives a reload, and is saved as the file
 // tools/names-test.mjs reads (16 kHz 16-bit mono WAV in base64). Nothing goes over the network but the page's own files.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
@@ -44,19 +44,20 @@ test("the recorder keeps a take, remembers it, and saves the file the names test
   const names = JSON.parse(readFileSync(ROOT + "record-names/names.json", "utf8")).names;
   assert.equal(names.length, 40);
   assert.equal(await page.textContent("#say"), "“Is Estoril open?”");
-  assert.equal(await page.locator("#list li").count(), 40);
+  assert.equal(await page.locator("#list li").count(), 80, "each name twice");
+  assert.equal(await page.textContent("#list li:nth-child(41) b"), "41. Estoril, when is it open?");
   await page.click("#rec");
   await page.waitForFunction(() => /^Kept/.test(document.getElementById("state").textContent), null, { timeout: 30000 });
-  assert.equal(await page.textContent("#prog"), "1 of 40 recorded");
+  assert.equal(await page.textContent("#prog"), "1 of 80 recorded");
   assert.match(await page.textContent("#list li:first-child small"), /^✓ \d\.\d s$/);
   assert.equal(await page.textContent("#say"), "“Is La Azotea open?”", "on to the next name");
   await page.reload();
-  await page.waitForFunction(() => /1 of 40/.test(document.getElementById("prog").textContent));
+  await page.waitForFunction(() => /1 of 80/.test(document.getElementById("prog").textContent));
   const [download] = await Promise.all([page.waitForEvent("download"), page.click("#save")]);
   assert.match(download.suggestedFilename(), /^my-place-names-\d{4}-\d\d-\d\d\.json$/);
   const saved = JSON.parse(readFileSync(await download.path(), "utf8"));
   assert.equal(saved.names.length, 1);
-  assert.deepEqual([saved.names[0].id, saved.names[0].name, saved.names[0].prompt], ["67", "Estoril", "Is Estoril open?"]);
+  assert.deepEqual([saved.names[0].id, saved.names[0].name, saved.names[0].take, saved.names[0].prompt], ["67", "Estoril", 1, "Is Estoril open?"]);
   const wav = Buffer.from(saved.names[0].wav, "base64");
   assert.equal(wav.toString("ascii", 0, 4), "RIFF");
   assert.deepEqual([wav.readUInt16LE(22), wav.readUInt32LE(24), wav.readUInt16LE(34)], [1, 16000, 16], "mono, 16 kHz, 16-bit");

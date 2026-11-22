@@ -21,7 +21,10 @@
 // (one model, both languages); its text comes back in lower case, words only. onnxruntime-web 1.18 (one thread, the same engine
 // file the voice worker keeps) is loaded only when the ears are asked for, and transformers.js only when Whisper is.
 // Names by sound (22 Nov 2026): with ?names=<the city's ears-names.json>, the text message also carries `spot`, the five place names
-// that fit the sounds best ([{id, name, perSound}], engines/ears-spot.js), for the page to use when the words missed the name.
+// that fit the sounds best ([{id, name, perSound}], engines/ears-spot.js), for the page to use when the words missed the name, and
+// `heardId`. Learning from the visitor's picks: {type: "learn", heardId, id} (they chose place id for that question) → {type:
+// "learned", id, phones} (how the name sounded, for the page to keep on the device); {type: "readings", readings: [{id, phones}]} gives
+// them back next visit (→ {type: "readings", used}); {type: "forget"} drops them.
 
 const CORE = "tiny-speech 0.3.0";
 const TRANSFORMERS = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
@@ -133,6 +136,7 @@ const runModel = (model, id, audio) => (model.hear ? model.hear(audio) : model(a
 
 let asr = null;
 let asrId = "";
+let pendingReadings = [];  // names learned before, sent before the ears had loaded
 let loading = null;  // {id, promise} while a model loads
 let running = Promise.resolve();  // the transcription in progress, so a model is not let go in the middle of one
 
@@ -186,6 +190,7 @@ function load(id) {
     asrId = id;
     loading = null;
     letGo(old);
+    if (model.addReadings && pendingReadings.length) { let used = 0; try { used = model.addReadings(pendingReadings); } catch { /* none */ } postMessage({ type: "readings", used }); pendingReadings = []; }
     postMessage({ type: "ready", id, core: CORE, ms: Math.round(performance.now() - started), ...seen });
     warm(model, id);
     return model;
@@ -265,7 +270,17 @@ export function hintWentWrong(text, hintText) {
 }
 
 onmessage = async ({ data }) => {
-  if (data.type === "load") {
+  if (data.type === "learn") {  // the visitor picked a place for a question: the ears remember how its name sounded
+    let phones = null;
+    try { phones = asr && asr.learnFrom ? asr.learnFrom(data.heardId, data.id) : null; } catch { phones = null; }  // never the worker's end
+    postMessage({ type: "learned", id: data.id, heardId: data.heardId, phones });
+  } else if (data.type === "readings") {  // names learned on an earlier visit (kept by the page)
+    if (asr && asr.addReadings) { let used = 0; try { used = asr.addReadings(data.readings); } catch { /* none */ } postMessage({ type: "readings", used }); }
+    else pendingReadings = [...pendingReadings, ...(data.readings || [])];
+  } else if (data.type === "forget") {
+    pendingReadings = [];
+    try { if (asr && asr.forget) asr.forget(); } catch { /* none */ }
+  } else if (data.type === "load") {
     if (asr && asrId === data.model) postMessage({ type: "ready", id: data.model, core: CORE });  // already loaded: say so again
     else load(data.model).catch(() => {});
   } else if (data.type === "transcribe") {
@@ -276,7 +291,7 @@ onmessage = async ({ data }) => {
       if (model.hear) {  // the tiny ears: no hint, no language, nothing to retry
         const out = await serial(() => { began = performance.now(); return model.hear(data.audio); });
         postMessage({ type: "text", reqId: data.reqId, text: out.text, engine: "tiny-ears", waitMs: Math.round(began - asked), runMs: Math.round(performance.now() - began), matchMs: out.matchMs,
-          ...(out.spot ? { spot: out.spot, spotMs: out.spotMs } : {}) });
+          ...(out.spot ? { spot: out.spot, spotMs: out.spotMs, heardId: out.heardId } : {}) });
         return;
       }
       let h = null;

@@ -97,8 +97,9 @@ The same 144 sentences read by two voices it **never heard** in training (Argent
 - **Names said with an accent** (names by sound, 22 Nov 2026): on 560 stand-in clips of five non-native English voices (Danish,
   German, Swedish, French, Belgian Dutch) and two native ones asking about 40 San Miguel places, names found 370 → **402**, and 81
   more offered as a button (86% found or one tap away); a wrong place 14 → 10. On 659 ordinary English and Spanish questions it adds
-  no wrong answer. `training/asr/probe/README.md` has the method; `record-names/` records your own voice for the same test
-  (`tools/names-test.mjs`).
+  no wrong answer. A name picked among "Did you mean" is remembered on the device as the sounds heard for it: after one pick, the same
+  voices asking another way found 192 → 211 of 280 names. `training/asr/probe/README.md` has the method; `record-names/` records your
+  own voice for the same test (`tools/names-test.mjs`).
 - **Speed**: 0.2–0.5 s to turn a 3-second question into text on one CPU core (Whisper tiny: about 2 s).
 - **Closed vocabulary**: it can only write words in the city's list. A word outside the list comes out as the nearest list
   word, or not at all. That is what makes it accurate for the city, and why it is not a general dictation model.

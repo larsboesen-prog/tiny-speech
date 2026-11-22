@@ -78,6 +78,9 @@ question here (Whisper tiny: about 2 s). Its text comes back in lower case, word
    name and other spoken forms, written by `tools/ears-lexicon.mjs`), every `text` message also carries `spot`: the five names that fit
    the sounds best, `[{id, name, perSound}]` (`engines/ears-spot.js`, about 20 ms). The page decides with `soundChoice(text, request, spot)`
    from the same file: answer about one name, offer two or three as buttons, or keep the words' answer (/page5 since update 5).
+   Learning from picks (update 6): `text` also carries `heardId`; `{type: "learn", heardId, id}` (the visitor picked place id for that
+   question; `heardId: "last"` for the latest) answers `{type: "learned", id, phones}`, which the page keeps on the device and hands back
+   on the next visit with `{type: "readings", readings: [{id, phones}]}`; `{type: "forget"}` drops them.
 5. **Try it first**: `check.html` on the iPhone: MapSMA's config preselects "Tiny ears"; *Load*, *Record*, ask; the line under the words
    gives the model's and the word list's milliseconds. `check.html?engine=whisper` starts on Whisper. On the computer:
    `check.html?app=mapsma&ears=/engines/ears/<file>&lexicon=/packs/mx-sma/ears-lexicon.json` with the test server.

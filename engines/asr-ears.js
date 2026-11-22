@@ -6,7 +6,7 @@
 //
 // Runs where onnxruntime runs (a worker with onnxruntime-web, or Node with onnxruntime-node): the caller passes `ort` in.
 import { buildLexicon, decode } from "./ears-match.js";
-import { buildNameSpotter } from "./ears-spot.js";
+import { buildNameSpotter } from "./ears-spot.js?v=20261122l";  // versioned: a phone that kept update 5's file gets this one
 
 export const EARS_ID = "tiny-ears";
 export const isEars = (id) => String(id || "").startsWith(EARS_ID);
@@ -25,6 +25,8 @@ export async function createEars({ ort, model, vocab, lexicon, names = null, set
   const blank = vocab["<pad>"], V = Object.keys(vocab).length;
   const input = session.inputNames[0], output = session.outputNames[0];
   const spotter = names && (names.names || names).length ? buildNameSpotter(names.names || names, lexicon, vocab) : null;
+  const recent = new Map();  // the last few questions' sounds, to learn a name from when the visitor picks it (learnFrom)
+  let heardSeq = 0;
   return {
     id: EARS_ID,
     words: lex.words,
@@ -43,8 +45,21 @@ export async function createEars({ ort, model, vocab, lexicon, names = null, set
       const text = decode(lp.data, frames, V, lex, blank, settings);
       const t2 = performance.now();
       const spot = spotter ? spotter.spot(lp.data, frames, V, blank, 5).map((x) => ({ id: x.id, name: x.name, perSound: Math.round(x.perSound * 1000) / 1000 })) : null;
-      return { text, frames, runMs: Math.round(t1 - t0), matchMs: Math.round(t2 - t1), ...(spot ? { spot, spotMs: Math.round(performance.now() - t2) } : {}) };
+      let heardId = 0;
+      if (spotter) { heardId = ++heardSeq; recent.set(heardId, { lp: lp.data, frames }); if (recent.size > 8) recent.delete(recent.keys().next().value); }
+      return { text, frames, runMs: Math.round(t1 - t0), matchMs: Math.round(t2 - t1), ...(spot ? { spot, spotMs: Math.round(performance.now() - t2), heardId } : {}) };
     },
+    /** The visitor picked place `id` for question `heardId` (hear()'s, or "last"): remember how that name sounded (ears-spot.js learn). Returns
+     * the sounds learned, to keep on the device and give back with addReadings next visit, or null. */
+    learnFrom(heardId, id) {
+      const h = heardId === "last" ? [...recent.values()].pop() : recent.get(heardId);
+      if (!h || !spotter || !spotter.heardAs) return null;
+      const phones = spotter.heardAs(h.lp, h.frames, V, blank, id);
+      return spotter.learn(id, phones) ? phones : null;
+    },
+    /** Readings learned before ([{id, phones}]); returns how many were usable. */
+    addReadings: (list) => (spotter ? (list || []).filter((r) => r && spotter.learn(r.id, r.phones)).length : 0),
+    forget: () => { spotter?.forget(); recent.clear(); },
     dispose: async () => { try { await session.release(); } catch { /* already gone */ } },
   };
 }

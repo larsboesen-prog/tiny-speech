@@ -1,206 +1,246 @@
 {
  "city": "mx-sma",
- "about": "40 San Miguel place names to record once in your own voice: a test set for finding names by sound (not for training)",
+ "about": "40 San Miguel place names to record once in your own voice, each in two questions: a test set for finding names by sound and for learning from picks (not for training)",
  "names": [
   {
    "id": "67",
    "name": "Estoril",
-   "prompt": "Is Estoril open?"
+   "prompt": "Is Estoril open?",
+   "prompt2": "Estoril, when is it open?"
   },
   {
    "id": "60",
    "name": "La Azotea",
-   "prompt": "Is La Azotea open?"
+   "prompt": "Is La Azotea open?",
+   "prompt2": "La Azotea, when is it open?"
   },
   {
    "id": "2",
    "name": "Lavanda",
-   "prompt": "Is Lavanda open?"
+   "prompt": "Is Lavanda open?",
+   "prompt2": "Lavanda, when is it open?"
   },
   {
    "id": "48",
    "name": "Bocaciega",
-   "prompt": "Is Bocaciega open?"
+   "prompt": "Is Bocaciega open?",
+   "prompt2": "Bocaciega, when is it open?"
   },
   {
    "id": "8",
    "name": "Café Umarán",
-   "prompt": "Is Café Umarán open?"
+   "prompt": "Is Café Umarán open?",
+   "prompt2": "Café Umarán, when is it open?"
   },
   {
    "id": "9",
    "name": "K'ibok Coffee",
-   "prompt": "Is K'ibok Coffee open?"
+   "prompt": "Is K'ibok Coffee open?",
+   "prompt2": "K'ibok Coffee, when is it open?"
   },
   {
    "id": "10",
    "name": "Amapola",
-   "prompt": "Is Amapola open?"
+   "prompt": "Is Amapola open?",
+   "prompt2": "Amapola, when is it open?"
   },
   {
    "id": "11",
    "name": "Zenteno Café",
-   "prompt": "Is Zenteno Café open?"
+   "prompt": "Is Zenteno Café open?",
+   "prompt2": "Zenteno Café, when is it open?"
   },
   {
    "id": "15",
    "name": "Raíces",
-   "prompt": "Is Raíces open?"
+   "prompt": "Is Raíces open?",
+   "prompt2": "Raíces, when is it open?"
   },
   {
    "id": "16",
    "name": "Rústica",
-   "prompt": "Is Rústica open?"
+   "prompt": "Is Rústica open?",
+   "prompt2": "Rústica, when is it open?"
   },
   {
    "id": "18",
    "name": "Luna de Queso",
-   "prompt": "Is Luna de Queso open?"
+   "prompt": "Is Luna de Queso open?",
+   "prompt2": "Luna de Queso, when is it open?"
   },
   {
    "id": "22",
    "name": "Tacos Don Tomás",
-   "prompt": "Is Tacos Don Tomás open?"
+   "prompt": "Is Tacos Don Tomás open?",
+   "prompt2": "Tacos Don Tomás, when is it open?"
   },
   {
    "id": "33",
    "name": "Hierba Santa",
-   "prompt": "Is Hierba Santa open?"
+   "prompt": "Is Hierba Santa open?",
+   "prompt2": "Hierba Santa, when is it open?"
   },
   {
    "id": "42",
    "name": "Andanza",
-   "prompt": "Is Andanza open?"
+   "prompt": "Is Andanza open?",
+   "prompt2": "Andanza, when is it open?"
   },
   {
    "id": "43",
    "name": "Agavia",
-   "prompt": "Is Agavia open?"
+   "prompt": "Is Agavia open?",
+   "prompt2": "Agavia, when is it open?"
   },
   {
    "id": "45",
    "name": "Tostévere",
-   "prompt": "Is Tostévere open?"
+   "prompt": "Is Tostévere open?",
+   "prompt2": "Tostévere, when is it open?"
   },
   {
    "id": "46",
    "name": "San Mezcal",
-   "prompt": "Is San Mezcal open?"
+   "prompt": "Is San Mezcal open?",
+   "prompt2": "San Mezcal, when is it open?"
   },
   {
    "id": "47",
    "name": "Olas Altas",
-   "prompt": "Is Olas Altas open?"
+   "prompt": "Is Olas Altas open?",
+   "prompt2": "Olas Altas, when is it open?"
   },
   {
    "id": "50",
    "name": "La Cabra Iluminada",
-   "prompt": "Is La Cabra Iluminada open?"
+   "prompt": "Is La Cabra Iluminada open?",
+   "prompt2": "La Cabra Iluminada, when is it open?"
   },
   {
    "id": "51",
    "name": "Casa Nostra",
-   "prompt": "Is Casa Nostra open?"
+   "prompt": "Is Casa Nostra open?",
+   "prompt2": "Casa Nostra, when is it open?"
   },
   {
    "id": "52",
    "name": "Fenicia",
-   "prompt": "Is Fenicia open?"
+   "prompt": "Is Fenicia open?",
+   "prompt2": "Fenicia, when is it open?"
   },
   {
    "id": "53",
    "name": "La Parada",
-   "prompt": "Is La Parada open?"
+   "prompt": "Is La Parada open?",
+   "prompt2": "La Parada, when is it open?"
   },
   {
    "id": "58",
    "name": "La Chope",
-   "prompt": "Is La Chope open?"
+   "prompt": "Is La Chope open?",
+   "prompt2": "La Chope, when is it open?"
   },
   {
    "id": "59",
    "name": "La Hija del Manantial",
-   "prompt": "Is La Hija del Manantial open?"
+   "prompt": "Is La Hija del Manantial open?",
+   "prompt2": "La Hija del Manantial, when is it open?"
   },
   {
    "id": "65",
    "name": "Cava Sautto",
-   "prompt": "Is Cava Sautto open?"
+   "prompt": "Is Cava Sautto open?",
+   "prompt2": "Cava Sautto, when is it open?"
   },
   {
    "id": "70",
    "name": "Birria Xalisco",
-   "prompt": "Is Birria Xalisco open?"
+   "prompt": "Is Birria Xalisco open?",
+   "prompt2": "Birria Xalisco, when is it open?"
   },
   {
    "id": "71",
    "name": "El Rinconcito",
-   "prompt": "Is El Rinconcito open?"
+   "prompt": "Is El Rinconcito open?",
+   "prompt2": "El Rinconcito, when is it open?"
   },
   {
    "id": "72",
    "name": "Nudol",
-   "prompt": "Is Nudol open?"
+   "prompt": "Is Nudol open?",
+   "prompt2": "Nudol, when is it open?"
   },
   {
    "id": "74",
    "name": "Sikelia",
-   "prompt": "Is Sikelia open?"
+   "prompt": "Is Sikelia open?",
+   "prompt2": "Sikelia, when is it open?"
   },
   {
    "id": "76",
    "name": "El Vergel",
-   "prompt": "Is El Vergel open?"
+   "prompt": "Is El Vergel open?",
+   "prompt2": "El Vergel, when is it open?"
   },
   {
    "id": "77",
    "name": "Cava Garambullo",
-   "prompt": "Is Cava Garambullo open?"
+   "prompt": "Is Cava Garambullo open?",
+   "prompt2": "Cava Garambullo, when is it open?"
   },
   {
    "id": "X1",
    "name": "Kan Bei",
-   "prompt": "Is Kan Bei open?"
+   "prompt": "Is Kan Bei open?",
+   "prompt2": "Kan Bei, when is it open?"
   },
   {
    "id": "X3",
    "name": "Carnitas El Güero",
-   "prompt": "Is Carnitas El Güero open?"
+   "prompt": "Is Carnitas El Güero open?",
+   "prompt2": "Carnitas El Güero, when is it open?"
   },
   {
    "id": "X5",
    "name": "Mariscos Los Delfines",
-   "prompt": "Is Mariscos Los Delfines open?"
+   "prompt": "Is Mariscos Los Delfines open?",
+   "prompt2": "Mariscos Los Delfines, when is it open?"
   },
   {
    "id": "X8",
    "name": "Petit Four",
-   "prompt": "Is Petit Four open?"
+   "prompt": "Is Petit Four open?",
+   "prompt2": "Petit Four, when is it open?"
   },
   {
    "id": "X17",
    "name": "Tío Lucas",
-   "prompt": "Is Tío Lucas open?"
+   "prompt": "Is Tío Lucas open?",
+   "prompt2": "Tío Lucas, when is it open?"
   },
   {
    "id": "X19",
    "name": "Mama Mía",
-   "prompt": "Is Mama Mía open?"
+   "prompt": "Is Mama Mía open?",
+   "prompt2": "Mama Mía, when is it open?"
   },
   {
    "id": "X20",
    "name": "Raindog Cantina",
-   "prompt": "Is Raindog Cantina open?"
+   "prompt": "Is Raindog Cantina open?",
+   "prompt2": "Raindog Cantina, when is it open?"
   },
   {
    "id": "X21",
    "name": "Johnny's Piano Bar",
-   "prompt": "Is Johnny's Piano Bar open?"
+   "prompt": "Is Johnny's Piano Bar open?",
+   "prompt2": "Johnny's Piano Bar, when is it open?"
   },
   {
    "id": "S10",
    "name": "Parque Juárez",
-   "prompt": "Where is Parque Juárez?"
+   "prompt": "Where is Parque Juárez?",
+   "prompt2": "Parque Juárez, is it open now?"
   }
  ]
 }

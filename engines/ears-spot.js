@@ -90,7 +90,49 @@ export function buildNameSpotter(names, lexicon, vocab, { maxReadings = 6 } = {}
     }
     return [...byId.values()].sort((a, b) => a.perSound - b.perSound).slice(0, top);
   }
-  return { spot, size: entries.length, names: new Set(entries.map((e) => e.id)).size };
+
+  // ---------- learning a visitor's way of saying a name (owner, 22 Nov 2026: "build option 1": the phone remembers the taps) ----------
+  // When the visitor picks a name after "Did you mean", the sounds the ears heard where that name fits best become one more reading of
+  // it, on that device only. Next time the same way of saying it costs little, so the name is answered instead of asked about.
+  const symbols = Object.fromEntries(Object.entries(vocab).map(([k, v]) => [v, k]));
+  const nameOf = new Map(names.map((n) => [n.id, n.name]));
+  const MAX_LEARNED = 3;  // per name: the latest three ways
+  /** The sounds heard where name `id` fits best: the frames of its best placement read freely (each frame's best sound, repeats and
+   * blanks dropped), as sound symbols. [] when the name cannot be placed. */
+  function heardAs(lp, frames, V, blank, id) {
+    const best = new Float64Array(frames);
+    for (let t = 0; t < frames; t++) { let m = NEG; const o = t * V; for (let c = 0; c < V; c++) if (lp[o + c] > m) m = lp[o + c]; best[t] = m; }
+    let at = null;
+    for (const e of entries) {
+      if (e.id !== id || e.learned) continue;
+      const r = costOf(lp, frames, V, blank, e.seq, best), perSound = r.cost / e.seq.length;
+      if (!at || perSound < at.perSound) at = { perSound, start: r.start, end: r.end };
+    }
+    if (!at) return [];
+    const out = [];
+    let prev = -1;
+    for (let t = at.start; t < at.end; t++) {
+      let c = 0, m = NEG; const o = t * V;
+      for (let k = 0; k < V; k++) if (lp[o + k] > m) { m = lp[o + k]; c = k; }
+      if (c !== prev && c !== blank) out.push(symbols[c]);
+      prev = c;
+    }
+    return out;
+  }
+  /** Adds a reading (sound symbols, as heardAs gives them) for name `id`; false when it is unusable (too short or long, unknown). */
+  function learn(id, phones) {
+    if (!nameOf.has(id) || !Array.isArray(phones) || phones.length < 3 || phones.length > 24 || phones.some((x) => !(x in vocab))) return false;
+    const key = phones.join(" ");
+    if (entries.some((e) => e.id === id && e.key === key)) return true;
+    entries.push({ id, name: nameOf.get(id), seq: Int32Array.from(phones.map((x) => vocab[x])), learned: true, key });
+    const mine = entries.filter((e) => e.id === id && e.learned);
+    for (const old of mine.slice(0, Math.max(0, mine.length - MAX_LEARNED))) entries.splice(entries.indexOf(old), 1);
+    return true;
+  }
+  /** Forgets every learned reading. */
+  function forget() { for (let i = entries.length - 1; i >= 0; i--) if (entries[i].learned) entries.splice(i, 1); }
+  const learned = () => entries.filter((e) => e.learned).map((e) => ({ id: e.id, phones: e.key.split(" ") }));
+  return { spot, heardAs, learn, forget, learned, get size() { return entries.length; }, names: new Set(entries.map((e) => e.id)).size };
 }
 
 // ---------- what to do with it: answer about the name, ask, or leave the words' answer alone ----------
@@ -108,6 +150,8 @@ export const SOUND_RULES = {
   askBelow: 3.0,   // otherwise offer the names ("Did you mean …?") when the best costs at most this…
   window: 1.0,     // …those within this of the best, at most three
   override: 1.5,   // the words named a place but the sounds clearly say another (this much better): ask between the two (English page)
+  strong: 1.0,     // a question not shaped like one about a place: answer about a name at most this per sound…
+  strongGap: 1.5,  // …this far ahead of the next (in practice only a name learned from the visitor gets this close)
 };
 const foldText = (s) => fold(s).replace(/[^a-z0-9ñ' ]+/g, " ").replace(/\s+/g, " ").trim();
 // The shape of a question about one place: "Is X open?", "When does X close?", "Where is X?", "X, when is it open?", "¿Está abierto X?",
@@ -133,7 +177,10 @@ export function soundChoice(text, q, spot, { rules = SOUND_RULES, override = tru
     const mine = list.find((s) => s.id === named);
     return !mine || mine.perSound - top.perSound >= rules.override ? { pick: null, ask: [top.id, named], keep: false } : none;
   }
-  if (!ONE_PLACE.test(foldText(text)) || (q && (q.plural || q.near))) return none;
+  if (q && (q.plural || q.near)) return none;
+  if (!ONE_PLACE.test(foldText(text))) {  // not shaped like a question about a place: only a very clear name, when nothing else was asked
+    return rules.strong && !subjectOf(q) && top.perSound <= rules.strong && gap >= rules.strongGap ? { pick: top.id, ask: [], keep: false } : none;
+  }
   if (top.perSound <= rules.accept && gap >= rules.gap) return { pick: top.id, ask: [], keep: false };
   if (top.perSound <= rules.askBelow) return { pick: null, ask: list.filter((s) => s.perSound <= top.perSound + rules.window).slice(0, 3).map((s) => s.id), keep: subjectOf(q) };
   return none;
